@@ -63,9 +63,11 @@ class ForgetPassword(APIView):
         try:
             email=request.data.get(email)
             user=CustomUser.objects.get(email=email,role="customer")
-            pass
-                                
-        
+            if user:
+                return Response({"success":True,"message":" Email found "},status=200)
+            else:
+                return Response({"success":False,"error":"Email not found"},status=400)
+                
         except Exception as e:
             return Response({"success":False,"error":str(e)})
     

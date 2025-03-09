@@ -32,9 +32,14 @@ admin.sites.AdminSite.index_title = 'Admin Panel'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/login/', views.LoginView.as_view(), name='token_obtain_login'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),    
-    path('/api/register/',views.Register.as_view()),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), 
+       
+    path('api/register/',views.Register.as_view()),
+    path('api/forget_password/',views.ForgetPassword.as_view()),
+    
+    
     # path('api/bus',include('bus.urls')),
     # path('api/booking',include('booking.urls')),
+    path('api/',include('route.urls')),
     
 ]
