@@ -6,7 +6,7 @@ from custom_user.models import CustomUser
 
 from bus.models import Bus,BusAdmin,Driver,Staff,TicketCounter
 from booking.models import Booking,Seat
-from route.models import Route,Schedule 
+from route.models import Route,Schedule,Trip
 
 # Registering CustomUser model
 from django.contrib.auth.admin import UserAdmin
@@ -96,7 +96,7 @@ class RouteAdmin(admin.ModelAdmin):
     ordering = ('source',)  # Ordering by source
 
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ('bus', 'route', 'departure_time', 'arrival_time', 'date', 'price','bus_admin')  # Display fields for schedule
+    list_display = ('bus', 'route', 'departure_time', 'arrival_time','date',  'price')  # Display fields for schedule
     search_fields = ('bus__bus_number', 'route__source', 'route__destination')  # Search schedules by bus number, source, and destination
     list_filter = ('route', 'departure_time', 'date')  # Allow filtering by route and departure time
     ordering = ('date',)  # Ordering by date of journey
@@ -105,6 +105,7 @@ class ScheduleAdmin(admin.ModelAdmin):
 admin.site.register(Route, RouteAdmin)
 admin.site.register(Schedule, ScheduleAdmin)
 
-
 class  TripAdmin(admin.ModelAdmin):
-    list_display=('bus','driver','route','schedule_depature','scheduled_arrival','actual_departure','actual_arrival','status')
+    list_display=('bus','route','driver','scheduled_departure','scheduled_arrival','actual_departure','actual_arrival','status')
+
+admin.site.register(Trip,TripAdmin)

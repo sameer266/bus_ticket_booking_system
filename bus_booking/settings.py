@@ -145,7 +145,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'custom_user.CustomUser'  # Points to your custom user model
 
 
-# ======= renderer============
+
+
+# =======  Rest Framework ============
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
@@ -159,16 +161,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 # ============ JWT Authentication ==============
 
-
-
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-}
 
 
 SIMPLE_JWT = {
