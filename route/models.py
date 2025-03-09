@@ -3,6 +3,7 @@ from django.apps import apps  # For lazy importing models
 from django.core.exceptions import ValidationError
 from custom_user.models import CustomUser
 
+
 class Route(models.Model):
     source = models.CharField(max_length=255, null=False, help_text="Starting point of the route")
     destination = models.CharField(max_length=255, null=False, help_text="Ending point of the route")
@@ -43,3 +44,35 @@ class Schedule(models.Model):
 
     def __str__(self):
         return f"{self.bus.bus_number} | {self.route.source} to {self.route.destination} at {self.date.strftime('%Y-%m-%d %H:%M:%S')}"
+
+
+
+
+class Trip(models.Model):
+    bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE)
+    route = models.ForeignKey('Route', on_delete=models.CASCADE)
+    driver = models.ForeignKey('bus.Driver', on_delete=models.CASCADE, help_text="Driver of the bus")
+    # Scheduled trip details
+    scheduled_departure = models.DateTimeField(help_text="Scheduled departure time of the bus")
+    scheduled_arrival = models.DateTimeField(help_text="Scheduled arrival time of the bus")
+    
+    # Actual trip details
+    actual_departure = models.DateTimeField(null=True, blank=True, help_text="Actual departure time of the bus")
+    actual_arrival = models.DateTimeField(null=True, blank=True, help_text="Actual arrival time of the bus")
+
+    status = models.CharField(max_length=20, choices=[('on_time', 'On Time'), ('delayed', 'Delayed'), ('completed', 'Completed')], default='on_time', help_text="Current status of the trip")
+
+    def __str__(self):
+        return f"Trip from {self.route.source} to {self.route.destination} on Bus {self.bus.bus_number}"
+
+    def save(self, *args, **kwargs):
+        if self.actual_departure and self.scheduled_departure:
+            #  checking if the trip is delayed
+            if self.actual_departure > self.scheduled_departure:
+                self.status = 'delayed'
+            
+            # checking if trip is on_time
+            if self.actual_departure <= self.scheduled_departure:
+                self.status='on_time'
+        
+        super().save(*args, **kwargs)

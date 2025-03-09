@@ -15,8 +15,6 @@ from bus.models import Bus
 '''
 
 
-
-
 class Seat(models.Model):
     STATUS_CHOICES=(
         ('available','Available'),

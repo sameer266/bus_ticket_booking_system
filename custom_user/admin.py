@@ -44,7 +44,7 @@ admin.site.register(TicketCounter,TicketCounterAdmin)
 
 # Registering BusAdmin model
 class BusAdminAdmin(admin.ModelAdmin):
-    list_display = ('user','bus')
+    list_display = ('user','bus','driver','booked_seats','remaining_seats','estimated_arrival','price','source','destination','last_updated')
   
   
 
@@ -104,3 +104,7 @@ class ScheduleAdmin(admin.ModelAdmin):
 # Register the models with the admin site
 admin.site.register(Route, RouteAdmin)
 admin.site.register(Schedule, ScheduleAdmin)
+
+
+class  TripAdmin(admin.ModelAdmin):
+    list_display=('bus','driver','route','schedule_depature','scheduled_arrival','actual_departure','actual_arrival','status')
