@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.apps import apps
 
 
+# ========= Ticket Counter ===============
 class TicketCounter(models.Model):
     user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE,limit_choices_to={'role':'sub_admin'},related_name="ticket_counter")
     counter_name=models.CharField(max_length=200, default="None",help_text="Name of Ticket Counter name")
@@ -17,7 +18,7 @@ class TicketCounter(models.Model):
 def __str__(self):
     return f"{self.counter_name} - {self.location}"
 
-
+# =========== Driver ===============
 class Driver(models.Model):
     full_name = models.CharField(max_length=255, null=False)
     driver_profile = models.ImageField(upload_to="driver_profile/")
@@ -27,6 +28,8 @@ class Driver(models.Model):
     def __str__(self):
         return f"Driver: {self.full_name} - {self.phone_number}"
 
+
+# =========== Staff ===============
 class Staff(models.Model):
     full_name = models.CharField(max_length=255, null=False)
     staff_profile = models.ImageField(upload_to="staff_profile/", null=True, blank=True)  # Optional profile image

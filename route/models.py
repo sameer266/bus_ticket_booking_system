@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.utils import timezone
 
-
+# ======= Route ==========
 class Route(models.Model):
     source = models.CharField(max_length=255, null=False, help_text="Starting point of the route")
     destination = models.CharField(max_length=255, null=False, help_text="Ending point of the route")
@@ -19,7 +19,7 @@ class Route(models.Model):
         
 
 
-
+# =========== Trip ==============
 class Trip(models.Model):
     bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE)
     route = models.ForeignKey('Route', on_delete=models.CASCADE)

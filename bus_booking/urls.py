@@ -36,6 +36,8 @@ urlpatterns = [
        
     path('api/register/',views.Register.as_view()),
     path('api/forget_password/',views.ForgetPassword.as_view()),
+    path('api/get_otp/',views.SendOtp_VerifyOtp.as_view()),
+    path('api/verify_otp/',views.SendOtp_VerifyOtp.as_view()),
     
     
     # path('api/bus',include('bus.urls')),
