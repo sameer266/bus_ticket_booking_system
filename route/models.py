@@ -2,7 +2,6 @@ from django.db import models
 from django.apps import apps  # For lazy importing models
 from django.core.exceptions import ValidationError
 from django.dispatch import receiver
-from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.utils import timezone
 
@@ -51,7 +50,7 @@ class Trip(models.Model):
         super().save(*args, **kwargs)
 
 
-
+# ====== schedule =========
 
 class Schedule(models.Model):
     bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE)

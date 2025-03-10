@@ -93,8 +93,6 @@ class BusAdmin(models.Model):
     remaining_seats = models.PositiveIntegerField(default=0, help_text="Calculated remaining seats")
     estimated_arrival = models.DateTimeField(null=True, blank=True, help_text="Estimated Arrival time")
     last_updated = models.DateTimeField(auto_now=True, help_text="Timestamp of last update")
-
-    # New fields to represent the price and source/destination
     price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Ticket price for the bus journey")
     source = models.CharField(max_length=255, null=True, blank=True, help_text="Starting point of the journey (overrides route source)")
     destination = models.CharField(max_length=255, null=True, blank=True, help_text="Ending point of the journey (overrides route destination)")
@@ -116,7 +114,7 @@ class BusAdmin(models.Model):
 
             # Update the Bus model automatically
             self.bus.available_seats = self.remaining_seats
-            self.bus.is_running = True  # Set bus as running when updated
+            self.bus.is_running = True  
             self.bus.save()
 
             # Update source/destination dynamically if not provided

@@ -5,7 +5,7 @@ from django.contrib import admin
 from custom_user.models import CustomUser
 
 from bus.models import Bus,BusAdmin,Driver,Staff,TicketCounter
-from booking.models import Booking,Seat
+from booking.models import Booking,Seat,Payment,Commission,Rate
 from route.models import Route,Schedule,Trip
 
 # Registering CustomUser model
@@ -72,7 +72,7 @@ class BusAdminModel(admin.ModelAdmin):
 
 admin.site.register(Bus, BusAdminModel)
 
-# Registering Seat model
+#  ========== Seat ===============
 class SeatAdmin(admin.ModelAdmin):
     list_display = ('bus', 'row', 'number', 'status')
     search_fields = ('bus__bus_number', 'row', 'number')
@@ -80,21 +80,24 @@ class SeatAdmin(admin.ModelAdmin):
 
 admin.site.register(Seat, SeatAdmin)
 
-# Registering Booking model
+# ===== booking =============
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ('user', 'seat', 'bus','schedule','booking_status', 'booked_at', 'updated_at')
+    list_display = ('user', 'seat', 'bus','schedule','booking_status','paid', 'booked_at', 'updated_at')
     search_fields = ('user__email', 'seat__row', 'seat__number', 'bus__bus_number')
     list_filter = ('booking_status' ,'booked_at',)
 
 admin.site.register(Booking, BookingAdmin)
 
 
+# ======== route =============
 class RouteAdmin(admin.ModelAdmin):
     list_display = ('source', 'destination', 'distance', 'estimated_time')  # Display these fields in the admin list view
     search_fields = ('source', 'destination')  # Allow searching by source and destination
     list_filter = ('source', 'destination')  # Filter by source and destination
     ordering = ('source',)  # Ordering by source
 
+
+# ======= Schedule ===========
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ('bus', 'route', 'departure_time', 'arrival_time','date',  'price')  # Display fields for schedule
     search_fields = ('bus__bus_number', 'route__source', 'route__destination')  # Search schedules by bus number, source, and destination
@@ -105,7 +108,34 @@ class ScheduleAdmin(admin.ModelAdmin):
 admin.site.register(Route, RouteAdmin)
 admin.site.register(Schedule, ScheduleAdmin)
 
+
+# ======== Trip ===============
 class  TripAdmin(admin.ModelAdmin):
     list_display=('bus','route','driver','scheduled_departure','scheduled_arrival','actual_departure','actual_arrival','status')
 
 admin.site.register(Trip,TripAdmin)
+
+
+# ====== Payment ============
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('user', 'trip', 'price', 'commission_deducted', 'created_at')
+    search_fields = ('user__email', 'trip__bus__bus_number', 'trip__route__source', 'trip__route__destination')
+    list_filter = ('trip__status', 'created_at')
+
+admin.site.register(Payment, PaymentAdmin)
+
+#========== Rate ========
+class RateAdmin(admin.ModelAdmin):
+    list_display = ('rate',)
+    search_fields = ('rate',)
+    list_filter = ('rate',)
+
+admin.site.register(Rate, RateAdmin)
+
+# ===== Commission =========
+class CommissionAdmin(admin.ModelAdmin):
+    list_display = ('bus', 'total_earnings', 'total_commission')
+    search_fields = ('bus__bus_number',)
+    list_filter = ('bus__bus_number',)
+
+admin.site.register(Commission, CommissionAdmin)
