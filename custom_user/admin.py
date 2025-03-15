@@ -6,7 +6,7 @@ from custom_user.models import CustomUser
 
 from bus.models import Bus,BusAdmin,Driver,Staff,TicketCounter
 from booking.models import Booking,Seat,Payment,Commission,Rate
-from route.models import Route,Schedule,Trip
+from route.models import Route,Schedule,Trip,CustomerReview
 
 # Registering CustomUser model
 from django.contrib.auth.admin import UserAdmin
@@ -14,19 +14,19 @@ from .models import CustomUser
 
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ('email', 'full_name', 'role', 'is_active', 'is_staff')
+    list_display = ('email', 'full_name', 'role','phone','gender', 'is_active', 'is_staff')
     list_filter = ('role', 'is_active', 'is_staff')
     search_fields = ('email', 'full_name')
     ordering = ('email',)
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('full_name', 'phone')}),
+        ('Personal info', {'fields': ('full_name', 'phone','gender')}),
         ('Permissions', {'fields': ('role', 'is_active', 'is_staff', 'is_superuser')}),
         ('Important dates', {'fields': ('last_login',)}),
     )
     add_fieldsets = (
         (None, {'fields': ('email', 'password1', 'password2')}),
-        ('Personal info', {'fields': ('full_name', 'phone')}),
+        ('Personal info', {'fields': ('full_name', 'phone','gender')}),
         ('Permissions', {'fields': ('role', 'is_active', 'is_staff')}),
     )
 
@@ -42,31 +42,33 @@ admin.site.register(TicketCounter,TicketCounterAdmin)
     
 
 
-# Registering BusAdmin model
+# ========= Bus Admin ==========
 class BusAdminAdmin(admin.ModelAdmin):
     list_display = ('user','bus','driver','booked_seats','remaining_seats','estimated_arrival','price','source','destination','last_updated')
-  
-  
 
 admin.site.register(BusAdmin, BusAdminAdmin)
 
-# Registering Driver model
+
+
+# ======== Driver =============
 class DriverAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'phone_number')
     search_fields = ('full_name', 'phone_number')
 
 admin.site.register(Driver, DriverAdmin)
 
-# Registering Staff model
+# ===== Staff  ============
 class StaffAdmin(admin.ModelAdmin):
     list_display = ('full_name', 'phone_number')
     search_fields = ('full_name', 'phone_number')
 
 admin.site.register(Staff, StaffAdmin)
 
-# Registering Bus model
+
+
+# ======== Bus ===========
 class BusAdminModel(admin.ModelAdmin):
-    list_display = ('bus_number', 'bus_type', 'total_seats', 'available_seats', 'route', 'is_active')
+    list_display = ('bus_number', 'bus_type', 'total_seats', 'available_seats','features', 'route', 'is_active')
     search_fields = ('bus_number', 'bus_type')
     list_filter = ('is_active',)
 
@@ -139,3 +141,11 @@ class CommissionAdmin(admin.ModelAdmin):
     list_filter = ('bus__bus_number',)
 
 admin.site.register(Commission, CommissionAdmin)
+
+
+
+# ====== CustomerReview ============
+@admin.register(CustomerReview)
+class CustomerReviewAdmin(admin.ModelAdmin):
+    list_display=('bus','user','rating','route','comment','created_at')
+

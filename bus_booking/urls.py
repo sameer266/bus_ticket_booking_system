@@ -19,6 +19,8 @@ Including another URLconf
 
 
 from django.contrib import admin
+from django.conf import settings
+from django.conf.urls.static import static
 from django.urls import path,include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
@@ -31,17 +33,32 @@ admin.sites.AdminSite.index_title = 'Admin Panel'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # ====== Authentication api =========
     path('api/login/', views.LoginView.as_view(), name='token_obtain_login'),
+    path('api/logout/',views.LogoutView.as_view()),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), 
-       
     path('api/register/',views.Register.as_view()),
     path('api/forget_password/',views.ForgetPassword.as_view()),
     path('api/get_otp/',views.SendOtp_VerifyOtp.as_view()),
     path('api/verify_otp/',views.SendOtp_VerifyOtp.as_view()),
     
+    # ======== Web Home page Api  ==========
+    path('api/all_routes/',views.AllRoutesConatinsSchedule.as_view()),
+    path('api/all_schedule/',views.AllSchedule.as_view()),
+    path('api/filter_schedule/',views.FilterRoute.as_view()),
+    path('api/popular_routes/',views.PopularRoutes.as_view()),
+    path('api/all_reviews/',views.AllReveiews().as_view()),
+    path('api/all_buses/',views.AllBuses.as_view()),
     
-    # path('api/bus',include('bus.urls')),
-    # path('api/booking',include('booking.urls')),
-    path('api/',include('route.urls')),
+    # ======== Admin Dashboard ==========
+    path('api/admin_dashboard/',views.AdminDashboardData.as_view()),
+    
+    path('api/',include('booking.urls')),
+  
     
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

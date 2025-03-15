@@ -1,4 +1,5 @@
 from django.db import models
+from multiselectfield import MultiSelectField
 
 # Create your models here.
 from django.db import models
@@ -10,7 +11,7 @@ from django.apps import apps
 
 # ========= Ticket Counter ===============
 class TicketCounter(models.Model):
-    user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE,limit_choices_to={'role':'sub_admin'},related_name="ticket_counter")
+    user=models.OneToOneField('custom_user.CustomUser',on_delete=models.CASCADE,limit_choices_to={'role':'sub_admin'},related_name="ticket_counter")
     counter_name=models.CharField(max_length=200, default="None",help_text="Name of Ticket Counter name")
     location=models.CharField(max_length=100)
     created_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
@@ -40,7 +41,7 @@ class Staff(models.Model):
     
     
 
-
+    
 # ====== Bus =============
 class Bus(models.Model):
     VEHICLE_CHOICES = (
@@ -51,11 +52,18 @@ class Bus(models.Model):
         ("micro_bus", "Micro Bus"),
         ("electric_bus", "Electric Bus"),
     )
+    FEATURE_CHOICES = (
+        ("ac", "AC"),
+        ("charging", "charging"),
+        ("fan", "Fan"),
+        ("wifi","Wifi"),      
+    )
 
     driver = models.ForeignKey(Driver, on_delete=models.SET_NULL, null=True, blank=True)  # A bus has one driver (optional)
     staff = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True)  # A bus has one staff (optional)
     bus_number = models.CharField(max_length=20, unique=True, null=False, help_text="Example: BA 1 KHA 1234")
     bus_type = models.CharField(max_length=20, choices=VEHICLE_CHOICES, default="deluxe_bus")
+    features = MultiSelectField(choices=FEATURE_CHOICES, null=True, blank=True)  # Allows multiple selections
     bus_image = models.ImageField(upload_to="bus_images/")
     total_seats = models.PositiveIntegerField(default=35)
     available_seats = models.PositiveIntegerField(default=35)

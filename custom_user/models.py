@@ -29,13 +29,19 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ("bus_admin", "Bus Admin User"),
         ("customer", "Normal User"),
     )
+    GENDER_CHOICE=(
+        ("male","Male"),
+        ("female","Female"),
+        ("others","Others")
+    )
     phone = models.CharField(max_length=15, unique=True) 
     email = models.EmailField(unique=True, null=True, blank=True)  
     full_name = models.CharField(max_length=255)   
     role = models.CharField(max_length=20, choices=USER_ROLES, default="customer")
+    gender=models.CharField(max_length=50,choices=GENDER_CHOICE,null=True,blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-
+    created_at=models.DateField(auto_now_add=True,null=True)
     objects = CustomUserManager()
 
     USERNAME_FIELD = "phone"  # Authenticate using phone

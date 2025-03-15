@@ -91,3 +91,17 @@ def create_bus_admin_and_trip(sender,instance,created,**kwargs):
                             driver=instance.bus.driver,
                             scheduled_departure=instance.departure_time,
                             scheduled_arrival=instance.arrival_time)
+        
+
+
+# ======== Customer Reiew ============
+class CustomerReview(models.Model):
+    bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE, related_name="reviews")
+    user = models.ForeignKey('custom_user.CustomUser', on_delete=models.CASCADE,limit_choices_to={'role':'customer'})  # Assuming users are registered
+    route=models.ForeignKey(Route,on_delete=models.CASCADE,null=True,blank=True)
+    rating = models.PositiveIntegerField(choices=[(i, i) for i in range(1, 6)])  # Rating from 1 to 5
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review by {self.user.full_name} for {self.bus.bus_number} - {self.rating}⭐"

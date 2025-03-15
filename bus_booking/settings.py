@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'multiselectfield',
     
     'custom_user',
     'bus',
@@ -125,6 +126,8 @@ USE_I18N = True
 
 USE_TZ = True
 
+USE_L10N = True  # Enable localization
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
@@ -164,7 +167,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=180),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=43800), # 30 days
     'REFRESH_TOKEN_LIFETIME': timedelta(days=50),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
