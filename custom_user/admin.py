@@ -68,7 +68,7 @@ admin.site.register(Staff, StaffAdmin)
 
 # ======== Bus ===========
 class BusAdminModel(admin.ModelAdmin):
-    list_display = ('bus_number', 'bus_type', 'total_seats', 'available_seats','features', 'route', 'is_active')
+    list_display = ('driver','bus_number', 'bus_type', 'total_seats', 'available_seats','features', 'route', 'is_active')
     search_fields = ('bus_number', 'bus_type')
     list_filter = ('is_active',)
 
@@ -76,7 +76,7 @@ admin.site.register(Bus, BusAdminModel)
 
 #  ========== Seat ===============
 class SeatAdmin(admin.ModelAdmin):
-    list_display = ('bus', 'row', 'number', 'status')
+    list_display = ('row', 'number', 'status')
     search_fields = ('bus__bus_number', 'row', 'number')
     list_filter = ('status',)
 
@@ -120,9 +120,9 @@ admin.site.register(Trip,TripAdmin)
 
 # ====== Payment ============
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'trip', 'price', 'commission_deducted', 'created_at')
-    search_fields = ('user__email', 'trip__bus__bus_number', 'trip__route__source', 'trip__route__destination')
-    list_filter = ('trip__status', 'created_at')
+    list_display = ('user', 'schedule', 'price', 'commission_deducted', 'created_at')
+    search_fields = ('user__email', 'schedule__bus__bus_number', 'schedule__route__source', 'schedule__route__destination')
+  
 
 admin.site.register(Payment, PaymentAdmin)
 

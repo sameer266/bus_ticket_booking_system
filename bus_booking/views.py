@@ -10,6 +10,7 @@ from booking.models import Commission,Booking
 from custom_user.serializers import CustomUserSerializer
 from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BookingSerializer,TripSerilaizer
 
+
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -231,6 +232,20 @@ class AllBuses(APIView):
         except Exception as e:
             return Response({"error":True,"error":str(e)},status=400)
         
+    
+
+# ====== show all  buses of one route ==========
+class RoutesBusList(APIView):
+    def get(self,request,*args,**kwargs):
+        try:
+            route_id=kwargs.get(id=id)
+            route_obj=Route.objects.get(id=route_id)
+            bus=Bus.objects.filter(route=route_obj)
+            serializer=BusScheduleSerializer(bus,many=True)
+            return Response({"success":True,"data":serializer.data},status=200)
+        except Exception as e:
+            return Response({"success":False,'error':str(e)},status=200)
+    
         
 # ====== admin dashboard Homedata =====
 class AdminDashboardData(APIView):
@@ -265,3 +280,6 @@ class AdminDashboardData(APIView):
             
         except Exception as e:
             return Response({'success':False,"error":str(e)},status=400)
+        
+
+

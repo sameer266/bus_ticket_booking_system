@@ -1,15 +1,15 @@
 from  .models import Route,Schedule,Trip,CustomerReview
 from custom_user.models import CustomUser
-from bus.models import Bus,TicketCounter
+from bus.models import Bus,TicketCounter,Driver,Staff
 from rest_framework import serializers
-from booking.models import Booking
+from booking.models import Booking,Seat
 
 
 
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model=Route
-        fields=['source','destination','distance','estimated_time']
+        fields=['id','source','destination','distance','estimated_time']
     
     
     
@@ -18,7 +18,7 @@ class BusScheduleSerializer(serializers.ModelSerializer):
     route=RouteSerializer()
     class Meta:
         model=Bus
-        fields=['bus_type','total_seats','available_seats','features','bus_image','route']
+        fields=['id','bus_number','bus_type','total_seats','available_seats','features','bus_image','route']
 
 class ScheduleSerializer(serializers.ModelSerializer):
     bus=BusScheduleSerializer()
@@ -49,10 +49,18 @@ class CustomReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model=CustomerReview
         fields='__all__'
+
+
+class SeatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Seat
+        fields="__all__"
         
-    
+        
 class BookingSerializer(serializers.ModelSerializer):
     schedule=ScheduleSerializer()
+    user=CustomUserReviewSerializer()
+    seat=SeatSerializer()
     
     class Meta:
         model=Booking
@@ -68,7 +76,20 @@ class TicketCounterSerializer(serializers.ModelSerializer):
        model=TicketCounter
        fields='__all__'
        
+class DriverSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Driver
+        fields='__all__'
+
+class StaffSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Staff
+        fields='__all__'
+       
 class BusSerializer(serializers.ModelSerializer):
+    staff=StaffSerializer()
+    driver=DriverSerializer()
+    route=RouteSerializer()
     class Meta:
         model=Bus
         fields='__all__'

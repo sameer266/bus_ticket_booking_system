@@ -22,9 +22,27 @@ urlpatterns = [
     
     # ===== Bus management ========
     path('admin_buslist/',views.BusListView.as_view()),
-    path('admin_buslist_add',views.BusListView.as_view()),
+    path('admin_buslist_add/',views.BusListView.as_view()),
     path('admin_buslist_update/<id>/',views.BusListView.as_view()),
-    path('admin_buslist_delete/<id>/',views.BusListView.as_view())
+    path('admin_buslist_delete/<id>/',views.BusListView.as_view()),
     
+    
+    # ======  Schedule ======
+    path('admin_schedulelist/',views.ScheduleView.as_view()),
+    path('admin_schedulelist_add/',views.ScheduleView.as_view()),
+    path('admin_schedulelist_update/<int:id>/',views.ScheduleView.as_view()),
+    path('admin_schedulelist_delete/<int:id>/',views.ScheduleView.as_view()),
+    
+    
+    # ======== route ========
+    path('admin_routelist/',views.RouteApiView.as_view()),
+    path('admin_routelist_add/',views.RouteApiView.as_view()),
+    path('admin_routelist_update/<int:id>/',views.RouteApiView.as_view()),
+    path('admin_routelist_delete/<int:id>/',views.RouteApiView.as_view()),
+    
+    
+    # ====== Booking ========
+    path('admin_bookinglist/',views.BookingAPiView.as_view()),
+    path('admin_bookinglist_update/<int:id/',views.BookingAPiView.as_view()),
     
 ]

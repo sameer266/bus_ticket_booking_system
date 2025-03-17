@@ -50,6 +50,7 @@ urlpatterns = [
     path('api/popular_routes/',views.PopularRoutes.as_view()),
     path('api/all_reviews/',views.AllReveiews().as_view()),
     path('api/all_buses/',views.AllBuses.as_view()),
+    path('api/routes_all_buses/',views.RoutesBusList.as_view()),
     
     # ======== Admin Dashboard ==========
     path('api/admin_dashboard/',views.AdminDashboardData.as_view()),

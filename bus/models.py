@@ -1,5 +1,6 @@
 from django.db import models
 from multiselectfield import MultiSelectField
+import os
 
 # Create your models here.
 from django.db import models
@@ -25,6 +26,15 @@ class Driver(models.Model):
     driver_profile = models.ImageField(upload_to="driver_profile/")
     license_image = models.ImageField(upload_to="driver_license/")
     phone_number = models.CharField(max_length=10, unique=True, null=False)
+    
+    def delete(self, *args, **kwargs):
+        # Delete the associated image file before deleting the model
+        if self.driver_profile:
+            self.driver_profile.delete(save=False)
+        if self.license_image:
+            self.license_image.delete(save=False)
+            
+        super().delete(*args,**kwargs)
 
     def __str__(self):
         return f"Driver: {self.full_name} - {self.phone_number}"
@@ -36,6 +46,12 @@ class Staff(models.Model):
     staff_profile = models.ImageField(upload_to="staff_profile/", null=True, blank=True)  # Optional profile image
     phone_number = models.CharField(max_length=10, unique=True, null=False)
 
+
+    def delete(self,*args,**kwargs):
+        if self.staff_profile:
+            self.staff_profile.delete(save=False)
+        super().delete(*args,**kwargs)
+        
     def __str__(self):
         return f"Staff: {self.full_name} - {self.phone_number}"
     
@@ -59,26 +75,34 @@ class Bus(models.Model):
         ("wifi","Wifi"),      
     )
 
-    driver = models.ForeignKey(Driver, on_delete=models.SET_NULL, null=True, blank=True)  # A bus has one driver (optional)
-    staff = models.ForeignKey(Staff, on_delete=models.SET_NULL, null=True, blank=True)  # A bus has one staff (optional)
+    driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)  # A bus has one driver (optional)
+    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, null=True, blank=True)  # A bus has one staff (optional)
     bus_number = models.CharField(max_length=20, unique=True, null=False, help_text="Example: BA 1 KHA 1234")
     bus_type = models.CharField(max_length=20, choices=VEHICLE_CHOICES, default="deluxe_bus")
     features = MultiSelectField(choices=FEATURE_CHOICES, null=True, blank=True)  # Allows multiple selections
     bus_image = models.ImageField(upload_to="bus_images/")
     total_seats = models.PositiveIntegerField(default=35)
     available_seats = models.PositiveIntegerField(default=35)
-    route = models.OneToOneField(Route, on_delete=models.CASCADE)
+    route = models.ForeignKey(Route, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     is_running = models.BooleanField(default=False, help_text="To ensure the bus is in running state or not")
-
-    def __str__(self):
-        return f"{self.bus_number}"
-
+    
     def save(self, *args, **kwargs):
         """Ensure available seats don't exceed total seats."""
         if self.available_seats > self.total_seats:
             raise ValidationError("Available seats cannot exceed total seats.")
         super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        # Delete the associated image file before deleting the model
+        if self.bus_image:
+            self.bus_image.delete(save=False)
+        super().delete(*args,**kwargs)
+
+    def __str__(self):
+        return f"{self.bus_number}"
+
+    
 
 
 

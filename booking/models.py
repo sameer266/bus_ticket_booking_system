@@ -1,5 +1,6 @@
 from django.db import models
 from bus.models import Bus
+from route.models import Schedule
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
 from django.db.models.signals  import post_save
@@ -26,19 +27,23 @@ class Seat(models.Model):
         ('available', 'Available'),
         ('booked', 'Booked')
     )
-    bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE, related_name='seats')
+    
     row = models.CharField(max_length=1, help_text="Row letter (A,B,C)")
     number = models.PositiveIntegerField(help_text="Seat Number (1,2,3)") 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="available")
     
     class Meta:
-        unique_together = ('bus', 'row', 'number')
+        unique_together = ( 'row', 'number')
     
     def __str__(self):
-        return f"Bus: {self.bus.bus_number} | Row: {self.row} | Seat: {self.number} | Status: {self.status}"
-        
-        
+        return f"Row: {self.row} | Seat: {self.number} | Status: {self.status}"
+
+
+
+
 # ====== Booking ============
+from .tasks import release_unpaid_seat
+
 class Booking(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
@@ -46,25 +51,44 @@ class Booking(models.Model):
         ('canceled', 'Canceled')
     )
     user = models.ForeignKey('custom_user.CustomUser', on_delete=models.CASCADE, limit_choices_to={'role': 'customer'})
-    paid=models.BooleanField(default=False)
+    paid = models.BooleanField(default=False)
     seat = models.ForeignKey(Seat, on_delete=models.CASCADE)
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='booking')
-    schedule = models.ForeignKey('route.Schedule', on_delete=models.CASCADE)
+    schedule = models.ForeignKey('route.Schedule', on_delete=models.CASCADE, null=True, blank=True) #Auto created 
     booking_status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='pending')
     booked_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateField(auto_now=True)
-    
 
-# ==== Change the status of seat when booking is booked  =======
-@receiver(post_save,sender=Booking)
-def change_seat_status_when_booked(sender,instance,**kwargs):
-  if instance.booking_status=='booked':
-    instance.seat.status='booked'
-    instance.seat.save()
-  else:
-    instance.seat.status='available'
-    instance.seat.save()
-    
+    def __str__(self):
+        return f"Booking #{self.id} - Seat: {self.seat} - Status: {self.booking_status}"
+
+# ==== Change the status of seat when booking is booked =======
+@receiver(post_save, sender=Booking)
+def change_seat_status_when_booked(sender, instance, **kwargs):
+    # Assign the schedule based on the bus
+    if instance.bus:
+        try:
+            schedule = Schedule.objects.get(bus=instance.bus)
+            instance.schedule = schedule
+            instance.save()  # Save the instance to reflect the schedule change
+        except Schedule.DoesNotExist:
+            print(f"Schedule not found for bus: {instance.bus}")
+
+    # Change seat status based on booking status
+    if instance.booking_status=='booked':
+        instance.seat.status == 'booked'
+        instance.seat.save()
+        
+    if instance.booking_status == 'pending':
+        instance.seat.status = 'booked'
+        instance.seat.save()
+
+        # Schedule Celery task to release seat after 10 minutes if unpaid
+        release_unpaid_seat.apply_async((instance.id,), countdown=600)  # 600 seconds = 10 minutes
+    else:
+        instance.seat.status = 'available'
+        instance.seat.save()
+
     
    
 
@@ -98,13 +122,13 @@ class Rate(models.Model):
 # ======== Payment ===========
 class Payment(models.Model):
     user = models.ForeignKey('custom_user.CustomUser', on_delete=models.CASCADE, limit_choices_to={'role': 'customer'}, help_text="User who made payment")
-    trip = models.ForeignKey('route.Trip', on_delete=models.CASCADE, help_text="The trip for which the payment was made")
+    schedule = models.ForeignKey('route.Schedule', on_delete=models.CASCADE, help_text="The Schedule for which the payment was made")
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of paid")
     commission_deducted = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Commission deducted from payment")
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
-        return f"Payment for {self.trip.bus.bus_number} for {self.trip.route.source} - {self.trip.route.destination}"
+        return f"Payment for {self.schedule.bus.bus_number} for {self.schedule.route.source} - {self.schedule.route.destination}"
 
 
 # ==== Commission ============
@@ -140,7 +164,7 @@ def updateStatus_booking_and_calculate_commission_on_payment(sender, instance,cr
       try:    
               booking = Booking.objects.get(
                   user=instance.user, 
-                  bus=instance.trip.bus, 
+                  bus=instance.schedule.bus, 
                   booking_status='pending' 
               )
               print("Booking",booking)
