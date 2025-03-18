@@ -26,12 +26,14 @@ SECRET_KEY = 'django-insecure-p^0itf2zm+hfhz-@he%b%u+r^7+t=4yq29)lz-6y*4qty1zi59
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['192.168.18.167','127.0.0.1']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
+    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,7 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
+    
     'multiselectfield',
     
     'custom_user',
@@ -158,9 +160,15 @@ REST_FRAMEWORK = {
     ],
 }
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_ALL_ORIGINS=True
 
+CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:3000",  # React, Next.js, Vue (if running locally)
+    "http://192.168.18.167:8000",  # Replace with your Django server's IP
+    "http://your-frontend-domain.com",  # If hosted
+]
 
 # ============ JWT Authentication ==============
 
@@ -201,6 +209,6 @@ SIMPLE_JWT = {
 
 # ======= Celery settings ========
 
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
+# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'

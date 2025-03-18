@@ -40,8 +40,10 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), 
     path('api/register/',views.Register.as_view()),
     path('api/forget_password/',views.ForgetPassword.as_view()),
-    path('api/get_otp/',views.SendOtp_VerifyOtp.as_view()),
-    path('api/verify_otp/',views.SendOtp_VerifyOtp.as_view()),
+    
+    path('api/send_otp/',views.SendOtp.as_view()),
+    path('api/verify_otp/',views.VerifyOtp.as_view()),
+    path('api/register_user/',views.RegisterUserOtp.as_view()),
     
     # ======== Web Home page Api  ==========
     path('api/all_routes/',views.AllRoutesConatinsSchedule.as_view()),
@@ -50,12 +52,13 @@ urlpatterns = [
     path('api/popular_routes/',views.PopularRoutes.as_view()),
     path('api/all_reviews/',views.AllReveiews().as_view()),
     path('api/all_buses/',views.AllBuses.as_view()),
-    path('api/routes_all_buses/',views.RoutesBusList.as_view()),
+    path('api/routes_all_buses/<int:id>/',views.RoutesBusList.as_view()),
     
     # ======== Admin Dashboard ==========
     path('api/admin_dashboard/',views.AdminDashboardData.as_view()),
     
     path('api/',include('booking.urls')),
+
   
     
 ]

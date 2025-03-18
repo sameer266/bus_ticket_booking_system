@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
-from custom_user.models import CustomUser
+from custom_user.models import CustomUser,UserOtp
 
 from bus.models import Bus,BusAdmin,Driver,Staff,TicketCounter
 from booking.models import Booking,Seat,Payment,Commission,Rate
@@ -33,6 +33,11 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(CustomUser, CustomUserAdmin)
 
+# ======== User Otp ==========
+class UserOtpAdmin(admin.ModelAdmin):
+    list_display=('user','phone','otp')
+    
+admin.site.register(UserOtp,UserOtpAdmin)
 
 # ===== Tickert Counter ========
 class TicketCounterAdmin(admin.ModelAdmin):

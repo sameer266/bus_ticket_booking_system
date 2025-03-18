@@ -2,7 +2,8 @@ from  .models import Route,Schedule,Trip,CustomerReview
 from custom_user.models import CustomUser
 from bus.models import Bus,TicketCounter,Driver,Staff
 from rest_framework import serializers
-from booking.models import Booking,Seat
+from booking.models import Booking,Seat,Payment,Commission,Rate
+
 
 
 
@@ -66,6 +67,7 @@ class BookingSerializer(serializers.ModelSerializer):
         model=Booking
         fields='__all__'
         
+        
 
 
 
@@ -93,4 +95,23 @@ class BusSerializer(serializers.ModelSerializer):
     class Meta:
         model=Bus
         fields='__all__'
+
+
+class PaymentSerilaizer(serializers.ModelSerializer):
+    user=CustomUserReviewSerializer()
+    schedule=ScheduleSerializer()
+    class Meta:
+        model=Payment
+        fields='__all__'
         
+class CommissionSerilaizer(serializers.ModelSerializer):
+    bus=BusScheduleSerializer()
+    
+    class Meta:
+        model=Commission
+        fields='__all__'
+
+class RateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Rate
+        fields='__all__'

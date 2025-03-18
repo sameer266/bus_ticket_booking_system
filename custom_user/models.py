@@ -52,14 +52,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class UserOtp(models.Model):
-    user=models.ForeignKey(CustomUser,on_delete=models.CASCADE,limit_choices_to={'role':'customer'})
+    user=models.ForeignKey(CustomUser,on_delete=models.CASCADE,limit_choices_to={'role':'customer'},null=True,blank=True)
+    phone=models.CharField(max_length=15,null=True,blank=True)
     otp=models.CharField(max_length=6)
     created_at=models.DateTimeField(auto_now_add=True)
     
-    def is_expired(self):
-        return  timezone.now()> self.created_at + timedelta(minutes=5)
+    # def is_expired(self):
+    #     return  timezone.now()> self.created_at + timedelta(minutes=5)
     
     @staticmethod
     def generate_otp():
-        return str(random(100000,999999))
+        return str(random.randint(100000,999999))
     

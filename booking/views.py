@@ -6,13 +6,14 @@ import json
 from custom_user.models import CustomUser, UserOtp
 from route.models import Route, Schedule, Trip, CustomerReview
 from bus.models import Bus, TicketCounter,Driver,Staff
-from booking.models import Commission, Booking
+from booking.models import Commission, Booking,Payment,Rate
 
 from custom_user.serializers import CustomUserSerializer
 from route.serializers import (
     RouteSerializer, ScheduleSerializer, CustomReviewSerializer, 
     BusScheduleSerializer, BookingSerializer, TripSerilaizer, TicketCounterSerializer,
-    BusSerializer,DriverSerializer,StaffSerializer
+    BusSerializer,DriverSerializer,StaffSerializer,PaymentSerilaizer,CommissionSerilaizer,
+    RateSerializer
 )
 
 from rest_framework.views import APIView
@@ -561,6 +562,7 @@ class RouteApiView(APIView):
             return Response({'success':False,'error':str(e)},status=400)
 
 
+# ========== Booking Management  =================
 class BookingAPiView(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
@@ -581,10 +583,94 @@ class BookingAPiView(APIView):
             id=kwargs.get('id')
             booking_obj=Booking.objects.get(id=id)
             
-            booking_status=request.data.get('status')
+            booking_status=request.data.get('booking_status')
             booking_obj.booking_status=booking_status
             booking_obj.save()
             return Response({'success':True,'message':"Booking Status Updated Successfully"})
         except Exception as e:
             return Response({'success':True,'error':str(e)},status=400)
         
+
+#========= Payment and Commission =============
+class PaymentApiView(APIView):
+    
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            payment = Payment.objects.all().order_by('-created_at')
+            serializer_payment = PaymentSerilaizer(payment, many=True)
+            commission = Commission.objects.all()
+            serializer_commission = CommissionSerilaizer(commission, many=True)
+            rate = Rate.objects.first()
+            serializer_rate = RateSerializer(rate)
+            
+            return Response({
+                'success': True,
+                'payment_data': serializer_payment.data,
+                'commission_data': serializer_commission.data,
+                'rate_data': serializer_rate.data
+            }, status=200)
+        
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=400)
+
+#   ======= Rate ============
+
+class RateApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def patch(self,request,*args,**kwargs):
+        try:
+            print(request.data)
+            id=kwargs.get('id')
+            rate=request.data.get('rate')
+            rate_obj = Rate.objects.get(id=id)
+            rate_obj.rate=rate
+            return Response({'success':True,'message':'Commission Rate Updated Successfully'},status=200)
+            
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)
+        
+        
+from django.db.models import Sum, Count, F
+from django.utils.timezone import now
+# ========== Report and analysis =========
+class ReportAnalysisApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes = [IsAuthenticated]  # Optional: Restrict access to logged-in admins
+
+    def get(self, request):
+        month, year = now().month, now().year  # Get current month & year
+        
+        # 1️⃣ Monthly Revenue & Commission
+        monthly_revenue = Payment.objects.filter(created_at__month=month, created_at__year=year).aggregate(total=Sum('price'))['total'] or 0
+        monthly_commission = Payment.objects.filter(created_at__month=month, created_at__year=year).aggregate(total=Sum('commission_deducted'))['total'] or 0
+
+        # 2️⃣ Monthly Bookings & Cancellations
+        total_bookings = Booking.objects.filter(booked_at__month=month, booked_at__year=year).count()
+        canceled_bookings = Booking.objects.filter(booked_at__month=month, booked_at__year=year, booking_status='canceled').count()
+
+        # 3️⃣ Top Performing Buses
+        top_buses = Booking.objects.values(bus_number=F('bus__bus_number')) \
+            .annotate(total_bookings=Count('id')) \
+            .order_by('-total_bookings')[:5]
+
+        # 4️⃣ Top Active Customers
+        top_customers = Booking.objects.values(customer=F('user__full_name')) \
+            .annotate(total_bookings=Count('id')) \
+            .order_by('-total_bookings')[:5]
+
+        return Response({
+            "success":True,
+            "month": f"{month}-{year}",
+            "monthly_revenue": monthly_revenue,
+            "monthly_commission": monthly_commission,
+            "monthly_bookings": total_bookings,
+            "monthly_canceled": canceled_bookings,
+            "top_buses": list(top_buses),
+            "top_customers": list(top_customers)
+        }) 
+

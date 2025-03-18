@@ -43,6 +43,18 @@ urlpatterns = [
     
     # ====== Booking ========
     path('admin_bookinglist/',views.BookingAPiView.as_view()),
-    path('admin_bookinglist_update/<int:id/',views.BookingAPiView.as_view()),
+    path('admin_bookinglist_update/<int:id>/',views.BookingAPiView.as_view()),
+    
+    
+    
+    #============ Payment ==========
+    path('admin_paymentlist/',views.PaymentApiView.as_view()),
+    
+    # ======== Rate========
+    path('admin_rate_add/<int:id>/',views.RateApiView.as_view()),
+    
+    #============ Report and analysis ============
+    
+    path('admin_reportlist/',views.ReportAnalysisApiView.as_view()),
     
 ]

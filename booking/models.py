@@ -69,14 +69,16 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
     if instance.bus:
         try:
             schedule = Schedule.objects.get(bus=instance.bus)
+            # Update the schedule directly without saving the instance
             instance.schedule = schedule
-            instance.save()  # Save the instance to reflect the schedule change
+            # Update the instance in the database directly
+            instance.__class__.objects.filter(pk=instance.pk).update(schedule=schedule)
         except Schedule.DoesNotExist:
             print(f"Schedule not found for bus: {instance.bus}")
 
     # Change seat status based on booking status
-    if instance.booking_status=='booked':
-        instance.seat.status == 'booked'
+    if instance.booking_status == 'booked':
+        instance.seat.status = 'booked'
         instance.seat.save()
         
     if instance.booking_status == 'pending':
@@ -185,7 +187,7 @@ def updateStatus_booking_and_calculate_commission_on_payment(sender, instance,cr
     try:
         rate = Rate.objects.first()
         if rate:
-            commission, created = Commission.objects.get_or_create(bus=instance.trip.bus)
+            commission, created = Commission.objects.get_or_create(bus=instance.schedule.bus)
             if created:
               print(created)
             price = Decimal(instance.price)  
