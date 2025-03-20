@@ -5,7 +5,7 @@ import os
 # Create your models here.
 from django.db import models
 from custom_user.models import CustomUser
-from route.models import Route
+from route.models import Route,Trip
 from django.core.exceptions import ValidationError
 from django.apps import apps
 
@@ -77,13 +77,14 @@ class Bus(models.Model):
 
     driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)  # A bus has one driver (optional)
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, null=True, blank=True)  # A bus has one staff (optional)
+    route=models.ForeignKey(Route,on_delete=models.CASCADE,null=True,blank=True)
     bus_number = models.CharField(max_length=20, unique=True, null=False, help_text="Example: BA 1 KHA 1234")
     bus_type = models.CharField(max_length=20, choices=VEHICLE_CHOICES, default="deluxe_bus")
     features = MultiSelectField(choices=FEATURE_CHOICES, null=True, blank=True)  # Allows multiple selections
     bus_image = models.ImageField(upload_to="bus_images/")
     total_seats = models.PositiveIntegerField(default=35)
     available_seats = models.PositiveIntegerField(default=35)
-    route = models.ForeignKey(Route, on_delete=models.CASCADE)
+   
     is_active = models.BooleanField(default=False)
     is_running = models.BooleanField(default=False, help_text="To ensure the bus is in running state or not")
     
@@ -122,8 +123,6 @@ class BusAdmin(models.Model):
         help_text="Bus assigned to this admin"
     )
     driver = models.OneToOneField(Driver, on_delete=models.CASCADE,null=True,blank=True)  # New field for the driver
-
-    # Activity fields
     booked_seats = models.PositiveIntegerField(default=0, help_text="Number of seats booked")
     remaining_seats = models.PositiveIntegerField(default=0, help_text="Calculated remaining seats")
     estimated_arrival = models.DateTimeField(null=True, blank=True, help_text="Estimated Arrival time")
@@ -152,7 +151,7 @@ class BusAdmin(models.Model):
             self.bus.is_running = True  
             self.bus.save()
 
-            # Update source/destination dynamically if not provided
+           # Update source/destination dynamically if not provided
             if self.source is None:
                 self.source = self.bus.route.source
             if self.destination is None:
@@ -171,3 +170,38 @@ class BusAdmin(models.Model):
     def __str__(self):
         eta = self.estimated_arrival.strftime('%Y-%m-%d %H:%M:%S') if self.estimated_arrival else "N/A"
         return f"Bus Admin: {self.user.full_name} | Bus: {self.bus.bus_number if self.bus else 'No Bus Assigned'} | Booked: {self.booked_seats} | Remaining: {self.remaining_seats} | ETA: {eta} | Price: {self.price} | Source: {self.source} | Destination: {self.destination}"
+
+
+#=========== Bus Reservation ===============
+class BusReservation(models.Model):
+    
+    STATUS_CHOICES=(
+        ('booked','Booked'),
+        ('cancelled','Cancelled')
+    )
+    bus=models.ForeignKey('bus.Bus',on_delete=models.CASCADE)
+    user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE)
+    reservation_date=models.DateTimeField(auto_now_add=True)
+    status=models.CharField(max_length=10,choices=STATUS_CHOICES,default='booked')
+
+    
+    @staticmethod
+    def is_bus_available(bus):
+            """
+            Check if the bus is available for a new reservation within the requested time frame.
+            If the trip spans multiple days, the start_time and end_time should account for that.
+            """
+            conflicting_trips = Trip.objects.filter(
+                
+                bus=bus,
+               
+            )
+            
+            if conflicting_trips.exists():
+                return False
+            return True
+
+    
+    def __str__(self):
+        return f"Reservation fror {self.user.full_name} on {self.bus.bus_number}"
+    

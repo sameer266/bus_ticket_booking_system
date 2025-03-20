@@ -1,6 +1,6 @@
 from  .models import Route,Schedule,Trip,CustomerReview
 from custom_user.models import CustomUser
-from bus.models import Bus,TicketCounter,Driver,Staff
+from bus.models import Bus,TicketCounter,Driver,Staff,BusReservation
 from rest_framework import serializers
 from booking.models import Booking,Seat,Payment,Commission,Rate
 
@@ -16,10 +16,12 @@ class RouteSerializer(serializers.ModelSerializer):
     
 
 class BusScheduleSerializer(serializers.ModelSerializer):
+   
     route=RouteSerializer()
     class Meta:
         model=Bus
         fields=['id','bus_number','bus_type','total_seats','available_seats','features','bus_image','route']
+        
 
 class ScheduleSerializer(serializers.ModelSerializer):
     bus=BusScheduleSerializer()
@@ -40,6 +42,13 @@ class CustomUserReviewSerializer(serializers.ModelSerializer):
         model=CustomUser
         fields=['full_name','phone','email','gender']
 
+
+class BusReservationSerializer(serializers.ModelSerializer):
+    bus=BusScheduleSerializer()
+    user=CustomUserReviewSerializer()
+    class Meta:
+        model=BusReservation
+        fields=['id','bus','user','reservation_date','status']
 
 
 class CustomReviewSerializer(serializers.ModelSerializer):
@@ -92,6 +101,7 @@ class BusSerializer(serializers.ModelSerializer):
     staff=StaffSerializer()
     driver=DriverSerializer()
     route=RouteSerializer()
+   
     class Meta:
         model=Bus
         fields='__all__'

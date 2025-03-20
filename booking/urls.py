@@ -3,7 +3,12 @@ from django.urls import path,include
 
 from . import views
 urlpatterns = [
+    
+     # ======== Admin Dashboard ==========
+    path('admin_dashboard/',views.AdminDashboardData.as_view()),
+    
     # ====== Admin Profile ======
+    
     path('admin_profile/',views.AdminProfile.as_view()), 
     path('admin_profile_update/',views.AdminProfile.as_view()),
     

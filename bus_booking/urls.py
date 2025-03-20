@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/register/',views.Register.as_view()),
     path('api/forget_password/',views.ForgetPassword.as_view()),
     
+    
     path('api/send_otp/',views.SendOtp.as_view()),
     path('api/verify_otp/',views.VerifyOtp.as_view()),
     path('api/register_user/',views.RegisterUserOtp.as_view()),
@@ -48,15 +49,22 @@ urlpatterns = [
     # ======== Web Home page Api  ==========
     path('api/all_routes/',views.AllRoutesConatinsSchedule.as_view()),
     path('api/all_schedule/',views.AllSchedule.as_view()),
+    
+    # ====== Search routes ==============
     path('api/filter_schedule/',views.FilterRoute.as_view()),
+    
+    # ====== Popular routes =========
     path('api/popular_routes/',views.PopularRoutes.as_view()),
+    
     path('api/all_reviews/',views.AllReveiews().as_view()),
     path('api/all_buses/',views.AllBuses.as_view()),
     path('api/routes_all_buses/<int:id>/',views.RoutesBusList.as_view()),
     
-    # ======== Admin Dashboard ==========
-    path('api/admin_dashboard/',views.AdminDashboardData.as_view()),
+    # ==== BUs Reservation ===========
+    path('api/all_bus_reservationlist/',views.BusReservationList.as_view()),
+    path('api/bus_reservation_add/',views.BusReservationList.as_view()),
     
+    # ===== Admin Dashboard ==========
     path('api/',include('booking.urls')),
 
   

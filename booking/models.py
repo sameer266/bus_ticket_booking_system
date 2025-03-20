@@ -69,7 +69,7 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
     if instance.bus:
         try:
             schedule = Schedule.objects.get(bus=instance.bus)
-            # Update the schedule directly without saving the instance
+            
             instance.schedule = schedule
             # Update the instance in the database directly
             instance.__class__.objects.filter(pk=instance.pk).update(schedule=schedule)
@@ -86,7 +86,7 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
         instance.seat.save()
 
         # Schedule Celery task to release seat after 10 minutes if unpaid
-        release_unpaid_seat.apply_async((instance.id,), countdown=600)  # 600 seconds = 10 minutes
+        # release_unpaid_seat.apply_async((instance.id,), countdown=600)  # 600 seconds = 10 minutes
     else:
         instance.seat.status = 'available'
         instance.seat.save()

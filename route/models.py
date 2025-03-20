@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.utils import timezone
 
+
 # ======= Route ==========
 class Route(models.Model):
     source = models.CharField(max_length=255, null=False, help_text="Starting point of the route")
@@ -46,53 +47,91 @@ class Trip(models.Model):
             # checking if trip is on_time
             if self.actual_departure <= self.scheduled_departure:
                 self.status='on_time'
-        
+                
+            if self.actual_arrival:
+                self.status = 'completed'
         super().save(*args, **kwargs)
 
 
 # ====== schedule =========
+import random
+
 
 class Schedule(models.Model):
     bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE)
-    route = models.ForeignKey('Route', on_delete=models.CASCADE)
+    route = models.ForeignKey(Route, on_delete=models.CASCADE)
     departure_time = models.DateTimeField(null=True, blank=True, help_text="Time when bus starts")
     arrival_time = models.DateTimeField(null=True, blank=True, help_text="Expected arrival time")
-    date = models.DateTimeField(null=True,blank=True,help_text="Date and time of the journey (Y-M-D H:M:S)",editable=False)
+    date = models.DateTimeField(null=True, blank=True, help_text="Date and time of the journey (Y-M-D H:M:S)", editable=False)
     price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Ticket price")
-    
-    def save(self,*args,**kargs):
-        if not self.date:
-            self.date=timezone.now()
-        super().save(*args,**kargs)
+
+    def save(self, *args, **kwargs):
+        
+        if self.bus:
+            self.bus.route=self.route
+            self.bus.save(update_fields=['route'])
             
-   
+        if not self.date:
+            self.date = timezone.now()
+        
+        super().save(*args, **kwargs)
+    
+    # Delete Trip and BusAdmin when Schedule is deleted
+    def delete(self, *args, **kwargs):
+        Trip = apps.get_model('route', 'Trip')
+        BusAdmin = apps.get_model('bus', 'BusAdmin')
+
+        # Delete the corresponding trip for this specific schedule
+        trip = Trip.objects.filter(bus=self.bus, route=self.route, scheduled_departure=self.departure_time)
+        if trip.exists():
+            trip.delete()
+
+        # Delete the corresponding BusAdmin if no other schedules exist for this bus
+        if not Schedule.objects.filter(bus=self.bus).exclude(id=self.id).exists():
+            bus_admin = BusAdmin.objects.filter(bus=self.bus)
+            if bus_admin.exists():
+                bus_admin.delete()
+
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f"{self.bus.bus_number} | {self.route.source} to {self.route.destination} at {self.date.strftime('%Y-%m-%d %H:%M:%S')}"
 
 
-@receiver(post_save,sender=Schedule)
-def create_bus_admin_and_trip(sender,instance,created,**kwargs):
+@receiver(post_save, sender=Schedule)
+def create_bus_admin_and_trip(sender, instance, created, **kwargs):
     if created:
-        BusAdmin=apps.get_model('bus','BusAdmin')
-        bus_admin=BusAdmin.objects.filter(bus=instance.bus).first()
-        if not bus_admin:
-            CustomUser=apps.get_model('custom_user','CustomUser')
-            new_user=CustomUser.objects.create_user(
-                email=f"busadmin_{instance.bus.bus_number.lower().replace(' ','_')}@example.com",
-                pasword="Sameer123",
-                role="bus_admin"
-            )
-            bus_admin=BusAdmin.objects.create(user=new_user,bus=instance.bus)
-    
-    # Create a Trip 
-    trip =Trip.objects.filter(bus=instance.bus).first()
-    if not trip:
-        Trip.objects.create(bus=instance.bus,route=instance.route,
-                            driver=instance.bus.driver,
-                            scheduled_departure=instance.departure_time,
-                            scheduled_arrival=instance.arrival_time)
+        BusAdmin = apps.get_model('bus', 'BusAdmin')
+        bus_admin = BusAdmin.objects.filter(bus=instance.bus).first()
         
-
+        
+        if not bus_admin:
+            CustomUser = apps.get_model('custom_user', 'CustomUser')
+            new_user=CustomUser.objects.get(email=f"busadmin_{instance.bus.bus_number.lower().replace(' ','_')}@example.com")
+            print(new_user)
+            if not new_user:
+                new_user = CustomUser.objects.create_user(
+                    email=f"busadmin_{instance.bus.bus_number.lower().replace(' ','_')}@example.com",
+                    password="Sameer123",
+                    phone=random.randint(9000000000, 9999999999),  # More realistic phone number
+                    role="bus_admin",
+                )
+            
+            bus_admin = BusAdmin.objects.create(user=new_user, bus=instance.bus, driver=instance.bus.driver, source=instance.route.source,
+                                                destination=instance.route.destination)
+    
+    # Create a Trip only if one doesn't exist for this exact schedule
+    Trip = apps.get_model('route', 'Trip')
+    trip = Trip.objects.filter(bus=instance.bus, route=instance.route, scheduled_departure=instance.departure_time).first()
+    
+    if not trip:
+        Trip.objects.create(
+            bus=instance.bus,
+            route=instance.route,
+            driver=instance.bus.driver,
+            scheduled_departure=instance.departure_time,
+            scheduled_arrival=instance.arrival_time
+        )
 
 # ======== Customer Reiew ============
 class CustomerReview(models.Model):

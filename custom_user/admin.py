@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib import admin
 from custom_user.models import CustomUser,UserOtp
 
-from bus.models import Bus,BusAdmin,Driver,Staff,TicketCounter
+from bus.models import Bus,BusAdmin,Driver,Staff,TicketCounter,BusReservation
 from booking.models import Booking,Seat,Payment,Commission,Rate
 from route.models import Route,Schedule,Trip,CustomerReview
 
@@ -73,11 +73,16 @@ admin.site.register(Staff, StaffAdmin)
 
 # ======== Bus ===========
 class BusAdminModel(admin.ModelAdmin):
-    list_display = ('driver','bus_number', 'bus_type', 'total_seats', 'available_seats','features', 'route', 'is_active')
+    list_display = ('driver','bus_number', 'bus_type', 'total_seats', 'available_seats','route','features', 'is_active')
     search_fields = ('bus_number', 'bus_type')
     list_filter = ('is_active',)
 
 admin.site.register(Bus, BusAdminModel)
+
+class BusReservationAdmin(admin.ModelAdmin):
+    list_display=('bus','user','status','reservation_date')
+    
+admin.site.register(BusReservation,BusReservationAdmin)
 
 #  ========== Seat ===============
 class SeatAdmin(admin.ModelAdmin):

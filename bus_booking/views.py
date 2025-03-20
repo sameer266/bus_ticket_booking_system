@@ -4,11 +4,12 @@ from datetime import datetime
 
 from custom_user.models import CustomUser,UserOtp
 from route.models import Route,Schedule,Trip,CustomerReview
-from bus.models import Bus
+from bus.models import Bus,BusReservation
 from booking.models import Commission,Booking
 
 from custom_user.serializers import CustomUserSerializer
-from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BookingSerializer,TripSerilaizer
+from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusReservationSerializer
+
 
 
 from rest_framework.views import APIView
@@ -17,6 +18,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.decorators import authentication_classes, permission_classes
 
        
 
@@ -46,6 +48,7 @@ class LoginView(APIView):
             return Response({"success": False, "error": str(e)}, status=400)
             
 import logging
+
 logger = logging.getLogger(__name__)
 
 class LogoutView(APIView):
@@ -164,6 +167,7 @@ class RegisterUserOtp(APIView):
         return Response({"success": True, "message": "Password created successfully"}, status=200)        
         
 
+
 # ===== All Routes  that is availabel in schedule =========
 class AllRoutesConatinsSchedule(APIView):
     def get(self, request):
@@ -196,42 +200,51 @@ class AllSchedule(APIView):
 class FilterRoute(APIView):
     def get(self, request):
         try:
-            print("Search"+request.data)
+            # Get the query parameters
+            print("Search", request.query_params)
             source = request.query_params.get('source')
             destination = request.query_params.get('destination')
-            departure_time = request.query_params.get('departure_time')
+            departure_time = request.query_params.get('departure_time')  # Expecting a date string in format YYYY-MM-DD
 
+            # Check for missing parameters
             if not source or not destination or not departure_time:
                 return Response({"success": False, "error": "Missing required parameters"}, status=400)
 
-            # Convert departure_time to datetime
             try:
-                departure_time = datetime.strptime(departure_time, "%Y-%m-%d")
+              
+                departure_date = datetime.strptime(departure_time, "%Y-%m-%d").date()
             except ValueError:
                 return Response({"success": False, "error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
-
-            # Get route(s) based on source & destination
-            route = Route.objects.filter(source=source, destination=destination)
-
-            # Get schedule for the given route
-            schedule = Schedule.objects.filter(route__in=route, departure_time__date=departure_time.date())
+            route_objs = Route.objects.filter(source=source, destination=destination)
+            
+            print("Route",route_objs)
+          
+            schedule = Schedule.objects.filter(route__in=route_objs)
+            print("Schedule",schedule)
 
             if not schedule.exists():
-                return Response({"success": False, "error": "No schedule found"}, status=404)
+                return Response({"success": True, "data": [],"source": source,
+                "destination": destination,
+                "departure_date": departure_date}, status=200)
 
+        
             serializer = ScheduleSerializer(schedule, many=True)
-            return Response({"success": True, "data": serializer.data}, status=200)
+            return Response({
+                "success": True,
+                "data": serializer.data,
+                "source": source,
+                "destination": destination,
+                "departure_date": departure_date  
+            }, status=200)
 
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
-
-
 
 # ========= Popular Routes =============
 class PopularRoutes(APIView):
     def get(self,request):
         try:
-            top_routes = Route.objects.values('source','destination').annotate(route_count=Count('id')).order_by('-route_count')[:4] 
+            top_routes = Route.objects.values('id','source','destination').annotate(route_count=Count('id')).order_by('-route_count')[:4] 
             return Response({'success':True,'data':top_routes},status=200)
         
         except Exception as e:
@@ -273,41 +286,35 @@ class RoutesBusList(APIView):
             return Response({"success":True,"data":serializer.data},status=200)
         except Exception as e:
             return Response({"success":False,'error':str(e)},status=200)
-    
-        
-# ====== admin dashboard Homedata =====
-class AdminDashboardData(APIView):
-    def get(self,request):
+ 
+
+# ========= Bus Reservation =============
+class BusReservationList(APIView):
+    def get(self, request):
         try:
-            data={}
-            user_count=CustomUser.objects.filter(role="customer").count()
-            bus_count=Bus.objects.filter(is_active=True).count()
-            commission=Commission.objects.all()
-            total_amount=0
-            for i in commission:
-                total_amount+=i.total_commission
+            buses = Bus.objects.all()
+            bus_data = []
+
+            for bus in buses:
+                is_available = BusReservation.is_bus_available(bus)
+                if is_available:
+                    bus_info = BusScheduleSerializer(bus).data
+                    bus_data.append(bus_info)
             
-            booking=Booking.objects.filter(booking_status="pending").count()
-            trip=Trip.objects.filter(status="completed").count()
-            booking_completed=Booking.objects.filter(booking_status='booked').count()
-            data["total_revenue"]=total_amount
-            data['total_booking_pending']=booking
-            data['total_trip_completed']=trip
-            data['ticket_booked']=booking_completed
-            data["total_active_bus"]=bus_count
-            data["total_user"]=user_count
-            
-            booking_obj=Booking.objects.all().order_by('-booked_at')[ :10]
-            booking_serializer=BookingSerializer(booking_obj,many=True)
-            
-            trip=Trip.objects.all()[ :8]
-            trip_serializer=TripSerilaizer(trip,many=True)
-        
-            return Response({'success':True,"data":data,"recent_booking":booking_serializer.data,"trip_data":trip_serializer.data},status=200)    
-        
-            
+            return Response({'success': True, 'data': bus_data}, status=200)
         except Exception as e:
-            return Response({'success':False,"error":str(e)},status=400)
+            return Response({'success': False, "error": str(e)}, status=400)
+
+    @authentication_classes([JWTAuthentication])
+    @permission_classes([IsAuthenticated])
+    def post(self, request, *args, **kwargs):
+        try:
+            user=request.user
+            bus_id = kwargs.get('id')
+            bus = Bus.objects.get(id=bus_id)
+            BusReservation(bus=bus,user=user)
+            return Response({'success':True,'message':'Bus reserved successfully'},status=200)
         
 
-
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=400)
