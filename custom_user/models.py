@@ -56,6 +56,7 @@ class UserOtp(models.Model):
     phone=models.CharField(max_length=15,null=True,blank=True)
     otp=models.CharField(max_length=6)
     created_at=models.DateTimeField(auto_now_add=True)
+    temp_name=models.CharField(max_length=20,null=True,blank=True)
     
     # def is_expired(self):
     #     return  timezone.now()> self.created_at + timedelta(minutes=5)

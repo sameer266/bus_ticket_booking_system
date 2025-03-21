@@ -44,7 +44,9 @@ class Driver(models.Model):
 class Staff(models.Model):
     full_name = models.CharField(max_length=255, null=False)
     staff_profile = models.ImageField(upload_to="staff_profile/", null=True, blank=True)  # Optional profile image
+    staff_card=models.ImageField(upload_to="staff_card/",null=True,blank=True)
     phone_number = models.CharField(max_length=10, unique=True, null=False)
+    
 
 
     def delete(self,*args,**kwargs):
@@ -57,7 +59,7 @@ class Staff(models.Model):
     
     
 
-    
+
 # ====== Bus =============
 class Bus(models.Model):
     VEHICLE_CHOICES = (
@@ -105,7 +107,24 @@ class Bus(models.Model):
 
     
 
+# ========= Bus Layout =========
+class BusLayout(models.Model):
+    bus=models.ForeignKey(Bus,on_delete=models.CASCADE,unique=True)
+    rows=models.PositiveIntegerField(blank=False,null=False)
+    column=models.PositiveIntegerField(blank=False,null=False)
+    aisle_column=models.PositiveIntegerField(blank=False)
+    layout_data=models.JSONField(
+        default=list,
+        blank=True
+    )
+    created_at=models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.bus} ({self.created_at})"
 
+    class Meta:
+        ordering = ['-created_at']
+    
 
 # ======= Bus Admin ============
 class BusAdmin(models.Model):

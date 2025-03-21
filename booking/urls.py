@@ -18,11 +18,24 @@ urlpatterns = [
     path('admin_ticketcounter_update/<id>/',views.TicketCounterView.as_view()),
     path('admin_ticketcounter_delete/<id>/',views.TicketCounterView.as_view()),
     
-    # ======= user amangement ==========
+    # ======= user Management ==========
     path('admin_userlist/',views.UserListView.as_view()),
     # path('admin_usrlist_add/')
     path('admin_userlist_update/<id>/',views.UserListView.as_view()),
     path('admin_userlist_delete/<id>/',views.UserListView.as_view()),
+    
+    # ======= Driver managment =========
+    path('admin_driverlist/',views.DriverListView.as_view()),
+    path('admin_driverlist_add/',views.DriverListView.as_view()),
+    path('admin_driverlist_update/<id>/',views.DriverListView.as_view()),
+    path('admin_driverlist_delete/<id>/',views.DriverListView.as_view()),
+    
+    
+    # ===== Staff management ========
+    path('admin_stafflist/',views.StaffListView.as_view()),
+    path('admin_stafflist_add/',views.StaffListView.as_view()),
+    path('admin_stafflist_update/<id>/',views.StaffListView.as_view()),
+    path('admin_stafflist_delete/<id>/',views.StaffListView.as_view()),
     
     
     # ===== Bus management ========
@@ -31,6 +44,7 @@ urlpatterns = [
     path('admin_buslist_update/<id>/',views.BusListView.as_view()),
     path('admin_buslist_delete/<id>/',views.BusListView.as_view()),
     
+   
     
     # ======  Schedule ======
     path('admin_schedulelist/',views.ScheduleView.as_view()),
@@ -59,7 +73,8 @@ urlpatterns = [
     path('admin_rate_add/<int:id>/',views.RateApiView.as_view()),
     
     #============ Report and analysis ============
-    
     path('admin_reportlist/',views.ReportAnalysisApiView.as_view()),
+    
+    
     
 ]

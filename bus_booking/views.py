@@ -4,11 +4,11 @@ from datetime import datetime
 
 from custom_user.models import CustomUser,UserOtp
 from route.models import Route,Schedule,Trip,CustomerReview
-from bus.models import Bus,BusReservation
+from bus.models import Bus,BusReservation,BusLayout
 from booking.models import Commission,Booking
 
 from custom_user.serializers import CustomUserSerializer
-from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusReservationSerializer
+from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerilizer
 
 
 
@@ -104,9 +104,9 @@ class ForgetPassword(APIView):
             phone = request.data.get("phone")
             user = CustomUser.objects.get(phone=phone, role="customer")
             if user:
-                return Response({"success": True, "message": " Email found "}, status=200)
+                return Response({"success": True, "message": " User found "}, status=200)
             else:
-                return Response({"success": False, "error": "Email not found"}, status=400)
+                return Response({"success": False, "error": "User not found"}, status=400)
                 
         except Exception as e:
             return Response({"success": False, "error": str(e)})
@@ -118,11 +118,13 @@ class SendOtp(APIView):
     def post(self,request):
         try:
             phone=request.data.get('phone')  
+            full_name=request.data.get('full_name')
+            
             if CustomUser.objects.filter(phone=phone).exists():
                 return Response({'success':False,"error":"Phone number Already exists "})
             
             otp_number=UserOtp.generate_otp()
-            UserOtp.objects.create(otp=otp_number,phone=phone)
+            UserOtp.objects.create(otp=otp_number,phone=phone,temp_name=full_name)
             return Response({'success':True,'otp':otp_number,'phone':phone,'message':"Otp is valid for 5 minutes only"},status=200)
       
         except Exception as e:
@@ -142,11 +144,11 @@ class VerifyOtp(APIView):
         if not otp_obj:
             return Response({"success": False, "error": "Invalid OTP"}, status=400)
         
-        user, created = CustomUser.objects.get_or_create(phone=phone, defaults={"full_name": "None"})
+        user, created = CustomUser.objects.get_or_create(phone=phone, full_name=otp_obj.temp_name)
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
-        return Response({"success": True, "message": "OTP verified successfully", "phone": phone, "access": access_token}, status=200)
+        return Response({"success": True, "message": "OTP verified successfully", "phone": phone,"full_name":otp_obj.temp_name, "access": access_token}, status=200)
 
 
 # ==== Register User (Set Password) ====
@@ -186,6 +188,8 @@ class AllRoutesConatinsSchedule(APIView):
             route_data.append(route_info)
 
         return Response({"success": True, "data": route_data}, status=200)
+    
+    
 
 # ====== All Schedule ==========      
 class AllSchedule(APIView):
@@ -215,11 +219,17 @@ class FilterRoute(APIView):
                 departure_date = datetime.strptime(departure_time, "%Y-%m-%d").date()
             except ValueError:
                 return Response({"success": False, "error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
-            route_objs = Route.objects.filter(source=source, destination=destination)
+            route_objs = Route.objects.filter(
+                source__icontains=source, 
+                destination__icontains=destination
+            )
             
             print("Route",route_objs)
           
-            schedule = Schedule.objects.filter(route__in=route_objs)
+            schedule = Schedule.objects.filter(
+                route__in=route_objs,
+                departure_time__date=departure_date
+            )
             print("Schedule",schedule)
 
             if not schedule.exists():
@@ -239,6 +249,7 @@ class FilterRoute(APIView):
 
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
+
 
 # ========= Popular Routes =============
 class PopularRoutes(APIView):
@@ -272,8 +283,6 @@ class AllBuses(APIView):
             return Response({"success":True,"data":serializer.data},status=200)
         except Exception as e:
             return Response({"error":True,"error":str(e)},status=400)
-        
-    
 
 # ====== show all  buses of one route ==========
 class RoutesBusList(APIView):
@@ -318,3 +327,27 @@ class BusReservationList(APIView):
 
         except Exception as e:
             return Response({'success': False, 'error': str(e)}, status=400)
+
+
+
+# ========= Bus Layout =========
+class BusLayoutApiView(APIView):
+    def get(self, request, *args, **kwargs):
+        try:
+            bus_id = kwargs.get('id')
+            if not bus_id:
+                return Response({"success": False, "error": "Bus ID not provided"}, status=400)
+            
+            bus_layout = BusLayout.objects.get(bus_id=bus_id)
+            layout_searilaizer=BusLayoutSerilizer(bus_layout)
+            
+            schedule=Schedule.objects.get(bus__id=bus_id)
+            serializer=ScheduleSerializer(schedule)
+            return Response({"success": True, "bus_schedule": serializer.data,'layout':layout_searilaizer.data}, status=200)
+        
+        except BusLayout.DoesNotExist:
+            return Response({"success": False, "error": "Bus layout not found"}, status=404)
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
+    
+    

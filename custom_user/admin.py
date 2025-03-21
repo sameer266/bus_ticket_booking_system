@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.contrib import admin
 from custom_user.models import CustomUser,UserOtp
 
-from bus.models import Bus,BusAdmin,Driver,Staff,TicketCounter,BusReservation
+from bus.models import Bus,BusAdmin,Driver,Staff,TicketCounter,BusReservation,BusLayout
 from booking.models import Booking,Seat,Payment,Commission,Rate
 from route.models import Route,Schedule,Trip,CustomerReview
 
@@ -73,7 +73,7 @@ admin.site.register(Staff, StaffAdmin)
 
 # ======== Bus ===========
 class BusAdminModel(admin.ModelAdmin):
-    list_display = ('driver','bus_number', 'bus_type', 'total_seats', 'available_seats','route','features', 'is_active')
+    list_display = ('id','driver','bus_number', 'bus_type', 'total_seats', 'available_seats','route','features', 'is_active')
     search_fields = ('bus_number', 'bus_type')
     list_filter = ('is_active',)
 
@@ -86,8 +86,8 @@ admin.site.register(BusReservation,BusReservationAdmin)
 
 #  ========== Seat ===============
 class SeatAdmin(admin.ModelAdmin):
-    list_display = ('row', 'number', 'status')
-    search_fields = ('bus__bus_number', 'row', 'number')
+    list_display = ('seat_number', 'status')
+
     list_filter = ('status',)
 
 admin.site.register(Seat, SeatAdmin)
@@ -159,3 +159,7 @@ admin.site.register(Commission, CommissionAdmin)
 class CustomerReviewAdmin(admin.ModelAdmin):
     list_display=('bus','user','rating','route','comment','created_at')
 
+# ======= Bus layput =========
+@admin.register(BusLayout)
+class BusLayoutAdmin(admin.ModelAdmin):
+    list_display=('bus','rows','column','aisle_column','layout_data')

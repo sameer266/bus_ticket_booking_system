@@ -21,22 +21,19 @@ from decimal import Decimal
 '''
 
 
+
+
 # ===== Seat ===========
 class Seat(models.Model):
     STATUS_CHOICES = (
         ('available', 'Available'),
         ('booked', 'Booked')
     )
-    
-    row = models.CharField(max_length=1, help_text="Row letter (A,B,C)")
-    number = models.PositiveIntegerField(help_text="Seat Number (1,2,3)") 
+
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="available")
-    
-    class Meta:
-        unique_together = ( 'row', 'number')
-    
+    seat_number = models.CharField(max_length=10, help_text="Seat number in the format 'A1'")
     def __str__(self):
-        return f"Row: {self.row} | Seat: {self.number} | Status: {self.status}"
+        return f" Seat: {self.seat_number} | Status: {self.status}"
 
 
 

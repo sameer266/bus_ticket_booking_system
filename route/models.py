@@ -107,7 +107,7 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
         
         if not bus_admin:
             CustomUser = apps.get_model('custom_user', 'CustomUser')
-            new_user=CustomUser.objects.get(email=f"busadmin_{instance.bus.bus_number.lower().replace(' ','_')}@example.com")
+            new_user=CustomUser.objects.filter(email=f"busadmin_{instance.bus.bus_number.lower().replace(' ','_')}@example.com",role="bus_admin")
             print(new_user)
             if not new_user:
                 new_user = CustomUser.objects.create_user(

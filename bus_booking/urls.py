@@ -64,6 +64,12 @@ urlpatterns = [
     path('api/all_bus_reservationlist/',views.BusReservationList.as_view()),
     path('api/bus_reservation_add/',views.BusReservationList.as_view()),
     
+    
+     # ==== Bus Layout ==========
+    path('api/admin_buslayout/<int:id>/',views.BusLayoutApiView.as_view()),
+    
+    
+    
     # ===== Admin Dashboard ==========
     path('api/',include('booking.urls')),
 

@@ -5,7 +5,7 @@ import json
 
 from custom_user.models import CustomUser, UserOtp
 from route.models import Route, Schedule, Trip, CustomerReview
-from bus.models import Bus, TicketCounter,Driver,Staff,BusReservation
+from bus.models import Bus, TicketCounter,Driver,Staff,BusReservation,BusLayout
 from booking.models import Commission, Booking,Payment,Rate
 
 from custom_user.serializers import CustomUserSerializer
@@ -13,7 +13,7 @@ from route.serializers import (
     RouteSerializer, ScheduleSerializer, CustomReviewSerializer, 
     BusScheduleSerializer, BookingSerializer, TripSerilaizer, TicketCounterSerializer,
     BusSerializer,DriverSerializer,StaffSerializer,PaymentSerilaizer,CommissionSerilaizer,
-    RateSerializer,BusReservationSerializer
+    RateSerializer,BusReservationSerializer,BusLayoutSerilizer
 )
 
 from rest_framework.views import APIView
@@ -254,6 +254,115 @@ class UserListView(APIView):
             return Response({"success": False, "error": str(e)}, status=400)
 
 
+
+
+# ======= Driver Management =========
+class DriverListView(APIView):
+    
+    def get(self,request):
+        try:
+            drivers = Driver.objects.all()
+            serializer = DriverSerializer(drivers, many=True)
+            return Response({"success": True, "data": serializer.data}, status=200) 
+            
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
+        
+    
+    def post(self,request):
+        try:
+            full_name=request.data.get('full_name')
+            driver_profile=request.FILES.get('driver_profile')
+            license_image=request.FILES.get('license_image')
+            phone_number=request.data.get('phone_number')
+            if Driver.objects.filter(phone_number=phone_number).exists():
+                return Response({"success":False,"message":"Driver already exists"},status=400)
+            
+            Driver.objects.create(full_name=full_name,driver_profile=driver_profile,license_image=license_image,phone_number=phone_number)
+            return Response({"success":True,"message":"Driver added successfully"},status=200)
+            
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
+        
+    def patch(self,request,*args,**kwargs):
+        try:
+            id=kwargs.get('id')
+            driver=Driver.objects.get(id=id)
+            full_name=request.data.get('full_name')
+            driver_profile=request.FILES.get('driver_profile')
+            license_image=request.FILES.get('license_image')
+            phone_number=request.data.get('phone_number')
+            
+            driver.full_name=full_name
+            driver.driver_profile=driver_profile
+            driver.license_image=license_image
+            driver.phone_number=phone_number
+            driver.save()
+            return Response({"success":True,"message":"Driver Updated Successfully"},status=200)
+            
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
+        
+    def delete(self,request,*args,**kwargs):
+        try:
+            id=kwargs.get('id')
+            driver=Driver.objects.get(id=id)
+            driver.delete()
+            return Response({"success":True,"message":"Driver deleted successfully"},status=200)
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
+        
+
+# ======== Staff managment  ==========
+class StaffListView(APIView):
+    def get(self,request):
+        try:
+            staff=Staff.objects.all()
+            serializer=StaffSerializer(staff,many=True)
+            return Response({"success":True,"data":serializer.data},status=200)
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
+    
+    
+    def post(self,request):
+        try:
+            print(request.data)
+            full_name=request.data.get('full_name')
+            staff_profile=request.FILES.get('staff_profile')
+            phone_number=request.data.get('phone_number')
+            if Staff.objects.filter(phone_number=phone_number).exists():
+                return Response({"success":False,"message":"Staff already exists"},status=400)
+            Staff.objects.create(full_name=full_name,staff_profile=staff_profile,phone_number=phone_number)
+            return Response({"success":True,"message":"Staff added successfully"},status=200)
+        except Exception as e:
+            return Response({'success':True,'error':str(e)},status=400)
+    
+    def patch(self,request,*args,**kwargs):
+        try:
+            id=kwargs.get('id')
+            staff=Staff.objects.get(id=id)
+            full_name=request.data.get('full_name')
+            staff_profile=request.FILES.get('staff_profile')
+            phone_number=request.data.get('phone_number')
+            staff.full_name=full_name
+            staff.staff_profile=staff_profile
+            staff.phone_number=phone_number
+            staff.save()
+            return Response({'success':True,"message":"Staff Updated Successfully"},status=200)
+            
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)
+
+    def delete(self,request,*args,**kwargs):
+        try:
+            id=kwargs.get('id')
+            staff=Staff.objects.get(id=id)
+            staff.delete()
+            return Response({'success':True,'message':"Staff deleted successfully"},status=200)
+        
+        except Exception as e:
+            return Response({'success':True,'error':str(e)},status=400)
+     
 # ========= Bus Management ========
 
 class BusListView(APIView):
@@ -262,6 +371,9 @@ class BusListView(APIView):
 
     def get(self, request):
         try:
+            # bus_layout=BusLayout.objects.all()
+            # seat_layout_serializer=BusLayoutSerilizer(bus_layout,many=True)
+            
             # Get all buses
             bus = Bus.objects.all()
 
@@ -288,7 +400,8 @@ class BusListView(APIView):
                 "data": bus_serializer.data,
                 "all_route": route_serializer.data,
                 "all_driver": driver_serializer.data,
-                "all_staff": staff_serializer.data
+                "all_staff": staff_serializer.data,
+                # "all_layout":seat_layout_serializer.data
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
@@ -299,39 +412,66 @@ class BusListView(APIView):
 
     def post(self, request):
         try:
-          
+            print(request.data)
+            
+            # Extract and validate driver
             driver_id = request.data.get('driver')
+            driver_obj = None
             if driver_id:
                 driver_obj = Driver.objects.get(id=driver_id)
                 if Bus.objects.filter(driver=driver_obj).exists():
                     return Response({"success": False, "error": "Driver already assigned"}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                driver_obj = None
-
-            # Fetch staff and check if already assigned
+            
+            # Extract and validate staff
             staff_id = request.data.get('staff')
+            staff_obj = None
             if staff_id:
                 staff_obj = Staff.objects.get(id=staff_id)
                 if Bus.objects.filter(staff=staff_obj).exists():
                     return Response({"success": False, "error": "Staff already assigned"}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                staff_obj = None
 
-            # Fetch route
+            # Extract and validate route
             route_id = request.data.get('route')
             route_obj = Route.objects.get(id=route_id)
 
-            # Get other fields
+            # Extract other fields
             bus_number = request.data.get('bus_number')
-            bus_type = request.data.get('bus_type', 'deluxe_bus')  # Default from model
-            features = request.data.get('features', [])  # Expecting a list
-            features = json.loads(features)
+            bus_type = request.data.get('bus_type', 'deluxe_bus')
             bus_image = request.FILES.get('bus_image')
-            total_seats = request.data.get('total_seats', 35)  # Default from model
-            is_active = request.data.get('is_active', False) == 'true'  # Convert string to boolean
-            is_running = request.data.get('is_running', False) == 'true'  # Convert string to boolean
-
-            # Create the bus
+            
+            # Parse JSON fields
+            features = request.data.get('features', '[]')
+            if isinstance(features, list):
+                features = features[0]
+            try:
+                features = json.loads(features) if isinstance(features, str) else features
+            except json.JSONDecodeError:
+                return Response({"success": False, "error": "Invalid features format"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            layout = request.data.get('layout', '{}')
+            if isinstance(layout, list):
+                layout = layout[0]
+            try:
+                layout = json.loads(layout) if isinstance(layout, str) else layout
+            except json.JSONDecodeError:
+                return Response({"success": False, "error": "Invalid layout format"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            rows = layout.get('rows')
+            columns = layout.get('columns')
+            layout_data = layout.get('seatLayout')
+            
+            # Extract total seats
+            total_seats_list = request.data.getlist('total_seats')
+            total_seats = int(total_seats_list[0]) if total_seats_list else 35
+            
+            # Convert boolean fields
+            def str_to_bool(value):
+                return str(value).lower() in ['true', '1', 'yes']
+            
+            is_active = str_to_bool(request.data.get('is_active'))
+            is_running = str_to_bool(request.data.get('is_running'))
+            
+            # Create bus object
             bus = Bus.objects.create(
                 driver=driver_obj,
                 staff=staff_obj,
@@ -340,28 +480,24 @@ class BusListView(APIView):
                 features=features,
                 bus_image=bus_image,
                 total_seats=total_seats,
-                available_seats=total_seats,  # Match total_seats initially
+                available_seats=total_seats,
                 route=route_obj,
                 is_active=is_active,
                 is_running=is_running
             )
-
-            # Serialize the created bus for response
+            
+            # Create Bus layout
+            BusLayout.objects.create(bus=bus, rows=rows, column=columns, layout_data=layout_data)
+            
+            # Serialize response
             bus_serializer = BusSerializer(bus)
-            return Response({
-                "success": True,
-                "message": "Bus created successfully",
-                "data": bus_serializer.data
-            }, status=status.HTTP_201_CREATED)
-
-        except Driver.DoesNotExist:
-            return Response({"success": False, "error": "Driver not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Staff.DoesNotExist:
-            return Response({"success": False, "error": "Staff not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Route.DoesNotExist:
-            return Response({"success": False, "error": "Route not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"success": True, "message": "Bus created successfully", "data": bus_serializer.data}, status=status.HTTP_201_CREATED)
+        
+        except (Driver.DoesNotExist, Staff.DoesNotExist, Route.DoesNotExist) as e:
+            return Response({"success": False, "error": f"{e.__class__.__name__.replace('DoesNotExist', '')} not found"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
 
     
 
@@ -719,4 +855,6 @@ class ReportAnalysisApiView(APIView):
             "top_buses": list(top_buses),
             "top_customers": list(top_customers)
         }) 
+
+
 
