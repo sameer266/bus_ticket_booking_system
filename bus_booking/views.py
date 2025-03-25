@@ -4,11 +4,12 @@ from datetime import datetime
 
 from custom_user.models import CustomUser,UserOtp
 from route.models import Route,Schedule,Trip,CustomerReview
-from bus.models import Bus,BusReservation,BusLayout
-from booking.models import Commission,Booking
+from bus.models import Bus,BusReservation,BusLayout,Driver,Staff,VechicleType
+from booking.models import Commission,Booking,BusReservationBooking
 
 from custom_user.serializers import CustomUserSerializer
-from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerilizer
+from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerilizer,BusReservationSerializer,VechicleTypeSerializer,BusReservationBookingSerializer
+
 
 
 
@@ -26,27 +27,33 @@ from rest_framework.decorators import authentication_classes, permission_classes
 
 # ======Login ======
 class LoginView(APIView):
-    
     def post(self, request):
         try:
             phone = request.data.get('phone')
-           
             password = request.data.get('password')
             print(request.data)
-            user=authenticate(phone=phone,password=password)
+
+            user = authenticate(phone=phone, password=password)
+
             if user:
-                
                 print(user.phone)
                 refresh = RefreshToken.for_user(user)
-                if user:
-                    serializer = CustomUserSerializer(user)
-        
-                    return Response({"success": True, "refresh": str(refresh), "access": str(refresh.access_token), "user": serializer.data}, status=200)
-                else:
-                    return Response({"success": False, "error": "Invalid Phone number and Password "}, status=400)
+                serializer = CustomUserSerializer(user)
+                
+                return Response({
+                    "success": True,
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "user": serializer.data
+                }, status=200)
+
+            return Response({"success": False, "error": "Invalid phone number or password"}, status=400)
+
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
-            
+
+
+     
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,29 +79,29 @@ class LogoutView(APIView):
             return Response({"success": False, "error": str(e)}, status=400)
 
 
-# ====== Register ======
-class Register(APIView):
+# # ====== Register ======
+# class Register(APIView):
     
-    def post(self, request):
-        try:
-            full_name = request.data.get('full_name')
-            phone = request.data.get('phone')
-            email = request.data.get('email')
-            password = request.data.get('password')
-            confirm_password = request.data.get('confirm_password')
-            if password == confirm_password:
-                user = CustomUser.objects.create_user(full_name=full_name,
-                                                      phone=phone,
-                                                      password=password,
-                                          email=email,
-                                                      role='customer')
-                serializer = CustomUserSerializer(user)
-                if user:
-                    return Response({"success": True, "message": "Mormal  User created Successfully", "data": serializer.data})
-                else:
-                    return Response({"success": False, "error": "Error in creating User"}, status=401)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=401)
+#     def post(self, request):
+#         try:
+#             full_name = request.data.get('full_name')
+#             phone = request.data.get('phone')
+#             email = request.data.get('email')
+#             password = request.data.get('password')
+#             confirm_password = request.data.get('confirm_password')
+#             if password == confirm_password:
+#                 user = CustomUser.objects.create_user(full_name=full_name,
+#                                                       phone=phone,
+#                                                       password=password,
+#                                           email=email,
+#                                                       role='customer')
+#                 serializer = CustomUserSerializer(user)
+#                 if user:
+#                     return Response({"success": True, "message": "Mormal  User created Successfully", "data": serializer.data})
+#                 else:
+#                     return Response({"success": False, "error": "Error in creating User"}, status=401)
+#         except Exception as e:
+#             return Response({"success": False, "error": str(e)}, status=401)
         
 # ======Forget Password ======
 class ForgetPassword(APIView):
@@ -112,16 +119,17 @@ class ForgetPassword(APIView):
             return Response({"success": False, "error": str(e)})
 
 
-
+# ========= Register user ==========
 # ==== Otp Send ========
 class SendOtp(APIView):
     def post(self,request):
+        print(request.data)
         try:
             phone=request.data.get('phone')  
             full_name=request.data.get('full_name')
             
             if CustomUser.objects.filter(phone=phone).exists():
-                return Response({'success':False,"error":"Phone number Already exists "})
+                return Response({'success':False,"error":"Phone number Already exists "},status=400)
             
             otp_number=UserOtp.generate_otp()
             UserOtp.objects.create(otp=otp_number,phone=phone,temp_name=full_name)
@@ -134,21 +142,27 @@ class SendOtp(APIView):
 # ==== Verify OTP ====
 class VerifyOtp(APIView):
     def post(self, request):
-        phone = request.data.get("phone")
-        otp = request.data.get("otp")
+        print(request.data)
+        otp = request.data.get('otp')
+     
+        if not otp:
+            return Response({"success": False, "error": " OTP are required"}, status=400)
 
-        if not phone or not otp:
-            return Response({"success": False, "error": "Phone and OTP are required"}, status=400)
-
-        otp_obj = UserOtp.objects.filter(phone=phone, otp=otp).first()
+        otp_obj = UserOtp.objects.filter(otp=otp).first()
+        print("Full_nmae",otp_obj)
         if not otp_obj:
             return Response({"success": False, "error": "Invalid OTP"}, status=400)
         
-        user, created = CustomUser.objects.get_or_create(phone=phone, full_name=otp_obj.temp_name)
-
+        user, created = CustomUser.objects.get_or_create(phone=otp_obj.phone, full_name=otp_obj.temp_name,role='customer')
+        otp_obj.user=user
+        otp_obj.save()
+        
+        if created:
+            print(user)
+            
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
-        return Response({"success": True, "message": "OTP verified successfully", "phone": phone,"full_name":otp_obj.temp_name, "access": access_token}, status=200)
+        return Response({"success": True, "message": "OTP verified successfully", "phone": otp_obj.phone,"full_name":otp_obj.temp_name, "access": access_token,"refresh":str(refresh)},status=200)
 
 
 # ==== Register User (Set Password) ====
@@ -157,6 +171,7 @@ class RegisterUserOtp(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        print(request.data)
         user = request.user
         password = request.data.get('password')
 
@@ -250,17 +265,28 @@ class FilterRoute(APIView):
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
 
+from django.conf import settings
 
 # ========= Popular Routes =============
 class PopularRoutes(APIView):
-    def get(self,request):
+    def get(self, request):
         try:
-            top_routes = Route.objects.values('id','source','destination').annotate(route_count=Count('id')).order_by('-route_count')[:4] 
-            return Response({'success':True,'data':top_routes},status=200)
-        
-        except Exception as e:
-            return Response({"success":False,"error":str(e)},status=400)    
+            # Fetching the popular routes
+            top_routes = Route.objects.values('id', 'source', 'destination', 'image') \
+                .annotate(route_count=Count('id')) \
+                .order_by('-route_count')[:4]
 
+            # Adding the full image path to the 'image' field
+            for route in top_routes:
+                # Construct the full image URL if the image field is not empty
+                route['image'] = settings.MEDIA_URL + route['image'] if route['image'] else None
+
+            # Return the response with the top routes data
+            return Response({'success': True, 'data': top_routes}, status=200)
+
+        except Exception as e:
+            # Return error response if an exception occurs
+            return Response({"success": False, "error": str(e)}, status=400)
 
 
 # ====== All Reviews =============
@@ -297,38 +323,60 @@ class RoutesBusList(APIView):
             return Response({"success":False,'error':str(e)},status=200)
  
 
+# =====================
+# Vechicle Type 
+# =====================
+class VechicleTypeList(APIView):
+    def get(self,request):
+        try:
+            vechicle=VechicleType.objects.all()
+            serializer=VechicleTypeSerializer(vechicle,many=True)
+            return Response({"success":True,"data":serializer.data},status=200)
+        except Exception as e:
+            return Response({"success":False,"error":str(e)},status=400)
+    
+    
 # ========= Bus Reservation =============
 class BusReservationList(APIView):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         try:
-            buses = Bus.objects.all()
-            bus_data = []
-
-            for bus in buses:
-                is_available = BusReservation.is_bus_available(bus)
-                if is_available:
-                    bus_info = BusScheduleSerializer(bus).data
-                    bus_data.append(bus_info)
-            
-            return Response({'success': True, 'data': bus_data}, status=200)
+            id=kwargs.get('id')
+            if id == "null" or id ==" ":
+                bus_reservation = BusReservation.objects.all()
+                serializer = BusReservationSerializer(bus_reservation, many=True)
+                return Response({"success": True, "data": serializer.data}, status=200)
+            bus_reservation = BusReservation.objects.filter(type__id=id)
+            serializer = BusReservationSerializer(bus_reservation, many=True)
+            return Response({"success": True, "data": serializer.data}, status=200)
         except Exception as e:
             return Response({'success': False, "error": str(e)}, status=400)
-
-    @authentication_classes([JWTAuthentication])
-    @permission_classes([IsAuthenticated])
-    def post(self, request, *args, **kwargs):
-        try:
-            user=request.user
-            bus_id = kwargs.get('id')
-            bus = Bus.objects.get(id=bus_id)
-            BusReservation(bus=bus,user=user)
-            return Response({'success':True,'message':'Bus reserved successfully'},status=200)
         
 
+    
+# ======= Bus Reservation Booking ===========
+class  BusReeservationBookingApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            print(request.data)
+            user=request.user
+            print(user.phone)
+            
+            id=request.data.get('vehicle_id')
+            busReserve_obj=BusReservation.objects.get(id=id)
+            source=request.data.get('source')
+            destination=request.data.get('destination')
+            date=request.data.get('days')
+            start_date_str=request.data.get('date')
+            start_date = datetime.strptime(start_date_str, "%Y/%m/%d").date()
+            
+            BusReservationBooking.objects.create(user=user,bus_reserve=busReserve_obj,source=source,destination=destination,date=date,start_date=start_date)
+            return Response({'success':True,'message':'Bus reserved successfully'},status=200)
+        
         except Exception as e:
             return Response({'success': False, 'error': str(e)}, status=400)
-
-
 
 # ========= Bus Layout =========
 class BusLayoutApiView(APIView):

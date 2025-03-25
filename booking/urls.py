@@ -64,7 +64,16 @@ urlpatterns = [
     path('admin_bookinglist/',views.BookingAPiView.as_view()),
     path('admin_bookinglist_update/<int:id>/',views.BookingAPiView.as_view()),
     
+    # ========Vehicle Reservetion ===========
+    path('admin_vehiclereservationlist/',views.VechicleReservationView.as_view()),
+    path('admin_vehiclereserve_add/',views. VechicleReservationView.as_view()),
+    path('admin_vehiclereserve_update/<int:id>/',views. VechicleReservationView.as_view()),
+    path('admin_vehiclereserve_delete/<int:id>/',views. VechicleReservationView.as_view()),
     
+    
+    # =========Vechicle Type =========
+    path('admin_vehicletype/', views.VehicleTypeViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('admin_vehicletype/<int:pk>/', views.VehicleTypeViewSet.as_view({ 'patch': 'update', 'delete': 'destroy'})),
     
     #============ Payment ==========
     path('admin_paymentlist/',views.PaymentApiView.as_view()),

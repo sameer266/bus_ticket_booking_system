@@ -1,3 +1,266 @@
-from django.shortcuts import render
+from custom_user.models import CustomUser, UserOtp
+from bus.models import Bus, BusAdmin, Driver, Staff, TicketCounter, BusReservation, BusLayout
+from booking.models import Booking, Seat, Payment, Commission, Rate,BusReservationBooking
+from route.models import Route, Schedule, Trip, CustomerReview
+from  custom_user.serializers import CustomUserSerializer
+from route.serializers import RouteSerializer,BookingSerializer, ScheduleSerializer, BusReservationSerializer,CustomReviewSerializer,BusReservationBookingSerializer,PaymentSerilaizer
 
-# Create your views here.
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.permissions import IsAuthenticated
+from django.utils.timezone import now
+from rest_framework import status
+
+
+# ====== User Dashboard Data =========
+
+class UserDashboardView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+
+    def get(self,request):
+        print(request.user)
+        user=request.user
+        data={}
+        data["total_booking"]=Booking.objects.filter(user=user).count()
+        data["total_reviews"]=CustomerReview.objects.filter(user=user).count()
+        data["total_reservation"]= BusReservationBooking.objects.filter(user=user).count()
+        data["total_payment"]=Payment.objects.filter(user=user).count()
+        recent_booking=Booking.objects.filter(user=user).order_by('-id')[:5]
+        recent_reviews=CustomerReview.objects.filter(user=user).order_by('-id')[:5]
+
+        recent_booking_serializer=BookingSerializer(recent_booking,many=True)
+        recent_reviews_serializer=CustomReviewSerializer(recent_reviews,many=True)
+
+        return Response({"success":True,"data":data,"recent_booking":recent_booking_serializer.data,"recent_reviews":recent_reviews_serializer.data},status=200)
+
+        # ========= User Profile ===========
+class UserUpdateView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+                user = request.user
+                serializer = CustomUserSerializer(user)
+                return Response({"success": True, "data": serializer.data})
+
+    def patch(self, request):
+                user = request.user
+                serializer = CustomUserSerializer(user, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response({"success": True, "data": serializer.data}, status=200)
+                return Response({"success": False, "error": serializer.errors}, status=400)
+
+
+        # ====== Available Schedule for User =========
+class AvailableSchedule(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+                schedules = Schedule.objects.filter(departure_time__gte=now())
+                serializer = ScheduleSerializer(schedules, many=True)
+                return Response({"success": True, "data": serializer.data}, status=200)
+
+
+# ======== Booked Seat for User =========
+class BookedSeat(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+                user = request.user
+                bookings_seat = Booking.objects.filter(user=user)
+                serializer_seat = BookingSerializer(bookings_seat, many=True)
+                
+                reserve=BusReservationBooking.objects.filter(user=user)
+                serilaizer_reserve=BusReservationBookingSerializer(reserve,many=True)
+            
+                return Response({"success": True, "booking_seat": serializer_seat.data,"booking_reserve":serilaizer_reserve.data}, status=200)
+
+
+        # ======== User's Favorite Routes =========
+class FavoriteRoutesView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+                user = request.user
+                favorite_routes = Route.objects.filter(favorites__user=user)
+                serializer = RouteSerializer(favorite_routes, many=True)
+                return Response({"success": True, "data": serializer.data}, status=200)
+
+
+        # ======== User's Payment History =========
+class PaymentHistoryView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+                user = request.user
+                payments = Payment.objects.filter(user=user).order_by('-created_at')
+                serializer=PaymentSerilaizer(payments,many=True)
+                return Response({"success": True, "data":serializer.data}, status=200)
+
+
+
+
+# ==================
+# User Booking Paymnet
+# ==================
+
+import requests
+import json
+import uuid
+from django.db import transaction
+from  .serializers import KhaltiPaymentSerializer
+
+class UserBookingPaymentView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            with transaction.atomic():  # Ensures atomicity of booking and payment
+                user = request.user
+                print(user)
+                print(request.data)
+
+                seat = request.data.get('seat')  # Expecting a list of seats
+                bus_id = request.data.get('bus_id')
+
+                bus = Bus.objects.get(id=bus_id)
+                schedule_obj = Schedule.objects.get(bus=bus)
+
+                #  Correct seat count
+                count = len(seat)
+
+                #  Calculate total price
+                total_price = schedule_obj.price * count
+                print(f"Total Price: {total_price}")
+
+                #  Mark seats as booked in bus layout
+                bus_layout = BusLayout.objects.get(bus=bus)
+                bus_layout.mark_seat_booked(seat)
+
+                #  Create booking entry
+                booking_obj = Booking.objects.create(
+                    user=user,
+                    seat=seat,
+                    bus=bus,
+                    schedule=schedule_obj
+                )
+
+                # Khalti Payment Integration
+                payload = json.dumps({
+                    "return_url": "https://example.com/payment-success",
+                    "website_url": "https://example.com",
+                    "amount": float(total_price),
+                    "booking_id": str(uuid.uuid4()),  # Generate unique order ID
+                    "purchase_order_id":booking_obj.id,
+                    "purchase_order_name": "Bus Ticket Booking",
+                    "customer_info": {
+                        "name": user.full_name
+                    }
+                })
+
+                headers = {
+                    'Authorization': "key c3ace8e77db241119661f858acd5f6de",
+                    'Content-Type': 'application/json',
+                }
+
+                response = requests.post("https://a.khalti.com/api/v2/epayment/initiate/", headers=headers, data=payload)
+                print(response.content)
+                new_res = response.json()
+
+                if "payment_url" not in new_res:
+                    return Response({'success': False, 'error': 'Khalti Payment Failed'}, status=status.HTTP_400_BAD_REQUEST)
+
+                #  Prepare response data
+                data = {
+                    'bus_number': booking_obj.bus.bus_number,
+                    'source': booking_obj.bus.route.source,
+                    'destination': booking_obj.bus.route.destination,
+                    'booking_status': booking_obj.booking_status,
+                    'seat': booking_obj.seat,
+                    'booked_at': booking_obj.booked_at,
+                    'total_price': total_price,
+                    'total_seat': count,
+                    'pidx':new_res.get('pidx',''),
+                    'payment_url': new_res.get('payment_url', ''),
+                    'booking_id': booking_obj.id
+                }
+
+                return Response({'success': True, 'data': data}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'success': False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+
+# # ========== Payment khalti  =============
+
+
+# class InitiateKhaltiPayment(APIView):
+
+#     def post(self, request):
+#         try:
+#             with transaction.atomic():
+#                 serializer = KhaltiPaymentSerializer(data=request.data)
+#                 if serializer.is_valid():
+#                     price = serializer.validated_data["price"]
+
+
+#                     payload = json.dumps({
+#                         "return_url": "https://example.com/payment-success",
+#                         "website_url": "https://example.com",
+#                         "amount": float(price),
+#                         "booking_id": str(uuid.uuid4()),  # Generate unique order ID
+#                         "purchase_order_name": "Test Order",
+#                         "customer_info": {
+#                             "name": "Test User",
+                           
+#                         }
+#                     })
+
+#                     headers = {
+#                         'Authorization': "key c3ace8e77db241119661f858acd5f6de",
+#                         'Content-Type': 'application/json',
+#                     }
+
+#                     response = requests.post("https://a.khalti.com/api/v2/epayment/initiate/", headers=headers, data=payload)
+#                     print(response.content)
+#                     new_res = response.json()
+                    
+#                     return Response({'redirect_url': new_res.get('payment_url', ''), 'booking_id': "test_order_123"}, status=status.HTTP_200_OK)
+
+#                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#         except Exception as e:
+#             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# class VerifyKhalti(APIView):
+   
+
+#     def get(self, request):
+#         url = "https://a.khalti.com/api/v2/epayment/lookup/"
+#         pidx = request.GET.get('pidx')
+
+#         if not pidx:
+#             return Response({'error': 'Missing transaction ID (pidx)'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         headers = {
+#             'Authorization': "key c3ace8e77db241119661f858acd5f6de",
+#             'Content-Type': 'application/json',
+#         }
+
+#         data = json.dumps({'pidx': pidx})
+#         res = requests.post(url, headers=headers, data=data)
+#         new_res = res.json()
+
+#         if new_res.get('status') == 'Completed':
+#             return Response({'message': 'Payment Successful'}, status=status.HTTP_200_OK)
+
+#         return Response({'message': 'Payment Failed. Please contact support.'}, status=status.HTTP_400_BAD_REQUEST)

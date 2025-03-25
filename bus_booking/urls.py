@@ -38,7 +38,6 @@ urlpatterns = [
     path('api/login/', views.LoginView.as_view(), name='token_obtain_login'),
     path('api/logout/',views.LogoutView.as_view()),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), 
-    path('api/register/',views.Register.as_view()),
     path('api/forget_password/',views.ForgetPassword.as_view()),
     
     
@@ -60,18 +59,21 @@ urlpatterns = [
     path('api/all_buses/',views.AllBuses.as_view()),
     path('api/routes_all_buses/<int:id>/',views.RoutesBusList.as_view()),
     
-    # ==== BUs Reservation ===========
-    path('api/all_bus_reservationlist/',views.BusReservationList.as_view()),
-    path('api/bus_reservation_add/',views.BusReservationList.as_view()),
+    #======== Vechicle Type and Reservation  ============
+    path('api/all_vechicle_type/',views.VechicleTypeList.as_view()),
+    path('api/vechicle_reservation/<id>/',views.BusReservationList.as_view()),
+    path('api/vechicle_reservation_create/',views.BusReeservationBookingApiView.as_view()),
     
     
      # ==== Bus Layout ==========
     path('api/admin_buslayout/<int:id>/',views.BusLayoutApiView.as_view()),
     
     
-    
     # ===== Admin Dashboard ==========
     path('api/',include('booking.urls')),
+    
+    # ========= Normal User ============
+    path('api/',include('custom_user.urls')),
 
   
     

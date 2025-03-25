@@ -35,7 +35,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ("others","Others")
     )
     phone = models.CharField(max_length=15, unique=True) 
-    email = models.EmailField(unique=True, null=True, blank=True)  
+    email = models.EmailField(unique=True, null=True, blank=True,default="None" ) 
     full_name = models.CharField(max_length=255)   
     role = models.CharField(max_length=20, choices=USER_ROLES, default="customer")
     gender=models.CharField(max_length=50,choices=GENDER_CHOICE,null=True,blank=True)
@@ -44,8 +44,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     created_at=models.DateField(auto_now_add=True,null=True)
     objects = CustomUserManager()
 
-    USERNAME_FIELD = "phone"  # Authenticate using phone
-    REQUIRED_FIELDS = ["full_name"]  # Only full_name is required
+    USERNAME_FIELD = "phone"  
+    REQUIRED_FIELDS = ["full_name"]  
 
     def __str__(self):
         return f"{self.full_name} - {self.role}"
@@ -63,5 +63,10 @@ class UserOtp(models.Model):
     
     @staticmethod
     def generate_otp():
-        return str(random.randint(100000,999999))
+        while True:
+            otp = str(random.randint(100000, 999999))
+            if not UserOtp.objects.filter(otp=otp).exists():
+                return otp
     
+    def __str__(self):
+        return f"{self.user} - {self.otp}"

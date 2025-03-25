@@ -2,18 +2,19 @@ from django.contrib.auth import authenticate
 from django.db.models import Count
 from datetime import datetime
 import json
+from rest_framework.viewsets import ModelViewSet
 
 from custom_user.models import CustomUser, UserOtp
 from route.models import Route, Schedule, Trip, CustomerReview
-from bus.models import Bus, TicketCounter,Driver,Staff,BusReservation,BusLayout
-from booking.models import Commission, Booking,Payment,Rate
+from bus.models import Bus, TicketCounter,Driver,Staff,BusReservation,BusLayout,VechicleType
+from booking.models import Commission, Booking,Payment,Rate,BusReservationBooking
 
 from custom_user.serializers import CustomUserSerializer
 from route.serializers import (
     RouteSerializer, ScheduleSerializer, CustomReviewSerializer, 
     BusScheduleSerializer, BookingSerializer, TripSerilaizer, TicketCounterSerializer,
     BusSerializer,DriverSerializer,StaffSerializer,PaymentSerilaizer,CommissionSerilaizer,
-    RateSerializer,BusReservationSerializer,BusLayoutSerilizer
+    RateSerializer,BusReservationSerializer,BusLayoutSerilizer,BusReservationBookingSerializer,VechicleTypeSerializer
 )
 
 from rest_framework.views import APIView
@@ -459,6 +460,7 @@ class BusListView(APIView):
             rows = layout.get('rows')
             columns = layout.get('columns')
             layout_data = layout.get('seatLayout')
+            aisleAfterColumn=layout.get('aisleAfterColumn')
             
             # Extract total seats
             total_seats_list = request.data.getlist('total_seats')
@@ -487,7 +489,7 @@ class BusListView(APIView):
             )
             
             # Create Bus layout
-            BusLayout.objects.create(bus=bus, rows=rows, column=columns, layout_data=layout_data)
+            BusLayout.objects.create(bus=bus, rows=rows, column=columns, layout_data=layout_data,aisle_column=aisleAfterColumn)
             
             # Serialize response
             bus_serializer = BusSerializer(bus)
@@ -503,21 +505,21 @@ class BusListView(APIView):
 
     def patch(self, request, *args, **kwargs):
         try:
-          
+            print(request.data)
             bus_id = kwargs.get('id')
             bus = Bus.objects.get(id=bus_id)
 
             driver_id = request.data.get('driver')
             if driver_id:
                 driver_obj = Driver.objects.get(id=driver_id)
-                if Bus.objects.filter(driver=driver_obj).exclude(id=bus_id).exists():
+                if Bus.objects.filter(driver=driver_obj).exists():
                     return Response({"success": False, "error": "Driver already assigned to another bus"}, status=status.HTTP_400_BAD_REQUEST)
                 bus.driver = driver_obj
 
             staff_id = request.data.get('staff')
             if staff_id:
                 staff_obj = Staff.objects.get(id=staff_id)
-                if Bus.objects.filter(staff=staff_obj).exclude(id=bus_id).exists():
+                if Bus.objects.filter(staff=staff_obj).exists():
                     return Response({"success": False, "error": "Staff already assigned to another bus"}, status=status.HTTP_400_BAD_REQUEST)
                 bus.staff = staff_obj
 
@@ -528,7 +530,7 @@ class BusListView(APIView):
             bus_type = request.data.get('bus_type')
             bus.bus_type = bus_type
 
-            # Convert features from JSON string to a Python list
+           
             features = request.data.get('features')
             if features:
                 bus.features = json.loads(features)  # Convert JSON string to Python list
@@ -557,7 +559,18 @@ class BusListView(APIView):
             is_running = request.data.get('is_running')
             if is_running is not None:
                 bus.is_running = is_running == 'true'
+                
+            
             bus.save()
+                
+            bus_layout=BusLayout.objects.get(bus=bus)
+            layout = request.data.get('layout')
+            bus_layout.rows=layout.get('rows')
+            bus_layout.column=layout.get('columns')
+            bus_layout.aisle_column=layout.get('aisleAfterColumn')
+            bus_layout.layout_data=layout.get('seatLayout')
+            bus_layout.save()
+            
             return Response({
                 "success": True,
                 "message": "Bus updated successfully",
@@ -748,8 +761,8 @@ class BookingAPiView(APIView):
     
     def get(self,request):
         try:
-            bus_reserve=BusReservation.objects.all().order_by('-reservation_date')
-            serializer_bus=BusReservationSerializer(bus_reserve,many=True)
+            bus_reserve=BusReservationBooking.objects.all().order_by('-created_at')
+            serializer_bus=BusReservationBookingSerializer(bus_reserve,many=True)
             
             booking=Booking.objects.all().order_by('-booked_at')
             serializer=BookingSerializer(booking,many=True)
@@ -771,6 +784,145 @@ class BookingAPiView(APIView):
             return Response({'success':True,'message':"Booking Status Updated Successfully"})
         except Exception as e:
             return Response({'success':True,'error':str(e)},status=400)
+        
+        
+
+# ======================
+# Vehicle Reservation
+# =======================
+
+    
+class VechicleReservationView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        try:
+            # Fetch all reservations
+            bus_reserve = BusReservation.objects.all()
+            serializer = BusReservationSerializer(bus_reserve, many=True)
+
+            # Fetch drivers not assigned to any reservation
+            assigned_driver_ids = BusReservation.objects.filter(driver__isnull=False).values_list('driver__id', flat=True)
+            unassigned_drivers = Driver.objects.exclude(id__in=assigned_driver_ids)
+            driver_serializer = DriverSerializer(unassigned_drivers, many=True)
+            
+            assigned_staff_ids = BusReservation.objects.filter(staff__isnull=False).values_list('staff__id', flat=True)
+            unassigned_staff = Staff.objects.exclude(id__in=assigned_staff_ids)
+            staff_serializer = StaffSerializer(unassigned_staff, many=True)
+
+            vechicle_types = VechicleType.objects.all()
+            vechicle_type_serializer = VechicleTypeSerializer(vechicle_types, many=True)
+
+            return Response({
+                'success': True,
+                'data': serializer.data,
+                'unassigned_drivers': driver_serializer.data,
+                'unassigned_staff': staff_serializer.data,
+                'vechicle_types': vechicle_type_serializer.data
+            }, status=200)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=400)
+
+    def post(self, request):
+        try:
+            print(request.data)
+            name = request.data.get('name')
+            type_name = request.data.get('type')
+            vechicle_number = request.data.get('vehicle_number')
+            vechicle_model = request.data.get('vehicle_model')
+            color = request.data.get('color')
+            driver_name = request.data.get('driver_id')
+            staff_name = request.data.get('staff_id')
+            total_seats = request.data.get('total_seats', 35)
+            price = request.data.get('price')
+
+            # Validate and fetch related objects
+            type_obj = VechicleType.objects.get(name=type_name) if type_name else None
+            driver_obj = Driver.objects.get(full_name=driver_name) if driver_name else None
+            staff_obj = Staff.objects.get(full_name=staff_name) if staff_name else None
+
+            # Create the reservation
+            reservation = BusReservation.objects.create(
+                name=name,
+                type=type_obj,
+                vechicle_number=vechicle_number,
+                vechicle_model=vechicle_model,
+                color=color,
+                driver=driver_obj,
+                staff=staff_obj,
+                total_seats=total_seats,
+                price=price
+            )
+
+            serializer = BusReservationSerializer(reservation)
+            return Response({'success': True, 'message': 'Reservation created successfully', 'data': serializer.data}, status=201)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=400)
+
+
+    def patch(self, request, *args, **kwargs):
+        try:
+            print(request.data)
+            reservation_id = kwargs.get('id')
+            reservation = BusReservation.objects.get(id=reservation_id)
+
+            name = request.data.get('name')
+            type_name = request.data.get('type')
+            vechicle_number = request.data.get('vehicle_number')
+            vechicle_model = request.data.get('vehicle_model')
+            color = request.data.get('color')
+            driver_name = request.data.get('driver_id')
+            staff_name = request.data.get('staff_id')
+            total_seats = request.data.get('total_seats')
+            price = request.data.get('price')
+
+            # Update fields if provided
+            if name:
+                reservation.name = name
+            if type_name:
+                reservation.type = VechicleType.objects.get(name=type_name)
+            if vechicle_number:
+                reservation.vechicle_number = vechicle_number
+            if vechicle_model:
+                reservation.vechicle_model = vechicle_model
+            if color:
+                reservation.color = color
+            if driver_name:
+                reservation.driver = Driver.objects.get(full_name=driver_name)
+            if staff_name:
+                reservation.staff = Staff.objects.get(full_name=staff_name)
+            if total_seats:
+                reservation.total_seats = total_seats
+            if price:
+                reservation.price = price
+
+            reservation.save()
+            serializer = BusReservationSerializer(reservation)
+            return Response({'success': True, 'message': 'Reservation updated successfully', 'data': serializer.data}, status=200)
+        except BusReservation.DoesNotExist:
+            return Response({'success': False, 'message': 'Reservation not found'}, status=404)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=400)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            reservation_id = kwargs.get('id')
+            reservation = BusReservation.objects.get(id=reservation_id)
+            reservation.delete()
+            return Response({'success': True, 'message': 'Reservation deleted successfully'}, status=200)
+        except BusReservation.DoesNotExist:
+            return Response({'success': False, 'message': 'Reservation not found'}, status=404)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=400)
+
+# ================
+# Vehicle Type
+# ===================
+class VehicleTypeViewSet(ModelViewSet):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    queryset = VechicleType.objects.all()
+    serializer_class = VechicleTypeSerializer
         
 
 #========= Payment and Commission =============
@@ -819,6 +971,8 @@ class RateApiView(APIView):
         
 from django.db.models import Sum, Count, F
 from django.utils.timezone import now
+
+
 # ========== Report and analysis =========
 class ReportAnalysisApiView(APIView):
     authentication_classes=[JWTAuthentication]

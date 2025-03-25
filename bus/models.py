@@ -1,67 +1,87 @@
 from django.db import models
 from multiselectfield import MultiSelectField
-import os
-
-# Create your models here.
-from django.db import models
-from custom_user.models import CustomUser
-from route.models import Route,Trip
 from django.core.exceptions import ValidationError
 from django.apps import apps
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from decimal import Decimal
+from django.db import transaction
+
+# Importing related models
+from custom_user.models import CustomUser
+from route.models import Route, Trip
 
 
-# ========= Ticket Counter ===============
+# ========= Ticket Counter Model ===========
 class TicketCounter(models.Model):
-    user=models.OneToOneField('custom_user.CustomUser',on_delete=models.CASCADE,limit_choices_to={'role':'sub_admin'},related_name="ticket_counter")
-    counter_name=models.CharField(max_length=200, default="None",help_text="Name of Ticket Counter name")
-    location=models.CharField(max_length=100)
-    created_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
-    
-def __str__(self):
-    return f"{self.counter_name} - {self.location}"
+    """
+    Represents a ticket counter managed by a sub-admin.
+    """
+    user = models.OneToOneField(
+        'custom_user.CustomUser',
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'sub_admin'},
+        related_name="ticket_counter"
+    )
+    counter_name = models.CharField(max_length=200, default="None", help_text="Name of Ticket Counter")
+    location = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
-# =========== Driver ===============
+    def __str__(self):
+        return f"{self.counter_name} - {self.location}"
+
+
+# =========== Driver Model ===============
 class Driver(models.Model):
+    """
+    Represents a driver with their profile and license details.
+    """
     full_name = models.CharField(max_length=255, null=False)
     driver_profile = models.ImageField(upload_to="driver_profile/")
     license_image = models.ImageField(upload_to="driver_license/")
     phone_number = models.CharField(max_length=10, unique=True, null=False)
-    
+
     def delete(self, *args, **kwargs):
-        # Delete the associated image file before deleting the model
+        """
+        Deletes associated image files before deleting the model.
+        """
         if self.driver_profile:
             self.driver_profile.delete(save=False)
         if self.license_image:
             self.license_image.delete(save=False)
-            
-        super().delete(*args,**kwargs)
+        super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"Driver: {self.full_name} - {self.phone_number}"
 
 
-# =========== Staff ===============
+# =========== Staff Model ===============
 class Staff(models.Model):
+    """
+    Represents a staff member with optional profile and staff card images.
+    """
     full_name = models.CharField(max_length=255, null=False)
-    staff_profile = models.ImageField(upload_to="staff_profile/", null=True, blank=True)  # Optional profile image
-    staff_card=models.ImageField(upload_to="staff_card/",null=True,blank=True)
+    staff_profile = models.ImageField(upload_to="staff_profile/", null=True, blank=True)
+    staff_card = models.ImageField(upload_to="staff_card/", null=True, blank=True)
     phone_number = models.CharField(max_length=10, unique=True, null=False)
-    
 
-
-    def delete(self,*args,**kwargs):
+    def delete(self, *args, **kwargs):
+        """
+        Deletes associated profile image before deleting the model.
+        """
         if self.staff_profile:
             self.staff_profile.delete(save=False)
-        super().delete(*args,**kwargs)
-        
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f"Staff: {self.full_name} - {self.phone_number}"
-    
-    
 
 
-# ====== Bus =============
+# ====== Bus Model =============
 class Bus(models.Model):
+    """
+    Represents a bus with its details, features, and associated driver/staff.
+    """
     VEHICLE_CHOICES = (
         ("tourist_bus", "Tourist Bus"),
         ("express_bus", "Express Bus"),
@@ -72,113 +92,164 @@ class Bus(models.Model):
     )
     FEATURE_CHOICES = (
         ("ac", "AC"),
-        ("charging", "charging"),
+        ("charging", "Charging"),
         ("fan", "Fan"),
-        ("wifi","Wifi"),      
+        ("wifi", "WiFi"),
     )
 
-    driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)  # A bus has one driver (optional)
-    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, null=True, blank=True)  # A bus has one staff (optional)
-    route=models.ForeignKey(Route,on_delete=models.CASCADE,null=True,blank=True)
+    driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)
+    staff = models.OneToOneField(Staff, on_delete=models.CASCADE, null=True, blank=True)
+    route = models.ForeignKey(Route, on_delete=models.CASCADE, null=True, blank=True)
     bus_number = models.CharField(max_length=20, unique=True, null=False, help_text="Example: BA 1 KHA 1234")
     bus_type = models.CharField(max_length=20, choices=VEHICLE_CHOICES, default="deluxe_bus")
-    features = MultiSelectField(choices=FEATURE_CHOICES, null=True, blank=True)  # Allows multiple selections
+    features = MultiSelectField(choices=FEATURE_CHOICES, null=True, blank=True)
     bus_image = models.ImageField(upload_to="bus_images/")
     total_seats = models.PositiveIntegerField(default=35)
     available_seats = models.PositiveIntegerField(default=35)
-   
-    is_active = models.BooleanField(default=False)
-    is_running = models.BooleanField(default=False, help_text="To ensure the bus is in running state or not")
-    
+    is_active = models.BooleanField(default=True, help_text="Indicates if the bus is active")
+    is_running = models.BooleanField(default=False, help_text="Indicates if the bus is currently running")
+
+        
     def save(self, *args, **kwargs):
-        """Ensure available seats don't exceed total seats."""
+        """
+        Ensures available seats do not exceed total seats.
+        """
         if self.available_seats > self.total_seats:
             raise ValidationError("Available seats cannot exceed total seats.")
         super().save(*args, **kwargs)
-    
+
     def delete(self, *args, **kwargs):
-        # Delete the associated image file before deleting the model
-        if self.bus_image:
+        """
+        Deletes associated image file before deleting the model.
+        """
+        if self.bus_image and self.bus_image.storage.exists(self.bus_image.name):
             self.bus_image.delete(save=False)
-        super().delete(*args,**kwargs)
+        super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"{self.bus_number}"
 
-    
 
-# ========= Bus Layout =========
-class BusLayout(models.Model):
-    bus=models.ForeignKey(Bus,on_delete=models.CASCADE,unique=True)
-    rows=models.PositiveIntegerField(blank=False,null=False)
-    column=models.PositiveIntegerField(blank=False,null=False)
-    aisle_column=models.PositiveIntegerField(blank=False)
-    layout_data=models.JSONField(
-        default=list,
-        blank=True
-    )
-    created_at=models.DateTimeField(auto_now_add=True)
     
+# ========= Bus Layout Model =========
+class BusLayout(models.Model):
+    """
+    Represents the seating layout of a bus.
+    """
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE)
+    rows = models.PositiveIntegerField()
+    column = models.PositiveIntegerField()
+    aisle_column = models.PositiveIntegerField()
+    layout_data = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+     # Method to update seat status in the seat layout (Mark as available)
+     
+    def mark_seat_available(self, seat_keys):
+        """
+        Mark the seats as available in the seat layout.
+        Accepts a list of seat keys.
+        """
+        for seat_key in seat_keys:
+            found = False
+            for row in self.layout_data:
+                for seat in row:
+                    if isinstance(seat, dict) and seat["seat"] == seat_key:
+                        if seat["status"] == "booked":
+                            seat["status"] = "available"
+                            found = True
+                            print(f"Seat {seat_key} is now available.")
+                        else:
+                            print(f"Seat {seat_key} is already available.")
+                        break  # No need to continue if we've found the seat
+                if found:
+                    break  # Exit the outer loop if seat is found and updated
+            if not found:
+                print(f"Seat {seat_key} not found in layout.")
+        self.save()
+
+    def mark_seat_booked(self, seat_keys):
+        """
+        Mark the seats as booked in the seat layout.
+        Accepts a list of seat keys.
+        """
+        
+        for seat_key in seat_keys:
+            found = False
+            for row in self.layout_data:
+                for seat in row:
+                    if isinstance(seat, dict) and seat["seat"] == seat_key:
+                        if seat["status"] == "available":
+                            seat["status"] = "booked"
+                            found = True
+                            print(f"Seat {seat_key} is now booked.")
+                        else:
+                            print(f"Seat {seat_key} is already booked.")
+                        break  # No need to continue if we've found the seat
+                if found:
+                    break  # Exit the outer loop if seat is found and updated
+            if not found:
+                print(f"Seat {seat_key} not found in layout.")
+        self.save()
+        
+
     def __str__(self):
         return f"{self.bus} ({self.created_at})"
 
     class Meta:
         ordering = ['-created_at']
-    
 
-# ======= Bus Admin ============
+
+# ======= Bus Admin Model ============
 class BusAdmin(models.Model):
+    """
+    Represents a bus admin responsible for managing a bus and its operations.
+    """
     user = models.OneToOneField(
         CustomUser,
         on_delete=models.CASCADE,
         related_name="bus_admin_profile",
-        limit_choices_to={'role': 'bus_admin'}  # Restricts only users with "bus_admin" role
+        limit_choices_to={'role': 'bus_admin'}
     )
     bus = models.OneToOneField(
-        'Bus', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        'Bus',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         help_text="Bus assigned to this admin"
     )
-    driver = models.OneToOneField(Driver, on_delete=models.CASCADE,null=True,blank=True)  # New field for the driver
+    driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)
     booked_seats = models.PositiveIntegerField(default=0, help_text="Number of seats booked")
     remaining_seats = models.PositiveIntegerField(default=0, help_text="Calculated remaining seats")
     estimated_arrival = models.DateTimeField(null=True, blank=True, help_text="Estimated Arrival time")
     last_updated = models.DateTimeField(auto_now=True, help_text="Timestamp of last update")
-    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Ticket price for the bus journey")
-    source = models.CharField(max_length=255, null=True, blank=True, help_text="Starting point of the journey (overrides route source)")
-    destination = models.CharField(max_length=255, null=True, blank=True, help_text="Ending point of the journey (overrides route destination)")
-    
+    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True, help_text="Ticket price")
+    source = models.CharField(max_length=255, null=True, blank=True, help_text="Starting point of the journey")
+    destination = models.CharField(max_length=255, null=True, blank=True, help_text="Ending point of the journey")
+
     def save(self, *args, **kwargs):
-        """Ensure remaining seats are calculated, and  Update BusDriver and update Bus and Route models."""
-        
-        # Update Bus driver when BusAdmin is saved
+        """
+        Ensures remaining seats are calculated and updates related models.
+        """
         if self.driver:
-            self.bus.driver = self.driver  # Assign the driver to the bus
-            self.bus.save()  # Save the bus with the new driver
-            
+            self.bus.driver = self.driver
+            self.bus.save()
+
         if self.bus:
             if self.booked_seats > self.bus.total_seats:
                 raise ValidationError("Booked seats cannot exceed total seats on the bus.")
-            
-            # Calculate remaining seats
-            self.remaining_seats = self.bus.total_seats - self.booked_seats
 
-            # Update the Bus model automatically
+            self.remaining_seats = self.bus.total_seats - self.booked_seats
             self.bus.available_seats = self.remaining_seats
-            self.bus.is_running = True  
+            self.bus.is_running = True
             self.bus.save()
 
-           # Update source/destination dynamically if not provided
             if self.source is None:
                 self.source = self.bus.route.source
             if self.destination is None:
                 self.destination = self.bus.route.destination
 
-            # Update Schedule model price based on BusAdmin price
             if self.price:
-                # Fetch related schedule and update price
                 schedules = apps.get_model('bus', 'Schedule').objects.filter(bus=self.bus)
                 for schedule in schedules:
                     schedule.price = self.price
@@ -186,41 +257,64 @@ class BusAdmin(models.Model):
 
         super().save(*args, **kwargs)
 
+    def clean(self):
+        if self.driver and not Driver.objects.filter(id=self.driver.id).exists():
+            raise ValidationError("The specified driver does not exist.")
+        if self.staff and not Staff.objects.filter(id=self.staff.id).exists():
+            raise ValidationError("The specified staff does not exist.")
+
     def __str__(self):
         eta = self.estimated_arrival.strftime('%Y-%m-%d %H:%M:%S') if self.estimated_arrival else "N/A"
-        return f"Bus Admin: {self.user.full_name} | Bus: {self.bus.bus_number if self.bus else 'No Bus Assigned'} | Booked: {self.booked_seats} | Remaining: {self.remaining_seats} | ETA: {eta} | Price: {self.price} | Source: {self.source} | Destination: {self.destination}"
+        return f"Bus Admin: {self.user.full_name} | Bus: {self.bus.bus_number if self.bus else 'No Bus Assigned'}"
 
 
-#=========== Bus Reservation ===============
-class BusReservation(models.Model):
+# ========= Vehicle Type Model ============
+class VechicleType(models.Model):
+    """
+    Represents different types of vehicles.
+    """
+    name = models.CharField(max_length=100)
+    image=models.ImageField(upload_to="vechicle_type_images/",null=True,blank=True)
     
-    STATUS_CHOICES=(
-        ('booked','Booked'),
-        ('cancelled','Cancelled')
-    )
-    bus=models.ForeignKey('bus.Bus',on_delete=models.CASCADE)
-    user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE)
-    reservation_date=models.DateTimeField(auto_now_add=True)
-    status=models.CharField(max_length=10,choices=STATUS_CHOICES,default='booked')
+    def delete(self, *args, **kwargs):
+        """
+        Deletes associated image file before deleting the model.
+        """
+        if self.images and self.images.storage.exists(self.images.name):
+            self.images.delete(save=False)
+        
+        super().delete(*args, **kwargs)
 
-    
-    @staticmethod
-    def is_bus_available(bus):
-            """
-            Check if the bus is available for a new reservation within the requested time frame.
-            If the trip spans multiple days, the start_time and end_time should account for that.
-            """
-            conflicting_trips = Trip.objects.filter(
-                
-                bus=bus,
-               
-            )
-            
-            if conflicting_trips.exists():
-                return False
-            return True
-
-    
     def __str__(self):
-        return f"Reservation fror {self.user.full_name} on {self.bus.bus_number}"
+        return self.name
+
+
+# =========== Vehicle Reservation Model ===============
+class BusReservation(models.Model):
+    """
+    Represents a reservation for a bus or vehicle.
+    """
     
+    name=models.CharField(max_length=100,default="None")
+    type = models.ForeignKey(VechicleType, on_delete=models.CASCADE, null=True, blank=True)
+    vechicle_number = models.CharField(max_length=100, default="None")
+    vechicle_model=models.CharField(max_length=100,default="None")
+    image = models.ImageField(upload_to="vechicle_images/",null=True, blank=True)
+    color=models.CharField(max_length=100,null=True,blank=True)
+    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, null=True, blank=True)
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, null=True, blank=True)
+    total_seats = models.PositiveIntegerField(default=35)
+    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    created_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
+   
+
+    def delete(self, *args, **kwargs):
+        """
+        Deletes associated image file before deleting the model.
+        """
+        if self.image and self.image.storage.exists(self.image.name):
+            self.image.delete(save=False)
+        super().delete(*args, **kwargs)
+
+    def __str__(self):
+        return f"Reservation {self.vechicle_number}"
