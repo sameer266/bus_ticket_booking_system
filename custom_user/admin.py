@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from custom_user.models import CustomUser, UserOtp
+from custom_user.models import CustomUser, UserOtp,System
 from bus.models import Bus, BusAdmin, Driver, Staff, TicketCounter, BusReservation, BusLayout, VechicleType
 from booking.models import Booking, Seat, Payment, Commission, Rate,BusReservationBooking
 from route.models import Route, Schedule, Trip, CustomerReview
@@ -173,3 +173,9 @@ class BusLayoutAdmin(admin.ModelAdmin):
     list_display = ('bus', 'rows', 'column', 'aisle_column', 'layout_data', 'created_at')
     search_fields = ('bus__bus_number',)
     list_filter = ('created_at',)
+
+
+# ================ Settings ==========
+@admin.register(System)
+class SystemAdmin(admin.ModelAdmin):
+    list_display=('name','phone','image','address','email')

@@ -28,11 +28,14 @@ urlpatterns = [
     # ======== User's Payment History =========
     path('payment_history/', views.PaymentHistoryView.as_view()),
     
-    
-    
-    
     # ====== Khalti paymnet ===========
     # path('khalti-initiate/',views.InitiateKhaltiPayment.as_view(),name="initiate"),
-#    path('khalti-verify/',views.VerifyKhalti.as_view(),name="verify"),
+    #path('khalti-verify/',views.VerifyKhalti.as_view(),name="verify"),
+    
+    # ====================
+    # Sub Admin 
+    #======================
+    path('subadmin_dashboard/',views.SubAdminApiView.as_view())
+    
 ]
 

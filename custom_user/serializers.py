@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from custom_user.models import CustomUser
+from custom_user.models import CustomUser,System
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -9,8 +9,10 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields=['id','email','full_name','phone','role','gender','created_at']
 
 
-
-
+class SystemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=System
+        fields='__all__'
 
 
 class KhaltiPaymentSerializer(serializers.Serializer):

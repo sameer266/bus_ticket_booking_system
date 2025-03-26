@@ -181,7 +181,7 @@ class BusSerializer(serializers.ModelSerializer):
 # Serializer for Payment model
 class PaymentSerilaizer(serializers.ModelSerializer):
     user = CustomUserReviewSerializer()
-    schedule = ScheduleSerializer()
+    
 
     class Meta:
         model = Payment

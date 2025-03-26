@@ -2,12 +2,12 @@ from django.contrib.auth import authenticate
 from django.db.models import Count
 from datetime import datetime
 
-from custom_user.models import CustomUser,UserOtp
+from custom_user.models import CustomUser,UserOtp,System
 from route.models import Route,Schedule,Trip,CustomerReview
 from bus.models import Bus,BusReservation,BusLayout,Driver,Staff,VechicleType
 from booking.models import Commission,Booking,BusReservationBooking
 
-from custom_user.serializers import CustomUserSerializer
+from custom_user.serializers import CustomUserSerializer,SystemSerializer
 from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerilizer,BusReservationSerializer,VechicleTypeSerializer,BusReservationBookingSerializer
 
 
@@ -149,7 +149,7 @@ class VerifyOtp(APIView):
             return Response({"success": False, "error": " OTP are required"}, status=400)
 
         otp_obj = UserOtp.objects.filter(otp=otp).first()
-        print("Full_nmae",otp_obj)
+        print("Full_name",otp_obj)
         if not otp_obj:
             return Response({"success": False, "error": "Invalid OTP"}, status=400)
         
@@ -398,4 +398,9 @@ class BusLayoutApiView(APIView):
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
     
-    
+
+class NavAndContactDataApiView(APIView):
+    def get(self,request):
+        settings=System.objects.all().first()
+        serializer=SystemSerializer(settings)
+        return Response({'success':True,'data':serializer.data},status=200)

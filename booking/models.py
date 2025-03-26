@@ -91,6 +91,8 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
             instance.__class__.objects.filter(pk=instance.pk).update(schedule=schedule)
         except Schedule.DoesNotExist:
             print(f"Schedule not found for bus: {instance.bus}")
+    if instance.booking_status=="booked":
+        pass
 
         # # Update seat status based on booking status
         # if instance.booking_status in ['booked', 'pending']:
@@ -177,7 +179,8 @@ class Payment(models.Model):
         ('esewa','Esewa')
         
     )
-   
+    user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE,limit_choices_to={'role':'customer'},null=True,blank=True)
+    bus=models.ForeignKey('bus.Bus',on_delete=models.CASCADE,null=True,blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of paid")
     payment_method=models.CharField(max_length=20,choices=METHODS_CHOICES,null=True,blank=True)
     commission_deducted = models.DecimalField(
@@ -191,6 +194,64 @@ class Payment(models.Model):
     def __str__(self):
         return f"Payment in  {self.payment_method} for Rs {self.price} "
 
+
+
+# ===== Helper: Prevent Recursion in Signals =====
+def is_post_save_signal(instance):
+    """
+    Helper function to prevent recursion in signals.
+    """
+    return hasattr(instance, '_is_post_save_signal')
+
+
+# ===== Signal: Update Booking and Calculate Commission on Payment =====
+@receiver(post_save, sender=Payment)
+def update_status_booking_and_calculate_commission_on_payment(sender, instance, created, **kwargs):
+    """
+    Signal to update booking status and calculate commission when a payment is saved.
+    """
+    # Update booking status to 'booked' if payment is made
+    if created and instance.price > 0:
+        try:
+            booking = Booking.objects.get(
+                user=instance.user,
+                bus=instance.bus,
+                booking_status='pending'
+            )
+          
+            booking.booking_status = 'booked'
+            booking.save()
+        except Booking.DoesNotExist:
+            pass
+
+    # Calculate commission for the payment
+    if is_post_save_signal(instance):
+        return
+
+    instance._is_post_save_signal = True
+
+    try:
+        rate = Rate.objects.first()
+        if rate:
+            commission, created = Commission.objects.get_or_create(bus=instance.bus)
+            price = Decimal(instance.price)
+
+            # Calculate the commission amount
+            commission_amount = Decimal(commission.calculate_commission(price))
+
+            # Update commission and earnings
+            commission.total_commission = Decimal(str(commission.total_commission)) + commission_amount
+            commission.total_earnings = Decimal(str(commission.total_earnings)) + price
+
+            # Update payment with deducted commission
+            instance.commission_deducted = commission_amount
+            commission.save()
+            instance.save(update_fields=['commission_deducted'])
+    finally:
+        del instance._is_post_save_signal
+        
+        
+    
 
 # ===== Commission Model =====
 class Commission(models.Model):
@@ -245,7 +306,7 @@ class Commission(models.Model):
         return Decimal(0)
 
     def __str__(self):
-        return f"Commission for {self.bus.bus_number}"
+        return f"Commission "
 
 
 # ===== BusLayout Model =====
@@ -275,56 +336,3 @@ class BusLayout(models.Model):
         ordering = ['-created_at']
 
 
-# ===== Helper: Prevent Recursion in Signals =====
-def is_post_save_signal(instance):
-    """
-    Helper function to prevent recursion in signals.
-    """
-    return hasattr(instance, '_is_post_save_signal')
-
-
-# ===== Signal: Update Booking and Calculate Commission on Payment =====
-@receiver(post_save, sender=Payment)
-def update_status_booking_and_calculate_commission_on_payment(sender, instance, created, **kwargs):
-    """
-    Signal to update booking status and calculate commission when a payment is saved.
-    """
-    # Update booking status to 'booked' if payment is made
-    if created and instance.price > 0:
-        try:
-            booking = Booking.objects.get(
-                user=instance.user,
-                bus=instance.schedule.bus,
-                booking_status='pending'
-            )
-          
-            booking.booking_status = 'booked'
-            booking.save()
-        except Booking.DoesNotExist:
-            pass
-
-    # Calculate commission for the payment
-    if is_post_save_signal(instance):
-        return
-
-    instance._is_post_save_signal = True
-
-    try:
-        rate = Rate.objects.first()
-        if rate:
-            commission, created = Commission.objects.get_or_create(bus=instance.schedule.bus)
-            price = Decimal(instance.price)
-
-            # Calculate the commission amount
-            commission_amount = Decimal(commission.calculate_commission(price))
-
-            # Update commission and earnings
-            commission.total_commission +=commission_amount
-            commission.total_earnings += price
-
-            # Update payment with deducted commission
-            instance.commission_deducted = commission_amount
-            commission.save()
-            instance.save(update_fields=['commission_deducted'])
-    finally:
-        del instance._is_post_save_signal

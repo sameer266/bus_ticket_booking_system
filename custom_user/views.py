@@ -26,7 +26,11 @@ class UserDashboardView(APIView):
         data["total_booking"]=Booking.objects.filter(user=user).count()
         data["total_reviews"]=CustomerReview.objects.filter(user=user).count()
         data["total_reservation"]= BusReservationBooking.objects.filter(user=user).count()
-        data["total_payment"]=Payment.objects.filter(user=user).count()
+        total_payment=0
+        total_payment=Booking.objects.filter(user=user,booking_status="booked").count()
+        total_payment=BusReservationBooking.objects.filter(user=user,status="booked").count()
+        
+        data["total_payment"]=total_payment
         recent_booking=Booking.objects.filter(user=user).order_by('-id')[:5]
         recent_reviews=CustomerReview.objects.filter(user=user).order_by('-id')[:5]
 
@@ -72,10 +76,10 @@ class BookedSeat(APIView):
 
     def get(self, request):
                 user = request.user
-                bookings_seat = Booking.objects.filter(user=user)
+                bookings_seat = Booking.objects.filter(user=user).order_by('-booked_at')
                 serializer_seat = BookingSerializer(bookings_seat, many=True)
                 
-                reserve=BusReservationBooking.objects.filter(user=user)
+                reserve=BusReservationBooking.objects.filter(user=user).order_by('-created_at')
                 serilaizer_reserve=BusReservationBookingSerializer(reserve,many=True)
             
                 return Response({"success": True, "booking_seat": serializer_seat.data,"booking_reserve":serilaizer_reserve.data}, status=200)
@@ -196,9 +200,12 @@ class UserBookingPaymentView(APIView):
                 return Response({'success': True, 'data': data}, status=status.HTTP_200_OK)
 
         except Exception as e:
+            print(str(e))
             return Response({'success': False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
     
+
+
 
 # # ========== Payment khalti  =============
 
@@ -264,3 +271,34 @@ class UserBookingPaymentView(APIView):
 #             return Response({'message': 'Payment Successful'}, status=status.HTTP_200_OK)
 
 #         return Response({'message': 'Payment Failed. Please contact support.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+# ===============================
+# ====== SubAdmin ==============
+# ==============================
+
+
+class SubAdminApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+
+    def get(self,request):
+        print(request.user)
+        user=request.user
+        data={}
+        data["total_booking"]=Booking.objects.filter(user=user).count()
+        data["total_reviews"]=CustomerReview.objects.filter(user=user).count()
+        data["total_reservation"]= BusReservationBooking.objects.filter(user=user).count()
+        total_payment=0
+        total_payment=Booking.objects.filter(user=user,booking_status="booked").count()
+        total_payment=BusReservationBooking.objects.filter(user=user,status="booked").count()
+        
+        data["total_payment"]=total_payment
+        recent_booking=Booking.objects.filter(user=user).order_by('-id')[:5]
+        recent_reviews=CustomerReview.objects.filter(user=user).order_by('-id')[:5]
+
+        recent_booking_serializer=BookingSerializer(recent_booking,many=True)
+        recent_reviews_serializer=CustomReviewSerializer(recent_reviews,many=True)
+
+        return Response({"success":True,"data":data,"recent_booking":recent_booking_serializer.data,"recent_reviews":recent_reviews_serializer.data},status=200)

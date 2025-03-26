@@ -34,6 +34,10 @@ admin.sites.AdminSite.index_title = 'Admin Panel'
 urlpatterns = [
     path('admin/', admin.site.urls),
     
+    
+    # ===== Data For Navbar and Contact ========
+    path('api/nav_contact/',views.NavAndContactDataApiView.as_view()),
+    
     # ====== Authentication api =========
     path('api/login/', views.LoginView.as_view(), name='token_obtain_login'),
     path('api/logout/',views.LogoutView.as_view()),
@@ -74,6 +78,8 @@ urlpatterns = [
     
     # ========= Normal User ============
     path('api/',include('custom_user.urls')),
+    
+  
 
   
     

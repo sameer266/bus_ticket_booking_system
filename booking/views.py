@@ -4,12 +4,12 @@ from datetime import datetime
 import json
 from rest_framework.viewsets import ModelViewSet
 
-from custom_user.models import CustomUser, UserOtp
+from custom_user.models import CustomUser, UserOtp,System
 from route.models import Route, Schedule, Trip, CustomerReview
 from bus.models import Bus, TicketCounter,Driver,Staff,BusReservation,BusLayout,VechicleType
 from booking.models import Commission, Booking,Payment,Rate,BusReservationBooking
 
-from custom_user.serializers import CustomUserSerializer
+from custom_user.serializers import CustomUserSerializer,SystemSerializer
 from route.serializers import (
     RouteSerializer, ScheduleSerializer, CustomReviewSerializer, 
     BusScheduleSerializer, BookingSerializer, TripSerilaizer, TicketCounterSerializer,
@@ -49,7 +49,7 @@ class AdminDashboardData(APIView):
             data["total_active_bus"]=bus_count
             data["total_user"]=user_count
             
-            booking_obj=Booking.objects.all().order_by('-booked_at')[ :10]
+            booking_obj=Booking.objects.all().order_by('-booked_at')[ :8]
             booking_serializer=BookingSerializer(booking_obj,many=True)
             
             trip=Trip.objects.all()[ :8]
@@ -176,6 +176,9 @@ class TicketCounterView(APIView):
                 phone=phone,
                 gender=gender
             )
+            password=f"counter@{phone}"
+            user.set_password(password)
+            user.save()
 
             # Create the TicketCounter
             TicketCounter.objects.create(
@@ -512,15 +515,11 @@ class BusListView(APIView):
             driver_id = request.data.get('driver')
             if driver_id:
                 driver_obj = Driver.objects.get(id=driver_id)
-                if Bus.objects.filter(driver=driver_obj).exists():
-                    return Response({"success": False, "error": "Driver already assigned to another bus"}, status=status.HTTP_400_BAD_REQUEST)
-                bus.driver = driver_obj
+                bus.driver = driver_obj 
 
             staff_id = request.data.get('staff')
             if staff_id:
                 staff_obj = Staff.objects.get(id=staff_id)
-                if Bus.objects.filter(staff=staff_obj).exists():
-                    return Response({"success": False, "error": "Staff already assigned to another bus"}, status=status.HTTP_400_BAD_REQUEST)
                 bus.staff = staff_obj
 
             
@@ -529,21 +528,21 @@ class BusListView(APIView):
 
             bus_type = request.data.get('bus_type')
             bus.bus_type = bus_type
-
            
             features = request.data.get('features')
             if features:
                 bus.features = json.loads(features)  # Convert JSON string to Python list
                 
-
             bus_image = request.FILES.get('bus_image')
             if bus_image:
                 bus.bus_image = bus_image
 
             # Convert total_seats to integer before updating
-            total_seats = request.data.get('total_seats')
+            total_seats=request.data.get('total_seats')
             if total_seats:
                 try:
+                    if isinstance(total_seats, list):  # If it's a list, take the first value
+                        total_seats = total_seats[0]
                     bus.total_seats = int(total_seats)  # Convert from string to int
                 except ValueError:
                     return Response({"success": False, "error": "Invalid total_seats value"}, status=status.HTTP_400_BAD_REQUEST)
@@ -565,6 +564,8 @@ class BusListView(APIView):
                 
             bus_layout=BusLayout.objects.get(bus=bus)
             layout = request.data.get('layout')
+            layout=json.loads(layout)
+            
             bus_layout.rows=layout.get('rows')
             bus_layout.column=layout.get('columns')
             bus_layout.aisle_column=layout.get('aisleAfterColumn')
@@ -1012,3 +1013,43 @@ class ReportAnalysisApiView(APIView):
 
 
 
+
+
+# ========================
+# Settings 
+#=========================
+
+class SettingsApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request):
+        system=System.objects.all().first()
+        serializer=SystemSerializer(system)
+        return Response({"success":True,"data":serializer.data},status=200)
+    
+    
+    def patch(self,request,*args,**kwargs):
+        try:
+            print(request.data)
+            id=kwargs.get('id')
+            system=System.objects.get(id=id)
+            name=request.data.get('name')
+            email=request.data.get('email')
+            phone=request.data.get('phone')
+            image=request.FILES.get('image')
+            address=request.data.get('address')
+            
+            system.name=name
+            system.email=email
+            system.phone=phone
+            system.image=image
+            system.address=address
+            system.save()
+            return Response({"success":True,'message':"System data upated successfully"},status=201)
+        
+        except Exception as e:
+            return Response({"success":False,"error":str(e)},status=400)
+        
+        
+        

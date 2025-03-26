@@ -35,7 +35,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ("others","Others")
     )
     phone = models.CharField(max_length=15, unique=True) 
-    email = models.EmailField(unique=True, null=True, blank=True,default="None" ) 
+    email = models.EmailField( null=True, blank=True,default="None" ) 
     full_name = models.CharField(max_length=255)   
     role = models.CharField(max_length=20, choices=USER_ROLES, default="customer")
     gender=models.CharField(max_length=50,choices=GENDER_CHOICE,null=True,blank=True)
@@ -51,6 +51,19 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return f"{self.full_name} - {self.role}"
 
 
+
+# ======== System  Model ==============
+class System(models.Model):
+    name=models.CharField(max_length=100)
+    email=models.CharField(max_length=100)
+    phone=models.PositiveIntegerField(max_length=10)
+    address=models.CharField(max_length=100)
+    image=models.ImageField(upload_to='system_logo/')
+    
+    def __str__(self):
+        return f"{self.name} and Address {self.address}"
+    
+    
 class UserOtp(models.Model):
     user=models.ForeignKey(CustomUser,on_delete=models.CASCADE,limit_choices_to={'role':'customer'},null=True,blank=True)
     phone=models.CharField(max_length=15,null=True,blank=True)

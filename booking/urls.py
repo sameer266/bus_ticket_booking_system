@@ -81,8 +81,15 @@ urlpatterns = [
     # ======== Rate========
     path('admin_rate_add/<int:id>/',views.RateApiView.as_view()),
     
+    
+    
     #============ Report and analysis ============
     path('admin_reportlist/',views.ReportAnalysisApiView.as_view()),
+    
+    
+    # ========= Setting =============
+    path('admin_settings/',views.SettingsApiView.as_view()),
+    path('admin_settings_update/<int:id>/',views.SettingsApiView.as_view())
     
     
     
