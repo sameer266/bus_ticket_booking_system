@@ -1,6 +1,6 @@
 from custom_user.models import CustomUser, UserOtp
 from bus.models import Bus, BusAdmin, Driver, Staff, TicketCounter, BusReservation, BusLayout
-from booking.models import Booking, Seat, Payment, Commission, Rate,BusReservationBooking
+from booking.models import Booking, Payment, Commission, Rate,BusReservationBooking
 from route.models import Route, Schedule, Trip, CustomerReview
 from  custom_user.serializers import CustomUserSerializer
 from route.serializers import RouteSerializer,BookingSerializer, ScheduleSerializer, BusReservationSerializer,CustomReviewSerializer,BusReservationBookingSerializer,PaymentSerilaizer
@@ -119,7 +119,6 @@ import requests
 import json
 import uuid
 from django.db import transaction
-from  .serializers import KhaltiPaymentSerializer
 
 class UserBookingPaymentView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -136,10 +135,12 @@ class UserBookingPaymentView(APIView):
                 bus_id = request.data.get('bus_id')
 
                 bus = Bus.objects.get(id=bus_id)
+                
                 schedule_obj = Schedule.objects.get(bus=bus)
 
-                #  Correct seat count
                 count = len(seat)
+                bus.available_seats-= count
+                bus.save()
 
                 #  Calculate total price
                 total_price = schedule_obj.price * count
@@ -203,74 +204,35 @@ class UserBookingPaymentView(APIView):
             print(str(e))
             return Response({'success': False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
+
+from decimal  import Decimal
     
-
-
-
-# # ========== Payment khalti  =============
-
-
-# class InitiateKhaltiPayment(APIView):
-
-#     def post(self, request):
-#         try:
-#             with transaction.atomic():
-#                 serializer = KhaltiPaymentSerializer(data=request.data)
-#                 if serializer.is_valid():
-#                     price = serializer.validated_data["price"]
-
-
-#                     payload = json.dumps({
-#                         "return_url": "https://example.com/payment-success",
-#                         "website_url": "https://example.com",
-#                         "amount": float(price),
-#                         "booking_id": str(uuid.uuid4()),  # Generate unique order ID
-#                         "purchase_order_name": "Test Order",
-#                         "customer_info": {
-#                             "name": "Test User",
-                           
-#                         }
-#                     })
-
-#                     headers = {
-#                         'Authorization': "key c3ace8e77db241119661f858acd5f6de",
-#                         'Content-Type': 'application/json',
-#                     }
-
-#                     response = requests.post("https://a.khalti.com/api/v2/epayment/initiate/", headers=headers, data=payload)
-#                     print(response.content)
-#                     new_res = response.json()
-                    
-#                     return Response({'redirect_url': new_res.get('payment_url', ''), 'booking_id': "test_order_123"}, status=status.HTTP_200_OK)
-
-#                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#         except Exception as e:
-#             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-# class VerifyKhalti(APIView):
-   
-
-#     def get(self, request):
-#         url = "https://a.khalti.com/api/v2/epayment/lookup/"
-#         pidx = request.GET.get('pidx')
-
-#         if not pidx:
-#             return Response({'error': 'Missing transaction ID (pidx)'}, status=status.HTTP_400_BAD_REQUEST)
-
-#         headers = {
-#             'Authorization': "key c3ace8e77db241119661f858acd5f6de",
-#             'Content-Type': 'application/json',
-#         }
-
-#         data = json.dumps({'pidx': pidx})
-#         res = requests.post(url, headers=headers, data=data)
-#         new_res = res.json()
-
-#         if new_res.get('status') == 'Completed':
-#             return Response({'message': 'Payment Successful'}, status=status.HTTP_200_OK)
-
-#         return Response({'message': 'Payment Failed. Please contact support.'}, status=status.HTTP_400_BAD_REQUEST)
+# ===== User Payment ===========
+class UserPayment(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def post(self,request):
+        try:
+        
+            user=request.user
+            total_amount=request.data.get('amount')
+            booking_id=request.data.get('booking_id')
+            try:
+                booking_obj = Booking.objects.get(id=booking_id)
+            except Booking.DoesNotExist:
+                return Response({'success': False, 'error': 'Booking not found'}, status=400)
+            transaction_id = request.data.get('transaction_id')
+            payment_obj = Payment.objects.create(user=user, price=total_amount, payment_status="completed", transaction_id=transaction_id, bus=booking_obj.bus)
+            
+            booking_obj.payment = payment_obj
+            booking_obj.booking_status = "booked"
+            booking_obj.save()
+            return Response({'success':True,'message':"Successfully payment"},status=200)
+            
+            
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)
 
 
 

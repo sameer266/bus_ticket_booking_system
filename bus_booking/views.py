@@ -6,7 +6,7 @@ from custom_user.models import CustomUser,UserOtp,System
 from route.models import Route,Schedule,Trip,CustomerReview
 from bus.models import Bus,BusReservation,BusLayout,Driver,Staff,VechicleType
 from booking.models import Commission,Booking,BusReservationBooking
-
+from django.shortcuts import get_object_or_404
 from custom_user.serializers import CustomUserSerializer,SystemSerializer
 from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerilizer,BusReservationSerializer,VechicleTypeSerializer,BusReservationBookingSerializer
 
@@ -119,6 +119,19 @@ class ForgetPassword(APIView):
             return Response({"success": False, "error": str(e)})
 
 
+# ========= Reset password ======
+class ResetPassword(APIView):
+    
+    def post(self,request):
+        try:
+            password=request.data.get('password')
+            user=request.user
+            user.set_password(password)
+            user.save()
+            
+        except Exception as e:
+            return Response({"success":True,'error':str(e)})
+
 # ========= Register user ==========
 # ==== Otp Send ========
 class SendOtp(APIView):
@@ -142,27 +155,35 @@ class SendOtp(APIView):
 # ==== Verify OTP ====
 class VerifyOtp(APIView):
     def post(self, request):
-        print(request.data)
-        otp = request.data.get('otp')
-     
-        if not otp:
-            return Response({"success": False, "error": " OTP are required"}, status=400)
+        try:
+            otp = request.data.get('otp')
+            if not otp:
+                return Response({"success": False, "error": "OTP is required"}, status=400)
 
-        otp_obj = UserOtp.objects.filter(otp=otp).first()
-        print("Full_name",otp_obj)
-        if not otp_obj:
-            return Response({"success": False, "error": "Invalid OTP"}, status=400)
-        
-        user, created = CustomUser.objects.get_or_create(phone=otp_obj.phone, full_name=otp_obj.temp_name,role='customer')
-        otp_obj.user=user
-        otp_obj.save()
-        
-        if created:
-            print(user)
-            
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        return Response({"success": True, "message": "OTP verified successfully", "phone": otp_obj.phone,"full_name":otp_obj.temp_name, "access": access_token,"refresh":str(refresh)},status=200)
+            otp_obj = UserOtp.objects.filter(otp=otp).first()
+            if not otp_obj:
+                return Response({"success": False, "error": "Invalid OTP"}, status=400)
+
+            user, created = CustomUser.objects.get_or_create(
+                phone=otp_obj.phone,
+                full_name= otp_obj.temp_name, 
+                role="customer"
+            )
+            otp_obj.user = user
+            otp_obj.save()
+
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "success": True,
+                "message": "OTP verified successfully",
+                "phone": otp_obj.phone,
+                "full_name": otp_obj.temp_name,
+                "access": str(refresh.access_token),
+                "refresh": str(refresh)
+            }, status=200)
+
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
 
 
 # ==== Register User (Set Password) ====
@@ -312,7 +333,7 @@ class AllBuses(APIView):
 
 # ====== show all  buses of one route ==========
 class RoutesBusList(APIView):
-    def get(self,request,*args,**kwargs):
+    def get(self,*args,**kwargs):
         try:
             route_id=kwargs.get('id')
             route_obj=Route.objects.get(id=route_id)
@@ -334,7 +355,30 @@ class VechicleTypeList(APIView):
             return Response({"success":True,"data":serializer.data},status=200)
         except Exception as e:
             return Response({"success":False,"error":str(e)},status=400)
-    
+
+class VehicleOneDetails(APIView):
+    def get(self, request, *args, **kwargs):
+        try:
+            id = kwargs.get('id')
+            bus_reservation = get_object_or_404(BusReservation, id=id)
+            data = {
+                'name': bus_reservation.name,
+                'type': bus_reservation.type.name,
+                'image': request.build_absolute_uri(bus_reservation.image.url) if bus_reservation.image else None,
+                'vehicle_number': bus_reservation.vechicle_number,
+                'vehicle_model': bus_reservation.vechicle_model,
+                'color': bus_reservation.color,
+                'driver': getattr(bus_reservation.driver, 'full_name', None),
+                'staff': getattr(bus_reservation.staff, 'full_name', None),
+                'total_seats': bus_reservation.total_seats,
+                'price': bus_reservation.price,
+            }
+
+            return Response({'success': True, 'data': data}, status=200)
+
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=400)
+        
     
 # ========= Bus Reservation =============
 class BusReservationList(APIView):
@@ -373,6 +417,7 @@ class  BusReeservationBookingApiView(APIView):
             start_date = datetime.strptime(start_date_str, "%Y/%m/%d").date()
             
             BusReservationBooking.objects.create(user=user,bus_reserve=busReserve_obj,source=source,destination=destination,date=date,start_date=start_date)
+            
             return Response({'success':True,'message':'Bus reserved successfully'},status=200)
         
         except Exception as e:

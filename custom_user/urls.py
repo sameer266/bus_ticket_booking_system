@@ -24,6 +24,10 @@ urlpatterns = [
 
     # ========= User's Booking process ========
     path('user_booking_add/',views.UserBookingPaymentView.as_view()),
+    
+    # ========== USer payment ===============
+    path('user_payment/',views.UserPayment.as_view()),
+
 
     # ======== User's Payment History =========
     path('payment_history/', views.PaymentHistoryView.as_view()),

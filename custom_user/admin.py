@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from custom_user.models import CustomUser, UserOtp,System
 from bus.models import Bus, BusAdmin, Driver, Staff, TicketCounter, BusReservation, BusLayout, VechicleType
-from booking.models import Booking, Seat, Payment, Commission, Rate,BusReservationBooking
+from booking.models import Booking, Payment, Commission, Rate,BusReservationBooking
 from route.models import Route, Schedule, Trip, CustomerReview
 
 # ========================= Custom User =========================
@@ -28,14 +28,14 @@ admin.site.register(CustomUser, CustomUserAdmin)
 
 # ========================= User OTP =========================
 class UserOtpAdmin(admin.ModelAdmin):
-    list_display = ('user', 'phone', 'otp', 'created_at')
+    list_display = ('user', 'phone', 'otp','temp_name', 'created_at')
     search_fields = ('user__email', 'phone')
 
 admin.site.register(UserOtp, UserOtpAdmin)
 
 # ========================= Ticket Counter =========================
 class TicketCounterAdmin(admin.ModelAdmin):
-    list_display = ('user', 'counter_name', 'location', 'created_at')
+    list_display = ('user', 'counter_name', 'location','bank_account','bank_name','created_at')
     search_fields = ('counter_name', 'location')
     list_filter = ('location',)
 
@@ -94,13 +94,13 @@ class BusReservationBookingAdmin(admin.ModelAdmin):
 admin.site.register(BusReservationBooking,BusReservationBookingAdmin)
     
     
-# ========================= Seat =========================
-class SeatAdmin(admin.ModelAdmin):
-    list_display = ('id','seat_number', 'status', 'bus')
-    list_filter = ('status', 'bus')
-    search_fields = ('seat_number', 'bus__bus_number')
+# # ========================= Seat =========================
+# class SeatAdmin(admin.ModelAdmin):
+#     list_display = ('id','seat_number', 'status', 'bus')
+#     list_filter = ('status', 'bus')
+#     search_fields = ('seat_number', 'bus__bus_number')
 
-admin.site.register(Seat, SeatAdmin)
+# admin.site.register(Seat, SeatAdmin)
 
 # ========================= Booking =========================
 class BookingAdmin(admin.ModelAdmin):
@@ -138,7 +138,7 @@ admin.site.register(Trip, TripAdmin)
 
 # ========================= Payment =========================
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = (  'price', 'payment_method','commission_deducted', 'created_at')
+    list_display = ( 'user','price', 'payment_status','payment_method','commission_deducted', 'created_at')
     search_fields = ('user__email', 'schedule__bus__bus_number', 'schedule__route__source', 'schedule__route__destination')
     list_filter = ('created_at',)
 

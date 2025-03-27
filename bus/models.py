@@ -24,6 +24,19 @@ class TicketCounter(models.Model):
         related_name="ticket_counter"
     )
     counter_name = models.CharField(max_length=200, default="None", help_text="Name of Ticket Counter")
+    bank_account = models.CharField(
+        max_length=50, 
+        null=True, 
+        blank=True, 
+        help_text="Bank account number for payments"
+    )
+    bank_name = models.CharField(
+        max_length=100, 
+        null=True, 
+        blank=True, 
+        help_text="Name of the bank"
+    )
+    
     location = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
@@ -37,7 +50,7 @@ class Driver(models.Model):
     Represents a driver with their profile and license details.
     """
     full_name = models.CharField(max_length=255, null=False)
-    driver_profile = models.ImageField(upload_to="driver_profile/")
+    driver_profile = models.ImageField(upload_to="driver_profile/",null=True,blank=True)
     license_image = models.ImageField(upload_to="driver_license/")
     phone_number = models.CharField(max_length=10, unique=True, null=False)
 

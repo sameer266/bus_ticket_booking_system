@@ -43,6 +43,7 @@ urlpatterns = [
     path('api/logout/',views.LogoutView.as_view()),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'), 
     path('api/forget_password/',views.ForgetPassword.as_view()),
+    path('api/reset_password/',views.ResetPassword.as_view()),
     
     
     path('api/send_otp/',views.SendOtp.as_view()),
@@ -65,8 +66,10 @@ urlpatterns = [
     
     #======== Vechicle Type and Reservation  ============
     path('api/all_vechicle_type/',views.VechicleTypeList.as_view()),
-    path('api/vechicle_reservation/<id>/',views.BusReservationList.as_view()),
+    path('api/vechicle_reservation/<id>/',views.BusReservationList.as_view()), #List all vehicle  one type reservation list
+    path('api/vechicle_detail/<int:id>/',views.VehicleOneDetails.as_view()),
     path('api/vechicle_reservation_create/',views.BusReeservationBookingApiView.as_view()),
+
     
     
      # ==== Bus Layout ==========

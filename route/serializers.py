@@ -3,7 +3,7 @@ from .models import Route, Schedule, Trip, CustomerReview
 from custom_user.models import CustomUser
 from bus.models import Bus, TicketCounter, Driver, Staff, BusReservation, BusLayout, VechicleType
 from rest_framework import serializers
-from booking.models import Booking, Seat, Payment, Commission, Rate,BusReservationBooking
+from booking.models import Booking, Payment, Commission, Rate,BusReservationBooking
 
 # ==========================
 # Route and Schedule Serializers
@@ -124,11 +124,11 @@ class BusReservationBookingSerializer(serializers.ModelSerializer):
 # Booking and Seat Serializers
 # ==========================
 
-# Serializer for Seat model
-class SeatSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Seat
-        fields = '__all__'
+# # Serializer for Seat model
+# class SeatSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Seat
+#         fields = '__all__'
 
 # Serializer for Booking model
 class BookingSerializer(serializers.ModelSerializer):

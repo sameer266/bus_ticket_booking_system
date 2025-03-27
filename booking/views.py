@@ -176,7 +176,7 @@ class TicketCounterView(APIView):
                 phone=phone,
                 gender=gender
             )
-            password=f"counter@{phone}"
+            password=f"counter@123"
             user.set_password(password)
             user.save()
 

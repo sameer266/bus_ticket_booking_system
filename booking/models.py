@@ -13,27 +13,27 @@ from .tasks import release_unpaid_seat
 # Models for Bus Seat Booking System
 # ==========================
 
-# ===== Seat Model =====
-class Seat(models.Model):
-    """
-    Represents a seat in a bus.
-    """
-    STATUS_CHOICES = (
-        ('available', 'Available'),
-        ('booked', 'Booked')
-    )
+# # ===== Seat Model =====
+# class Seat(models.Model):
+#     """
+#     Represents a seat in a bus.
+#     """
+#     STATUS_CHOICES = (
+#         ('available', 'Available'),
+#         ('booked', 'Booked')
+#     )
 
-    bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE, help_text="Bus to which the seat belongs",
-                            null=True,blank=True)  # Add this field
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="booked")
-    seat_number = models.CharField(max_length=10, help_text="Seat number in the format 'A1'")
+#     bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE, help_text="Bus to which the seat belongs",
+#                             null=True,blank=True)  # Add this field
+#     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="booked")
+#     seat_number = models.CharField(max_length=10, help_text="Seat number in the format 'A1'")
     
   
-    class Meta:
-        unique_together = ('seat_number', 'bus')  # Ensure unique seat numbers per bus
+#     class Meta:
+#         unique_together = ('seat_number', 'bus')  # Ensure unique seat numbers per bus
 
-    def __str__(self):
-        return f"Seat: {self.seat_number} | Status: {self.status}"
+#     def __str__(self):
+#         return f"Seat: {self.seat_number} | Status: {self.status}"
     
     
 
@@ -54,7 +54,7 @@ class Booking(models.Model):
         on_delete=models.CASCADE,
         limit_choices_to={'role': 'customer'}
     )
-    payment=models.ForeignKey('booking.Payment',on_delete=models.Case,null=True,blank=True)
+    payment=models.ForeignKey('booking.Payment',on_delete=models.CASCADE,null=True,blank=True)
     seat = models.JSONField(default=list)
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='booking',null=True,blank=True)
     schedule = models.ForeignKey(
@@ -77,13 +77,6 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
     """
     Signal to update the seat status and assign a schedule when a booking is created or updated.
     """
-#     # Assign the schedule based on the bus
-#     if instance.bus_reserve:
-#         commission_obj = Commission.objects.create(
-# #             bus_reserve=instance,
-# #             commission_type='bus_reservation',
-# #             total_earnings=instance.price,
-# #             total_commission=Decimal(0)
     if instance.bus:
         try:
             schedule = Schedule.objects.get(bus=instance.bus)
@@ -91,21 +84,39 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
             instance.__class__.objects.filter(pk=instance.pk).update(schedule=schedule)
         except Schedule.DoesNotExist:
             print(f"Schedule not found for bus: {instance.bus}")
-    if instance.booking_status=="booked":
-        pass
+    
+    # Update seat statuses based on booking status
+    if instance.booking_status == "booked":
+       for seat_id in instance.seat:
+                try:
+                    bus_layout = BusLayout.objects.get(bus=instance.bus)
+                    bus_layout.update_seat_status(seat_id, 'booked')
+                except BusLayout.DoesNotExist:
+                    pass
+           
+    elif instance.booking_status == "canceled":
+        for seat_id in instance.seat:
 
-        # # Update seat status based on booking status
-        # if instance.booking_status in ['booked', 'pending']:
-        #     instance.seat.status = 'booked'
-        #     instance.seat.save()
-
-        #     # Schedule Celery task to release unpaid seat after 10 minutes
-        #     # release_unpaid_seat.apply_async((instance.id,), countdown=600)
-        # else:
-        #     instance.seat.status = 'available'
-        #     instance.seat.save()
-
-
+                try:
+                    bus_layout = BusLayout.objects.get(bus=instance.bus)
+                    bus_layout.update_seat_status(seat_id, 'available')
+                except BusLayout.DoesNotExist:
+                    pass
+           
+    elif instance.booking_status == "pending":
+        for seat_id in instance.seat:
+                try:
+                    bus_layout = BusLayout.objects.get(bus=instance.bus)
+                    bus_layout.update_seat_status(seat_id, 'booked')
+                except BusLayout.DoesNotExist:
+                    pass
+                
+                # Schedule task to release seat after 15 minutes if payment not completed
+                # release_unpaid_seat.apply_async(
+                #     args=[instance.id, seat_id],
+                #     countdown=900  # 15 minutes
+                # )
+           
 
 
 # ======== Bus Reservatiom Booking ==========
@@ -177,12 +188,18 @@ class Payment(models.Model):
     METHODS_CHOICES=(
         ('khalti','Khalti'),
         ('esewa','Esewa')
-        
+    )
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed')
     )
     user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE,limit_choices_to={'role':'customer'},null=True,blank=True)
     bus=models.ForeignKey('bus.Bus',on_delete=models.CASCADE,null=True,blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of paid")
-    payment_method=models.CharField(max_length=20,choices=METHODS_CHOICES,null=True,blank=True)
+    payment_method=models.CharField(max_length=20,choices=METHODS_CHOICES,default="khalti")
+    payment_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    transaction_id = models.CharField(max_length=100, null=True, blank=True)
     commission_deducted = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -190,10 +207,9 @@ class Payment(models.Model):
         help_text="Commission deducted from payment"
     )
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-
+    
     def __str__(self):
-        return f"Payment in  {self.payment_method} for Rs {self.price} "
-
+        return f"Payment #{self.id} - {self.price} - {self.payment_status}"
 
 
 # ===== Helper: Prevent Recursion in Signals =====
@@ -210,48 +226,61 @@ def update_status_booking_and_calculate_commission_on_payment(sender, instance, 
     """
     Signal to update booking status and calculate commission when a payment is saved.
     """
-    # Update booking status to 'booked' if payment is made
-    if created and instance.price > 0:
-        try:
-            booking = Booking.objects.get(
-                user=instance.user,
-                bus=instance.bus,
-                booking_status='pending'
-            )
-          
-            booking.booking_status = 'booked'
-            booking.save()
-        except Booking.DoesNotExist:
-            pass
-
-    # Calculate commission for the payment
     if is_post_save_signal(instance):
         return
-
-    instance._is_post_save_signal = True
-
-    try:
-        rate = Rate.objects.first()
-        if rate:
-            commission, created = Commission.objects.get_or_create(bus=instance.bus)
-            price = Decimal(instance.price)
-
-            # Calculate the commission amount
-            commission_amount = Decimal(commission.calculate_commission(price))
-
-            # Update commission and earnings
-            commission.total_commission = Decimal(str(commission.total_commission)) + commission_amount
-            commission.total_earnings = Decimal(str(commission.total_earnings)) + price
-
-            # Update payment with deducted commission
-            instance.commission_deducted = commission_amount
-            commission.save()
-            instance.save(update_fields=['commission_deducted'])
-    finally:
-        del instance._is_post_save_signal
-        
-        
     
+    # Only process if the payment status is completed
+    if instance.payment_status == 'completed':
+        try:
+            # # Find all pending bookings for this user and bus
+            bookings = Booking.objects.filter(
+                user=instance.user,
+                bus=instance.bus,
+                booking_status='pending',
+                payment__isnull=True  # Only bookings without a payment
+            )
+            
+            if bookings.exists():
+                booking = bookings.order_by('-booked_at').first()
+                booking.payment = instance
+                booking.booking_status = 'booked'
+                booking.save()
+                
+                # Calculate commission
+                try:
+                    rate = Rate.objects.first()
+                    
+                    rate_value = rate.rate
+                    
+                    commission_amount = (instance.price * rate_value) / Decimal('100.00')
+                    
+                    # Create or update commission record
+                    commission, created = Commission.objects.get_or_create(
+                        bus=instance.bus,
+                        defaults={
+                            'commission_type': 'bus',
+                            'total_earnings': instance.price,
+                            'total_commission': commission_amount
+                        }
+                    )
+                    
+                    if not created:
+                        commission.total_earnings += instance.price
+                        commission.total_commission += commission_amount
+                        commission.save()
+                    
+                    # Update the payment with commission information
+                    instance.commission_deducted = commission_amount
+                    instance.__class__.objects.filter(pk=instance.pk).update(
+                        commission_deducted=commission_amount
+                    )
+                    
+                except Exception as e:
+                    print(f"Error calculating commission: {str(e)}")
+            
+        except Exception as e:
+            print(f"Error updating booking status: {str(e)}")
+
 
 # ===== Commission Model =====
 class Commission(models.Model):
@@ -306,7 +335,9 @@ class Commission(models.Model):
         return Decimal(0)
 
     def __str__(self):
-        return f"Commission "
+        commission_type_str = "Bus" if self.bus else "Bus Reservation"
+        amount = self.total_commission
+        return f"Commission for {commission_type_str}: {amount}"
 
 
 # ===== BusLayout Model =====
@@ -321,18 +352,54 @@ class BusLayout(models.Model):
         help_text="Bus associated with this layout",
         null=True,
         blank=True
-        
     )
     rows = models.PositiveIntegerField()
     column = models.PositiveIntegerField()
     aisle_column = models.PositiveIntegerField()
     layout_data = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
+    def update_seat_status(self, seat_number, status):
+        """
+        Update the status of a specific seat in the layout.
+        
+        Args:
+            seat_number: The seat number to update (e.g., 'A1')
+            status: The new status ('available' or 'booked')
+        
+        Returns:
+            bool: True if the seat was updated, False otherwise
+        """
+        if not self.layout_data:
+            return False
+            
+        for row_idx, row in enumerate(self.layout_data):
+            for seat_idx, seat in enumerate(row):
+                if isinstance(seat, dict) and seat.get('seat') == seat_number:
+                    self.layout_data[row_idx][seat_idx]['status'] = status
+                    self.save()
+                    return True
+        return False
+    
+    def get_available_seats(self):
+        """
+        Get a list of all available seats in the layout.
+        
+        Returns:
+            list: List of available seat numbers
+        """
+        available_seats = []
+        if not self.layout_data:
+            return available_seats
+            
+        for row in self.layout_data:
+            for seat in row:
+                if isinstance(seat, dict) and seat.get('status') == 'available':
+                    available_seats.append(seat.get('seat'))
+        return available_seats
+    
     def __str__(self):
-        return f"{self.bus} ({self.created_at})"
-
+        return f"Layout for {self.bus} - {self.rows}x{self.column}"
+    
     class Meta:
         ordering = ['-created_at']
-
-
