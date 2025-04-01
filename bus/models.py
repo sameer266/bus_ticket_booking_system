@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.db import transaction
 
 # Importing related models
-from custom_user.models import CustomUser
+from custom_user.models import CustomUser,TransportationCompany
 from route.models import Route, Trip
 
 
@@ -49,6 +49,8 @@ class Driver(models.Model):
     """
     Represents a driver with their profile and license details.
     """
+    transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
+    ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
     full_name = models.CharField(max_length=255, null=False)
     driver_profile = models.ImageField(upload_to="driver_profile/",null=True,blank=True)
     license_image = models.ImageField(upload_to="driver_license/")
@@ -73,6 +75,8 @@ class Staff(models.Model):
     """
     Represents a staff member with optional profile and staff card images.
     """
+    transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
+    ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.Case,null=True,blank=False)
     full_name = models.CharField(max_length=255, null=False)
     staff_profile = models.ImageField(upload_to="staff_profile/", null=True, blank=True)
     staff_card = models.ImageField(upload_to="staff_card/", null=True, blank=True)
@@ -109,7 +113,8 @@ class Bus(models.Model):
         ("fan", "Fan"),
         ("wifi", "WiFi"),
     )
-
+    transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
+    ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
     driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, null=True, blank=True)
     route = models.ForeignKey(Route, on_delete=models.CASCADE, null=True, blank=True)
@@ -120,7 +125,7 @@ class Bus(models.Model):
     total_seats = models.PositiveIntegerField(default=35)
     available_seats = models.PositiveIntegerField(default=35)
     is_active = models.BooleanField(default=True, help_text="Indicates if the bus is active")
-    is_running = models.BooleanField(default=False, help_text="Indicates if the bus is currently running")
+   
 
         
     def save(self, *args, **kwargs):
@@ -308,17 +313,28 @@ class BusReservation(models.Model):
     Represents a reservation for a bus or vehicle.
     """
     
+    CHOICES=(
+        ('booked','Booked'),
+        ('cancelled','Cancelled'),
+        ('pending','Pending')
+    )
+    transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
+    ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
+    
     name=models.CharField(max_length=100,default="None")
     type = models.ForeignKey(VechicleType, on_delete=models.CASCADE, null=True, blank=True)
     vechicle_number = models.CharField(max_length=100, default="None")
     vechicle_model=models.CharField(max_length=100,default="None")
     image = models.ImageField(upload_to="vechicle_images/",null=True, blank=True)
+    document=models.ImageField(upload_to="vechicle_document/",null=True,blank=True)
     color=models.CharField(max_length=100,null=True,blank=True)
     driver = models.ForeignKey(Driver, on_delete=models.CASCADE, null=True, blank=True)
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, null=True, blank=True)
     total_seats = models.PositiveIntegerField(default=35)
     price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    status=models.CharField(max_length=20,choices=CHOICES,default="pending")
     created_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
+    
    
 
     def delete(self, *args, **kwargs):

@@ -4,17 +4,17 @@ from datetime import datetime
 import json
 from rest_framework.viewsets import ModelViewSet
 
-from custom_user.models import CustomUser, UserOtp,System
-from route.models import Route, Schedule, Trip, CustomerReview
+from custom_user.models import CustomUser,System,TransportationCompany
+from route.models import Route, Schedule, Trip
 from bus.models import Bus, TicketCounter,Driver,Staff,BusReservation,BusLayout,VechicleType
 from booking.models import Commission, Booking,Payment,Rate,BusReservationBooking
 
 from custom_user.serializers import CustomUserSerializer,SystemSerializer
 from route.serializers import (
-    RouteSerializer, ScheduleSerializer, CustomReviewSerializer, 
-    BusScheduleSerializer, BookingSerializer, TripSerilaizer, TicketCounterSerializer,
-    BusSerializer,DriverSerializer,StaffSerializer,PaymentSerilaizer,CommissionSerilaizer,
-    RateSerializer,BusReservationSerializer,BusLayoutSerilizer,BusReservationBookingSerializer,VechicleTypeSerializer
+    RouteSerializer, ScheduleSerializer, BookingSerializer, TripSerializer, TicketCounterSerializer,
+    BusSerializer,DriverSerializer,StaffSerializer,PaymentSerializer,CommissionSerializer,
+    RateSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleReservationBookingSerializer,
+    BusLayoutSerializer
 )
 
 from rest_framework.views import APIView
@@ -53,7 +53,7 @@ class AdminDashboardData(APIView):
             booking_serializer=BookingSerializer(booking_obj,many=True)
             
             trip=Trip.objects.all()[ :8]
-            trip_serializer=TripSerilaizer(trip,many=True)
+            trip_serializer=TripSerializer(trip,many=True)
         
             return Response({'success':True,"data":data,"recent_booking":booking_serializer.data,"trip_data":trip_serializer.data},status=200)    
         
@@ -262,10 +262,18 @@ class UserListView(APIView):
 
 # ======= Driver Management =========
 class DriverListView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
     
     def get(self,request):
         try:
-            drivers = Driver.objects.all()
+            user=request.user
+            transportation_company = getattr(user, "transportation_company", None)
+            drivers=Driver.objects.none()
+            if transportation_company:
+                drivers=Driver.objects.filter(transportation_company=transportation_company)
+            else:
+                drivers = Driver.objects.all()
             serializer = DriverSerializer(drivers, many=True)
             return Response({"success": True, "data": serializer.data}, status=200) 
             
@@ -275,6 +283,9 @@ class DriverListView(APIView):
     
     def post(self,request):
         try:
+            user=request.user
+            transportation_company = getattr(user, "transportation_company", None)
+            
             full_name=request.data.get('full_name')
             driver_profile=request.FILES.get('driver_profile')
             license_image=request.FILES.get('license_image')
@@ -282,7 +293,11 @@ class DriverListView(APIView):
             if Driver.objects.filter(phone_number=phone_number).exists():
                 return Response({"success":False,"message":"Driver already exists"},status=400)
             
-            Driver.objects.create(full_name=full_name,driver_profile=driver_profile,license_image=license_image,phone_number=phone_number)
+            Driver.objects.create(full_name=full_name,
+                                  driver_profile=driver_profile,
+                                  license_image=license_image,
+                                  phone_number=phone_number,
+                                  transportation_company=transportation_company)
             return Response({"success":True,"message":"Driver added successfully"},status=200)
             
         except Exception as e:
@@ -319,9 +334,20 @@ class DriverListView(APIView):
 
 # ======== Staff managment  ==========
 class StaffListView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
     def get(self,request):
         try:
-            staff=Staff.objects.all()
+            user=request.user
+            transportation_company = getattr(user, "transportation_company", None)
+            staff=Staff.objects.none()
+            if transportation_company:
+                print(transportation_company)
+                staff=Staff.objects.filter(transportation_company=transportation_company)
+            else:
+                print("NoTicketConter")
+                staff=Staff.objects.all()
             serializer=StaffSerializer(staff,many=True)
             return Response({"success":True,"data":serializer.data},status=200)
         except Exception as e:
@@ -330,13 +356,15 @@ class StaffListView(APIView):
     
     def post(self,request):
         try:
-            print(request.data)
+            user=request.user
+            transportation_company = getattr(user, "transportation_company", None)
+            
             full_name=request.data.get('full_name')
             staff_profile=request.FILES.get('staff_profile')
             phone_number=request.data.get('phone_number')
             if Staff.objects.filter(phone_number=phone_number).exists():
                 return Response({"success":False,"message":"Staff already exists"},status=400)
-            Staff.objects.create(full_name=full_name,staff_profile=staff_profile,phone_number=phone_number)
+            Staff.objects.create(full_name=full_name,staff_profile=staff_profile,phone_number=phone_number,transportation_company=transportation_company)
             return Response({"success":True,"message":"Staff added successfully"},status=200)
         except Exception as e:
             return Response({'success':True,'error':str(e)},status=400)
@@ -368,55 +396,50 @@ class StaffListView(APIView):
             return Response({'success':True,'error':str(e)},status=400)
      
 # ========= Bus Management ========
-
 class BusListView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         try:
-            # bus_layout=BusLayout.objects.all()
-            # seat_layout_serializer=BusLayoutSerilizer(bus_layout,many=True)
-            
-            # Get all buses
-            bus = Bus.objects.all()
+            user = request.user
+            transportation_company = getattr(user, "transportation_company", None)
+
+            # Filter buses based on ticket counter
+            buses = Bus.objects.filter(transportation_company=transportation_company) if transportation_company else Bus.objects.all()
 
             # Get all routes
-            route = Route.objects.all()
+            routes = Route.objects.all()
 
             # Get drivers not assigned to any bus
-            assigned_driver_ids = Bus.objects.filter(driver__isnull=False).values_list('driver__id', flat=True)
+            assigned_driver_ids = Bus.objects.filter(driver__isnull=False).values_list("driver__id", flat=True)
             unassigned_drivers = Driver.objects.exclude(id__in=assigned_driver_ids)
 
             # Get staff not assigned to any bus
-            assigned_staff_ids = Bus.objects.filter(staff__isnull=False).values_list('staff__id', flat=True)
+            assigned_staff_ids = Bus.objects.filter(staff__isnull=False).values_list("staff__id", flat=True)
             unassigned_staff = Staff.objects.exclude(id__in=assigned_staff_ids)
 
-            # Serialize the data
-            route_serializer = RouteSerializer(route, many=True)
-            driver_serializer = DriverSerializer(unassigned_drivers, many=True)
-            staff_serializer = StaffSerializer(unassigned_staff, many=True)
-            bus_serializer = BusSerializer(bus, many=True)
-
-            # Return the response
-            return Response({
+            # Serialize data
+            response_data = {
                 "success": True,
-                "data": bus_serializer.data,
-                "all_route": route_serializer.data,
-                "all_driver": driver_serializer.data,
-                "all_staff": staff_serializer.data,
-                # "all_layout":seat_layout_serializer.data
-            }, status=status.HTTP_200_OK)
+                "data": BusSerializer(buses, many=True).data,
+                "all_routes": RouteSerializer(routes, many=True).data,
+                "all_drivers": DriverSerializer(unassigned_drivers, many=True).data,
+                "all_staff": StaffSerializer(unassigned_staff, many=True).data,
+            }
 
+            return Response(response_data, status=status.HTTP_200_OK)
+        
         except Exception as e:
-            return Response({
-                "success": False,
-                "error": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"success": False, "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def post(self, request):
         try:
             print(request.data)
+            
+            # Extract and validate transportation_company
+            user = request.user
+            transportation_company = getattr(user, "transportation_company", None)
             
             # Extract and validate driver
             driver_id = request.data.get('driver')
@@ -463,7 +486,7 @@ class BusListView(APIView):
             rows = layout.get('rows')
             columns = layout.get('columns')
             layout_data = layout.get('seatLayout')
-            aisleAfterColumn=layout.get('aisleAfterColumn')
+            aisleAfterColumn = layout.get('aisleAfterColumn')
             
             # Extract total seats
             total_seats_list = request.data.getlist('total_seats')
@@ -476,7 +499,7 @@ class BusListView(APIView):
             is_active = str_to_bool(request.data.get('is_active'))
             is_running = str_to_bool(request.data.get('is_running'))
             
-            # Create bus object
+            # Create bus object with transportation_company
             bus = Bus.objects.create(
                 driver=driver_obj,
                 staff=staff_obj,
@@ -488,11 +511,12 @@ class BusListView(APIView):
                 available_seats=total_seats,
                 route=route_obj,
                 is_active=is_active,
-                is_running=is_running
+                is_running=is_running,
+                transportation_company=transportation_company  
             )
             
             # Create Bus layout
-            BusLayout.objects.create(bus=bus, rows=rows, column=columns, layout_data=layout_data,aisle_column=aisleAfterColumn)
+            BusLayout.objects.create(bus=bus, rows=rows, column=columns, layout_data=layout_data, aisle_column=aisleAfterColumn)
             
             # Serialize response
             bus_serializer = BusSerializer(bus)
@@ -607,13 +631,21 @@ class ScheduleView(APIView):
 
     def get(self, request):
         try:
+            user = request.user
+            transportation_company = getattr(user, "transportation_company", None)
+            schedules=Schedule.objects.none()
+            if transportation_company:
+                schedules=Schedule.objects.filter(transportation_company=transportation_company)
+            else:
+                schedules = Schedule.objects.all()
             # Fetch all schedules
             all_buses = Bus.objects.all()
+            print(all_buses)
             assigned_bus_ids = Schedule.objects.values_list('bus_id', flat=True).distinct()
             unassigned_buses = all_buses.exclude(id__in=assigned_bus_ids)
             bus_serializer = BusSerializer(unassigned_buses, many=True)
             
-            schedules = Schedule.objects.all()
+            
             routes = Route.objects.all()
             schedule_serializer = ScheduleSerializer(schedules, many=True)
             route_serializer = RouteSerializer(routes, many=True)
@@ -636,6 +668,9 @@ class ScheduleView(APIView):
     
     def post(self,request):
         try:
+            user = request.user
+            transportation_company = getattr(user, "transportation_company", None)
+            
             route_id=request.data.get('route')
             route_obj=Route.objects.get(id=route_id)
             
@@ -645,7 +680,7 @@ class ScheduleView(APIView):
             arrival_time=request.data.get('arrival_time')
             price= request.data.get('price')
             
-            Schedule.objects.create(bus=bus_obj,route=route_obj,departure_time=departure,arrival_time=arrival_time,price=price)
+            Schedule.objects.create(bus=bus_obj,route=route_obj,departure_time=departure,arrival_time=arrival_time,price=price,transportation_company=transportation_company)
             return Response({"success":True,"message":"Schedule added successfully"})
         except Exception as e:
             return Response({'success':True,'error':str(e)},status=400)
@@ -691,7 +726,33 @@ class ScheduleView(APIView):
         
 
 
-
+# ======= Bus  details schedule =========
+class BusDetailsScheduleApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request,*args,**kwargs):
+        try:
+            bus_id=kwargs.get('id')
+            bus_obj=Bus.objects.get(id=bus_id)
+            serializer_bus=BusSerializer(bus_obj)
+            
+            
+            layout_obj=BusLayout.objects.get(bus=bus_obj)
+            schedule_obj=Schedule.objects.get(bus=bus_obj)
+            booked_seat=bus_obj.total_seats-bus_obj.available_seats
+            total_amount=schedule_obj.price*booked_seat
+            serializer_layout=BusLayoutSerializer(layout_obj)
+            
+            booking=Booking.objects.filter(bus=bus_obj)
+            serializer_booking=BookingSerializer(booking,many=True)
+            
+            return Response({'success':True,'bus_data':serializer_bus.data,"bus_layout":serializer_layout.data,"total_amount":total_amount,"booking_data":serializer_booking.data},status=200)
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)
+        
+        
+    
 # =========== Routes Manangemnet ========
 
 class RouteApiView(APIView):
@@ -755,6 +816,26 @@ class RouteApiView(APIView):
             return Response({'success':False,'error':str(e)},status=400)
 
 
+
+# ======= Bus List of one Route ========
+class RouteBusListAPiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request,*args,**kwargs):
+        try:
+            route_id=kwargs.get('id')
+            route=Route.objects.get(id=route_id)
+            bus_obj=Bus.objects.filter(schedule__route_id=route_id).distinct()
+            total_bus=Bus.objects.filter(schedule__route_id=route_id).distinct().count()
+            source=route.source
+            destination=route.destination
+            
+            serializer=BusSerializer(bus_obj,many=True)
+            return Response({'success':True,'data':serializer.data,"total_bus":total_bus,"source":source,"destination":destination},status=200)
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)
+        
 # ========== Booking Management  =================
 class BookingAPiView(APIView):
     authentication_classes=[JWTAuthentication]
@@ -763,7 +844,7 @@ class BookingAPiView(APIView):
     def get(self,request):
         try:
             bus_reserve=BusReservationBooking.objects.all().order_by('-created_at')
-            serializer_bus=BusReservationBookingSerializer(bus_reserve,many=True)
+            serializer_bus=VechicleReservationBookingSerializer(bus_reserve,many=True)
             
             booking=Booking.objects.all().order_by('-booked_at')
             serializer=BookingSerializer(booking,many=True)
@@ -786,7 +867,35 @@ class BookingAPiView(APIView):
         except Exception as e:
             return Response({'success':True,'error':str(e)},status=400)
         
+
+# ======= Bookinglist of one User ==============
+class BookingScheduleOneUserDetails(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request,*args,**kwargs):
+        try:
+            booking_id=kwargs.get('id')
+            booking_obj=Booking.objects.get(id=booking_id)
+            print(booking_id)
+            count=len(booking_obj.seat)
+            total_price=count*booking_obj.schedule.price
+            data = {    'user':booking_obj.user.full_name,
+                        'user_phone':booking_obj.user.phone,
+                        'bus_number': booking_obj.bus.bus_number,
+                        'source': booking_obj.bus.route.source,
+                        'destination': booking_obj.bus.route.destination,
+                        'booking_status': booking_obj.booking_status,
+                        'seat': booking_obj.seat,
+                        'booked_at': booking_obj.booked_at,
+                        'total_price': total_price,
+                        'total_seat': count,
+                        
+            }
+            return Response({'success':True,'data':data},status=200)
         
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)
 
 # ======================
 # Vehicle Reservation
@@ -798,8 +907,13 @@ class VechicleReservationView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request):
         try:
-            # Fetch all reservations
-            bus_reserve = BusReservation.objects.all()
+            user=request.user
+            transportation_company=getattr(user,'transportation_company',None)
+            bus_reserve = BusReservation.objects.none()
+            if transportation_company:
+                bus_reserve=BusReservation.objects.filter(transportation_company)
+            else:
+                bus_reserve = BusReservation.objects.all()
             serializer = BusReservationSerializer(bus_reserve, many=True)
 
             # Fetch drivers not assigned to any reservation
@@ -827,6 +941,8 @@ class VechicleReservationView(APIView):
     def post(self, request):
         try:
             print(request.data)
+            user=request.user
+            transportation_company=getattr(user,'transportation_company',None)
             name = request.data.get('name')
             type_name = request.data.get('type')
             vechicle_number = request.data.get('vehicle_number')
@@ -852,7 +968,8 @@ class VechicleReservationView(APIView):
                 driver=driver_obj,
                 staff=staff_obj,
                 total_seats=total_seats,
-                price=price
+                price=price,
+                transportation_company=transportation_company
             )
 
             serializer = BusReservationSerializer(reservation)
@@ -935,9 +1052,9 @@ class PaymentApiView(APIView):
     def get(self, request):
         try:
             payment = Payment.objects.all().order_by('-created_at')
-            serializer_payment = PaymentSerilaizer(payment, many=True)
+            serializer_payment = PaymentSerializer(payment, many=True)
             commission = Commission.objects.all()
-            serializer_commission = CommissionSerilaizer(commission, many=True)
+            serializer_commission = CommissionSerializer(commission, many=True)
             rate = Rate.objects.first()
             serializer_rate = RateSerializer(rate)
             

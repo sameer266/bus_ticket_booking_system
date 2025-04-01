@@ -64,12 +64,18 @@ urlpatterns = [
     path('api/all_buses/',views.AllBuses.as_view()),
     path('api/routes_all_buses/<int:id>/',views.RoutesBusList.as_view()),
     
+ 
+    
     #======== Vechicle Type and Reservation  ============
-    path('api/all_vechicle_type/',views.VechicleTypeList.as_view()),
-    path('api/vechicle_reservation/<id>/',views.BusReservationList.as_view()), #List all vehicle  one type reservation list
+    path('api/vechicle_types/',views.VechicleTypeList.as_view()),
+    path('api/vechicle_list/type/<id>/',views.VechicleReservationList.as_view()), #List all vehicle  one type reservation list
     path('api/vechicle_detail/<int:id>/',views.VehicleOneDetails.as_view()),
-    path('api/vechicle_reservation_create/',views.BusReeservationBookingApiView.as_view()),
-
+    path('api/vechicle_reservation_create/',views.VechicleReeservationBookingApiView.as_view()),
+    
+#============ For Mobile App api ====================
+#  One User Vechcile Reservation and Seat Booking List
+    path('api/vechicle_reservation_booking_list/',views.UserVechicleReservationBookingListApiView.as_view()),
+    path('api/bus_seat_booking_list/',views.UserSeatBookingListApiView.as_view()),
     
     
      # ==== Bus Layout ==========

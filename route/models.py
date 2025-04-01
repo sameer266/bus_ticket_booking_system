@@ -83,12 +83,20 @@ class Schedule(models.Model):
     """
     Represents a schedule for a bus on a specific route with departure and arrival times.
     """
+    CHOICES=(
+        ("upcoming","Upcoming"),
+        ("ongoing","Ongoing"),
+        ("finished","Finished")
+    )
+    transportation_company=models.ForeignKey('custom_user.TransportationCompany',on_delete=models.CASCADE,null=True,blank=True)
+    ticket_counter=models.ForeignKey('bus.TicketCounter',on_delete=models.CASCADE,null=True,blank=True)
     bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE)
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
     departure_time = models.DateTimeField(null=True, blank=True, help_text="Time when bus starts")
     arrival_time = models.DateTimeField(null=True, blank=True, help_text="Expected arrival time")
     date = models.DateTimeField(null=True, blank=True, help_text="Date and time of the journey (Y-M-D H:M:S)", editable=False)
     price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Ticket price")
+    status=models.CharField(max_length=20,null=True,blank=True)
 
     def save(self, *args, **kwargs):
         """
@@ -120,7 +128,7 @@ class Schedule(models.Model):
         super().delete(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.bus.bus_number} | {self.route.source} to {self.route.destination} at {self.date.strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"{self.bus.bus_number} | {self.route.source} to {self.route.destination} at {self.date.strftime('%Y-%m-%d %H:%M:%S') } {self.status}"
 
 
 @receiver(post_save, sender=Schedule)

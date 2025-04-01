@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from custom_user.models import CustomUser, UserOtp,System
+from custom_user.models import CustomUser, UserOtp,System,TransportationCompany
 from bus.models import Bus, BusAdmin, Driver, Staff, TicketCounter, BusReservation, BusLayout, VechicleType
 from booking.models import Booking, Payment, Commission, Rate,BusReservationBooking
 from route.models import Route, Schedule, Trip, CustomerReview
@@ -65,10 +65,9 @@ admin.site.register(Staff, StaffAdmin)
 
 # ========================= Bus =========================
 class BusAdminModel(admin.ModelAdmin):
-    list_display = ('id', 'driver', 'staff', 'bus_number', 'bus_type', 'total_seats', 'available_seats', 'route', 'features', 'is_active', 'is_running')
+    list_display = ('id', 'driver', 'staff', 'bus_number', 'bus_type', 'total_seats', 'available_seats', 'route', 'features', 'is_active')
     search_fields = ('bus_number', 'bus_type', 'route__source', 'route__destination')
-    list_filter = ('is_active', 'is_running', 'bus_type')
-
+   
 admin.site.register(Bus, BusAdminModel)
 
 # ========================= Vechicle Type =========================
@@ -179,3 +178,9 @@ class BusLayoutAdmin(admin.ModelAdmin):
 @admin.register(System)
 class SystemAdmin(admin.ModelAdmin):
     list_display=('name','phone','image','address','email')
+    
+#============= Transportation Company =======
+@admin.register(TransportationCompany)
+class TransportationCompanySerilaizers(admin.ModelAdmin):
+    list_display=('company_name','vat_number','location_name','longitude','latitude','bank_name','account_name','account_number','qr_image')
+    

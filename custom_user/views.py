@@ -1,9 +1,9 @@
-from custom_user.models import CustomUser, UserOtp
-from bus.models import Bus, BusAdmin, Driver, Staff, TicketCounter, BusReservation, BusLayout
+
+from bus.models import Bus, BusLayout
 from booking.models import Booking, Payment, Commission, Rate,BusReservationBooking
 from route.models import Route, Schedule, Trip, CustomerReview
 from  custom_user.serializers import CustomUserSerializer
-from route.serializers import RouteSerializer,BookingSerializer, ScheduleSerializer, BusReservationSerializer,CustomReviewSerializer,BusReservationBookingSerializer,PaymentSerilaizer
+from route.serializers import RouteSerializer,BookingSerializer, ScheduleSerializer,CustomReviewSerializer,PaymentSerializer,BusReservationBooking,VechicleReservationBookingSerializer
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -79,10 +79,10 @@ class BookedSeat(APIView):
                 bookings_seat = Booking.objects.filter(user=user).order_by('-booked_at')
                 serializer_seat = BookingSerializer(bookings_seat, many=True)
                 
-                reserve=BusReservationBooking.objects.filter(user=user).order_by('-created_at')
-                serilaizer_reserve=BusReservationBookingSerializer(reserve,many=True)
+                reserve = BusReservationBooking.objects.filter(user=user).order_by('-created_at')
+                serializer_reserve = VechicleReservationBookingSerializer(reserve, many=True)
             
-                return Response({"success": True, "booking_seat": serializer_seat.data,"booking_reserve":serilaizer_reserve.data}, status=200)
+                return Response({"success": True, "booking_seat": serializer_seat.data, "booking_reserve": serializer_reserve.data}, status=200)
 
 
         # ======== User's Favorite Routes =========
@@ -105,7 +105,7 @@ class PaymentHistoryView(APIView):
     def get(self, request):
                 user = request.user
                 payments = Payment.objects.filter(user=user).order_by('-created_at')
-                serializer=PaymentSerilaizer(payments,many=True)
+                serializer=PaymentSerializer(payments,many=True)
                 return Response({"success": True, "data":serializer.data}, status=200)
 
 
@@ -163,7 +163,7 @@ class UserBookingPaymentView(APIView):
                     "return_url": "https://example.com/payment-success",
                     "website_url": "https://example.com",
                     "amount": float(total_price),
-                    "booking_id": str(uuid.uuid4()),  # Generate unique order ID
+                    "booking_id": str(uuid.uuid4()), 
                     "purchase_order_id":booking_obj.id,
                     "purchase_order_name": "Bus Ticket Booking",
                     "customer_info": {
@@ -236,6 +236,19 @@ class UserPayment(APIView):
 
 
 
+# ========= User Review ==========
+class UserReviews(APIView):
+    def get(self,request):
+        try:
+            user=request.user
+            user_reviews=CustomerReview.objects.filter(user=user)
+            serializer=CustomReviewSerializer(user_reviews,many=True)
+            return Response({'success':True,'data':serializer.data},status=200)
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)
+        
+
+
 # ===============================
 # ====== SubAdmin ==============
 # ==============================
@@ -245,22 +258,35 @@ class SubAdminApiView(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
 
-    def get(self,request):
+    def get(self, request):
         print(request.user)
-        user=request.user
-        data={}
-        data["total_booking"]=Booking.objects.filter(user=user).count()
-        data["total_reviews"]=CustomerReview.objects.filter(user=user).count()
-        data["total_reservation"]= BusReservationBooking.objects.filter(user=user).count()
-        total_payment=0
-        total_payment=Booking.objects.filter(user=user,booking_status="booked").count()
-        total_payment=BusReservationBooking.objects.filter(user=user,status="booked").count()
+        user = request.user
+        transportation_company = getattr(user, "transportation_company", None)
+
+        if not transportation_company:
+            return Response({"success": False, "error": "User is not associated with a transportation company"}, status=400)
+
+        print("Name",transportation_company)
         
-        data["total_payment"]=total_payment
-        recent_booking=Booking.objects.filter(user=user).order_by('-id')[:5]
-        recent_reviews=CustomerReview.objects.filter(user=user).order_by('-id')[:5]
+        data = {
+            "total_booking": Booking.objects.filter(user=user).count(),
+            "total_reviews": CustomerReview.objects.filter(user=user).count(),
+            "total_reservation": BusReservationBooking.objects.filter(user=user).count(),
+            "total_payment": (
+                Booking.objects.filter(booking_status="booked").count() +
+                BusReservationBooking.objects.filter(bus_reserve__transportation_company=transportation_company, status="booked").count()
+            ),
+        }
 
-        recent_booking_serializer=BookingSerializer(recent_booking,many=True)
-        recent_reviews_serializer=CustomReviewSerializer(recent_reviews,many=True)
+        recent_booking = Booking.objects.filter(user=user).order_by('-id')[:5]
+        recent_reviews = CustomerReview.objects.filter(user=user).order_by('-id')[:5]
 
-        return Response({"success":True,"data":data,"recent_booking":recent_booking_serializer.data,"recent_reviews":recent_reviews_serializer.data},status=200)
+        recent_booking_serializer = BookingSerializer(recent_booking, many=True)
+        recent_reviews_serializer = CustomReviewSerializer(recent_reviews, many=True)
+
+        return Response({
+            "success": True,
+            "data": data,
+            "recent_booking": recent_booking_serializer.data,
+            "recent_reviews": recent_reviews_serializer.data
+        }, status=200)

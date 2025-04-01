@@ -8,7 +8,7 @@ from bus.models import Bus,BusReservation,BusLayout,Driver,Staff,VechicleType
 from booking.models import Commission,Booking,BusReservationBooking
 from django.shortcuts import get_object_or_404
 from custom_user.serializers import CustomUserSerializer,SystemSerializer
-from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerilizer,BusReservationSerializer,VechicleTypeSerializer,BusReservationBookingSerializer
+from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleUserReservationBookingSerializer,UserBookingSerilaizer
 
 
 
@@ -381,24 +381,57 @@ class VehicleOneDetails(APIView):
         
     
 # ========= Bus Reservation =============
-class BusReservationList(APIView):
+class VechicleReservationList(APIView):
     def get(self, request, *args, **kwargs):
         try:
-            id=kwargs.get('id')
-            if id == "null" or id ==" ":
-                bus_reservation = BusReservation.objects.all()
-                serializer = BusReservationSerializer(bus_reservation, many=True)
+            id = kwargs.get('id')
+
+            # Fetch all reservations if 'id' is null or empty
+            if id in ["null", " ", None]:
+                bus_reservations = BusReservation.objects.all()
+                serializer = BusReservationSerializer(bus_reservations, many=True)
                 return Response({"success": True, "data": serializer.data}, status=200)
-            bus_reservation = BusReservation.objects.filter(type__id=id)
-            serializer = BusReservationSerializer(bus_reservation, many=True)
-            return Response({"success": True, "data": serializer.data}, status=200)
+
+            # Fetch reservations filtered by 'type__id'
+            bus_reservations = BusReservation.objects.filter(type__id=id)
+
+            if not bus_reservations.exists():
+                return Response({"success": False, "error": "No bus reservations found"}, status=404)
+
+            # If multiple reservations exist, return a serialized list
+            if bus_reservations.count() > 1:
+                serializer = BusReservationSerializer(bus_reservations, many=True)
+                return Response({"success": True, "data": serializer.data}, status=200)
+
+            # If only one reservation exists, manually construct the response
+            bus_reservation = bus_reservations.first()
+
+            # Debugging output
+            print(bus_reservation)
+            print("Bus Reservation:", bus_reservation.name)
+
+            # Constructing response data
+            data = {
+                "name": bus_reservation.name,
+                "type": bus_reservation.type.name,
+                "vechicle_number": bus_reservation.vechicle_number,
+                "vechicle_model": bus_reservation.vechicle_model,
+                "image": bus_reservation.image.url if bus_reservation.image else None,  # Ensure valid image URL
+                "color": bus_reservation.color,
+                "driver": bus_reservation.driver.full_name if bus_reservation.driver else None,  # Handle None case
+                "staff": bus_reservation.staff.full_name if bus_reservation.staff else None,  # Handle None case
+                "total_seats": bus_reservation.total_seats,
+                "price": bus_reservation.price
+            }
+
+            return Response({"success": True, "data": data}, status=200)
+
         except Exception as e:
             return Response({'success': False, "error": str(e)}, status=400)
-        
 
     
 # ======= Bus Reservation Booking ===========
-class  BusReeservationBookingApiView(APIView):
+class  VechicleReeservationBookingApiView(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
     
@@ -423,6 +456,34 @@ class  BusReeservationBookingApiView(APIView):
         except Exception as e:
             return Response({'success': False, 'error': str(e)}, status=400)
 
+
+# ======= Vechicle Reservation or Booking one user List  ==========
+
+class UserVechicleReservationBookingListApiView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+                user = request.user
+                reserve=BusReservationBooking.objects.filter(user=user).order_by('-created_at')
+                serilaizer_reserve=VechicleUserReservationBookingSerializer(reserve,many=True)
+            
+                return Response({"success": True, "data":serilaizer_reserve.data}, status=200)
+
+
+# ======== Seat Booking list of one user ================
+class UserSeatBookingListApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    def get(self, request):
+        try:
+                user = request.user
+                bookings_seat = Booking.objects.filter(user=user).order_by('-booked_at')
+                serializer_seat = UserBookingSerilaizer(bookings_seat, many=True)
+                return Response({'success':True,'data':serializer_seat.data},status=200)
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)
+        
+
 # ========= Bus Layout =========
 class BusLayoutApiView(APIView):
     def get(self, request, *args, **kwargs):
@@ -432,7 +493,7 @@ class BusLayoutApiView(APIView):
                 return Response({"success": False, "error": "Bus ID not provided"}, status=400)
             
             bus_layout = BusLayout.objects.get(bus_id=bus_id)
-            layout_searilaizer=BusLayoutSerilizer(bus_layout)
+            layout_searilaizer=BusLayoutSerializer(bus_layout)
             
             schedule=Schedule.objects.get(bus__id=bus_id)
             serializer=ScheduleSerializer(schedule)

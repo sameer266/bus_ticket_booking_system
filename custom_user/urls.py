@@ -16,7 +16,8 @@ urlpatterns = [
     path('available_schedule/', views.AvailableSchedule.as_view()),
 
     # ======== Booked Seat for User =========
-    path('user_bookings/', views.BookedSeat.as_view()),
+    path('user_booking_list/', views.BookedSeat.as_view()),
+    
 
     # ======== User's Favorite Routes =========
     path('favorite_routes/', views.FavoriteRoutesView.as_view()),
@@ -24,6 +25,9 @@ urlpatterns = [
 
     # ========= User's Booking process ========
     path('user_booking_add/',views.UserBookingPaymentView.as_view()),
+    
+    # ========== User Review ============
+    path('user_reviews/',views.UserReviews.as_view()),
     
     # ========== USer payment ===============
     path('user_payment/',views.UserPayment.as_view()),

@@ -45,7 +45,6 @@ class Booking(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
         ('booked', 'Booked'),
-        ('reserved','Reserved'),
         ('canceled', 'Canceled')
     )
 
@@ -125,6 +124,7 @@ class BusReservationBooking(models.Model):
         ('booked', 'Booked'),
         ('available', 'Available')
     )
+    
     user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE)
     bus_reserve=models.ForeignKey('bus.BusReservation',on_delete=models.CASCADE)
     status=models.CharField(max_length=20,choices=STATUS_CHOICES,default="booked")

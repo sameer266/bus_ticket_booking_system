@@ -52,6 +52,8 @@ urlpatterns = [
     path('admin_schedulelist_update/<int:id>/',views.ScheduleView.as_view()),
     path('admin_schedulelist_delete/<int:id>/',views.ScheduleView.as_view()),
     
+    # ==== Bus details of schedule =========
+    path('admin_schedule_bus_details/<int:id>/',views.BusDetailsScheduleApiView.as_view()),
     
     # ======== route ========
     path('admin_routelist/',views.RouteApiView.as_view()),
@@ -59,10 +61,17 @@ urlpatterns = [
     path('admin_routelist_update/<int:id>/',views.RouteApiView.as_view()),
     path('admin_routelist_delete/<int:id>/',views.RouteApiView.as_view()),
     
+    # =====  Route to all Bus List =============
+    path('admin_route_buslist/<int:id>/',views.RouteBusListAPiView.as_view()),
+    
+    
     
     # ====== Booking ========
     path('admin_bookinglist/',views.BookingAPiView.as_view()),
     path('admin_bookinglist_update/<int:id>/',views.BookingAPiView.as_view()),
+    
+    # ===  One user Booking details =========
+    path('admin_user_booking_details/<int:id>/', views.BookingScheduleOneUserDetails.as_view()),
     
     # ========Vehicle Reservetion ===========
     path('admin_vehiclereservationlist/',views.VechicleReservationView.as_view()),
