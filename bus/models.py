@@ -50,7 +50,7 @@ class Driver(models.Model):
     Represents a driver with their profile and license details.
     """
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
-    ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
+    # ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
     full_name = models.CharField(max_length=255, null=False)
     driver_profile = models.ImageField(upload_to="driver_profile/",null=True,blank=True)
     license_image = models.ImageField(upload_to="driver_license/")
@@ -76,7 +76,7 @@ class Staff(models.Model):
     Represents a staff member with optional profile and staff card images.
     """
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
-    ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.Case,null=True,blank=False)
+    # ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.Case,null=True,blank=False)
     full_name = models.CharField(max_length=255, null=False)
     staff_profile = models.ImageField(upload_to="staff_profile/", null=True, blank=True)
     staff_card = models.ImageField(upload_to="staff_card/", null=True, blank=True)

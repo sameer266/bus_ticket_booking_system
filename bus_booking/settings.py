@@ -164,11 +164,11 @@ CORS_ALLOW_ALL_ORIGINS=True
 
 CORS_ALLOW_CREDENTIALS = True
 
-# CORS_ALLOWED_ORIGINS = [
-#     "http://127.0.0.1:3000",  # React, Next.js, Vue (if running locally)
-#     "http://192.168.18.167:8000",  # Replace with your Django server's IP
-#     "http://your-frontend-domain.com",  # If hosted
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:3000",  # React, Next.js, Vue (if running locally)
+    "http://192.168.18.167:8000",  # Replace with your Django server's IP
+    "http://your-frontend-domain.com",  # If hosted
+]
 
 # ============ JWT Authentication ==============
 

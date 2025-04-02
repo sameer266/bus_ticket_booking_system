@@ -413,11 +413,11 @@ class BusListView(APIView):
 
             # Get drivers not assigned to any bus
             assigned_driver_ids = Bus.objects.filter(driver__isnull=False).values_list("driver__id", flat=True)
-            unassigned_drivers = Driver.objects.exclude(id__in=assigned_driver_ids)
+            unassigned_drivers = Driver.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_driver_ids)
 
             # Get staff not assigned to any bus
             assigned_staff_ids = Bus.objects.filter(staff__isnull=False).values_list("staff__id", flat=True)
-            unassigned_staff = Staff.objects.exclude(id__in=assigned_staff_ids)
+            unassigned_staff = Staff.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_staff_ids)
 
             # Serialize data
             response_data = {
