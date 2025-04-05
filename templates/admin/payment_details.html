@@ -1,0 +1,683 @@
+{% extends 'components/base.html' %}
+
+{% block title %}
+    Payments & Commissions
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebarMenu">
+        {% include 'components/sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="dashboard-content" style="margin-top: 70px;">
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Total Payments</h6>
+                                <h3 class="mb-0 text-primary">NRP {{ total_amount|floatformat:2 }}</h3>
+                            </div>
+                            <div class="icon-circle bg-primary-soft">
+                                <i class="bi bi-cash-stack text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Total Commission</h6>
+                                <h3 class="mb-0 text-indigo">NRP {{ total_commission|floatformat:2 }}</h3>
+                            </div>
+                            <div class="icon-circle bg-indigo-soft">
+                                <i class="bi bi-percent text-indigo"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Net Received</h6>
+                                <h3 class="mb-0 text-blue">NRP {{ total_received|floatformat:2 }}</h3>
+                            </div>
+                            <div class="icon-circle bg-blue-soft">
+                                <i class="bi bi-wallet2 text-blue"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bus Statistics -->
+        <div class="card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bus-front text-primary me-2"></i>Earnings by Bus
+                </h5>
+                <div class="table-actions">
+                    <div class="input-group search-group">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control search-input border-start-0" placeholder="Search buses..." id="busSearch">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="busStatsTable">
+                        <thead>
+                            <tr>
+                                <th>Bus</th>
+                                <th>Route</th>
+                                <th>Total Earnings</th>
+                                <th>Commission</th>
+                                <th>Net Amount</th>
+                                <th>Trips</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bus in bus_stats %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-2 bg-blue-soft text-blue">
+                                            <i class="bi bi-bus-front"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">{{ bus.bus__bus_number|default:"N/A" }}</div>
+                                            <small class="text-muted">{{ bus.bus__bus_name|default:"" }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if bus.bus__route__source and bus.bus__route__destination %}
+                                        <span class="route-badge">{{ bus.bus__route__source }} → {{ bus.bus__route__destination }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No route</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-primary">NRP {{ bus.total_earnings|floatformat:2 }}</td>
+                                <td class="text-indigo">NRP {{ bus.total_commission|floatformat:2 }}</td>
+                                <td class="text-blue">NRP {{ bus.total_earnings|add:bus.total_commission|floatformat:2 }}</td>
+                                <td><span class="badge bg-blue-soft text-blue">{{ bus.payment_count }}</span></td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-outline-primary btn-rounded">
+                                        <i class="bi bi-eye me-1"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <div class="empty-icon bg-light-blue">
+                                            <i class="bi bi-bus-front text-blue"></i>
+                                        </div>
+                                        <h5 class="mt-3">No bus statistics available</h5>
+                                        <p class="text-muted">There are no payment records to calculate statistics</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Payments -->
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-credit-card text-primary me-2"></i>Recent Payments
+                </h5>
+                <div class="table-actions">
+                    <div class="input-group search-group">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control search-input border-start-0" placeholder="Search payments..." id="paymentSearch">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="paymentsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>User</th>
+                                <th>Bus</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Commission</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in payments %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-2 bg-gradient-blue">
+                                            {{ payment.user.full_name|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-medium">{{ payment.user.full_name|default:"N/A" }}</div>
+                                            <small class="text-muted">{{ payment.user.email|default:"No email" }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if payment.bus %}
+                                        <span class="bus-badge">{{ payment.bus.bus_number|default:"N/A" }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No bus</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-primary">NRP {{ payment.price|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        <i class="bi bi-{% if payment.payment_method == 'card' %}credit-card{% elif payment.payment_method == 'cash' %}cash{% else %}wallet{% endif %} me-1"></i>
+                                        {{ payment.payment_method|title }}
+                                    </span>
+                                </td>
+                                <td class="text-indigo">NRP {{ payment.commission_deducted|floatformat:2 }}</td>
+                                <td>
+                                    <span class="badge bg-{% if payment.payment_status == 'completed' %}success{% elif payment.payment_status == 'pending' %}warning{% else %}danger{% endif %}-soft text-{% if payment.payment_status == 'completed' %}success{% elif payment.payment_status == 'pending' %}warning{% else %}danger{% endif %}">
+                                        <i class="bi bi-{% if payment.payment_status == 'completed' %}check-circle{% elif payment.payment_status == 'pending' %}hourglass{% else %}x-circle{% endif %} me-1"></i>
+                                        {{ payment.payment_status|title }}
+                                    </span>
+                                </td>
+                                <td>{{ payment.created_at|date:"d M, Y" }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary btn-rounded">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <div class="empty-icon bg-light-blue">
+                                            <i class="bi bi-credit-card text-blue"></i>
+                                        </div>
+                                        <h5 class="mt-3">No payments found</h5>
+                                        <p class="text-muted">There are no payment records to display</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        Showing {{ payments.start_index }} to {{ payments.end_index }} of {{ payments.paginator.count }} entries
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if payments.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ payments.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">«</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ payments.number }}</span>
+                            </li>
+                            {% if payments.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ payments.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">»</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Commission Rate Update -->
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-percent text-primary me-2"></i>Commission Rate
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'update_rate' %}" class="row g-3 align-items-end">
+                    {% csrf_token %}
+                    <div class="col-md-4">
+                        <label for="commissionRate" class="form-label">Current Rate</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="commissionRate" 
+                                   name="rate" value="{{ rate.rate }}" min="0" max="50" step="0.1" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary btn-rounded">
+                            <i class="bi bi-save me-2"></i>Update Rate
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #2563eb; /* Blue-600 */
+        --primary-hover: #1d4ed8; /* Blue-700 */
+        --primary-soft: rgba(37, 99, 235, 0.1);
+        --blue-color: #3b82f6; /* Blue-500 */
+        --blue-soft: rgba(59, 130, 246, 0.1);
+        --light-blue: #dbeafe; /* Blue-100 */
+        --indigo-color: #4f46e5; /* Indigo-600 */
+        --indigo-soft: rgba(79, 70, 229, 0.1);
+        --success-color: #16a34a; /* Green-600 */
+        --success-soft: rgba(22, 163, 74, 0.1);
+        --warning-color: #ca8a04; /* Yellow-600 */
+        --warning-soft: rgba(202, 138, 4, 0.1);
+        --danger-color: #dc2626; /* Red-600 */
+        --danger-soft: rgba(220, 38, 38, 0.1);
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --text-primary: #1e293b; /* Slate-800 */
+        --text-secondary: #64748b; /* Slate-500 */
+        --bg-light: #f8fafc; /* Slate-50 */
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: var(--text-primary);
+    }
+
+    .dashboard-container {
+        min-height: 100vh;
+        background-color: var(--bg-light);
+        display: flex;
+    }
+
+    /* Sidebar styles */
+    .sidebar {
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+        background-color: #fff;
+        transition: all 0.3s;
+        z-index: 1000;
+    }
+
+    /* Main content styles */
+    .dashboard-content {
+        flex: 1;
+        padding: 2rem;
+        margin-left: 250px;
+        transition: margin 0.3s ease;
+    }
+
+    .card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .summary-card {
+        transition: all 0.2s;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .summary-card:nth-child(2) {
+        border-left-color: var(--indigo-color);
+    }
+
+    .summary-card:nth-child(3) {
+        border-left-color: var(--blue-color);
+    }
+
+    .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bg-primary-soft {
+        background-color: var(--primary-soft);
+    }
+
+    .bg-blue-soft {
+        background-color: var(--blue-soft);
+    }
+
+    .bg-indigo-soft {
+        background-color: var(--indigo-soft);
+    }
+
+    .bg-success-soft {
+        background-color: var(--success-soft);
+    }
+
+    .bg-warning-soft {
+        background-color: var(--warning-soft);
+    }
+
+    .bg-danger-soft {
+        background-color: var(--danger-soft);
+    }
+
+    .bg-light-blue {
+        background-color: var(--light-blue);
+    }
+
+    .text-primary {
+        color: var(--primary-color) !important;
+    }
+
+    .text-blue {
+        color: var(--blue-color) !important;
+    }
+
+    .text-indigo {
+        color: var(--indigo-color) !important;
+    }
+
+    .card-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 1.25rem 1.5rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .table-responsive {
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background-color: #f1f5f9;
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-top: none;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 1rem;
+    }
+
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(59, 130, 246, 0.03);
+    }
+
+    .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #fff;
+    }
+
+    .bg-gradient-blue {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    }
+
+    .route-badge {
+        display: inline-block;
+        background-color: var(--light-blue);
+        color: var(--blue-color);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+    }
+
+    .bus-badge {
+        display: inline-block;
+        background-color: var(--light-blue);
+        color: var(--blue-color);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .btn-rounded {
+        border-radius: 20px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }
+
+    .btn-outline-primary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .pagination .page-link {
+        color: var(--primary-color);
+        border-radius: 0.25rem;
+        margin: 0 0.125rem;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .empty-state {
+        padding: 3rem 2rem;
+        text-align: center;
+    }
+
+    .empty-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 1.5rem;
+    }
+
+    .search-group {
+        max-width: 250px;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .search-input {
+        border-radius: 0 20px 20px 0;
+    }
+
+    .input-group-text {
+        border: 1px solid #e2e8f0;
+        color: var(--text-secondary);
+    }
+
+    /* Responsive styles */
+    @media (max-width: 767.98px) {
+        .dashboard-content {
+            margin-left: 0;
+            padding: 1rem;
+        }
+
+        .sidebar {
+            transform: translateX(-100%);
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 1050;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+        }
+
+        .table-actions .search-group {
+            max-width: 100%;
+            margin-top: 1rem;
+        }
+
+        .table-responsive {
+            font-size: 0.875rem;
+        }
+        
+        /* Overlay when sidebar is open on mobile */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+        }
+        
+        .sidebar-overlay.show {
+            display: block;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Search functionality for bus stats
+    const busSearch = document.getElementById('busSearch');
+    if (busSearch) {
+        busSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#busStatsTable tbody tr');
+            
+            rows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                row.style.display = rowText.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+    
+    // Search functionality for payments
+    const paymentSearch = document.getElementById('paymentSearch');
+    if (paymentSearch) {
+        paymentSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#paymentsTable tbody tr');
+            
+            rows.forEach(row => {
+                const rowText = row.textContent.toLowerCase();
+                row.style.display = rowText.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+    
+    // Sidebar toggle functionality for mobile
+    const sidebarToggleBtn = document.querySelector('.navbar-toggler');
+    const sidebar = document.getElementById('sidebarMenu');
+    
+    if (sidebarToggleBtn && sidebar) {
+        // Create overlay element
+        const overlay = document.createElement('div');
+        overlay.className = 'sidebar-overlay';
+        document.body.appendChild(overlay);
+        
+        sidebarToggleBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        });
+        
+        // Close sidebar when clicking outside
+        overlay.addEventListener('click', function() {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+        });
+        
+        // Add animation to cards
+        const cards = document.querySelectorAll('.summary-card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('animate__animated', 'animate__fadeInUp');
+        });
+        
+        // Close sidebar when window is resized to desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -71,7 +71,7 @@ ROOT_URLCONF = 'bus_booking.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -79,6 +79,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'bus_booking.context_processors.system_settings',  # Custom context processor
             ],
         },
     },
@@ -152,13 +153,7 @@ AUTH_USER_MODEL = 'custom_user.CustomUser'  # Points to your custom user model
 
 
 
-# =======  Rest Framework ============
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
-    ],
-}
+
 
 CORS_ALLOW_ALL_ORIGINS=True
 

@@ -1,0 +1,476 @@
+<!-- Sidebar Component -->
+<div class="wrapper">
+  <!-- Sidebar -->
+  <nav id="sidebar" class="sidebar" data-collapsed="false">
+    <div class="sidebar-header">
+      <div class="d-flex align-items-center justify-content-between">
+        <a href="" class="sidebar-brand text-decoration-none">
+
+          {% if system.name %}
+          <span class="sidebar-brand">{{ system.name }}</span>
+          {% endif %}
+          {% if system.image%}
+          <img src={{ system.image.url }} alt="Go Sewa" height="32">
+        </a>
+        {% endif %}
+        <button type="button" id="sidebarCollapseBtn" class="btn btn-icon">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-content">
+      <ul class="nav flex-column">
+        {% if user.is_superuser %}
+          <!-- Admin Menu Items -->
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="/admin-dashboard/">
+              <i class="bi bi-speedometer2 menu-icon"></i>
+              <span class="menu-text">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/admin-profile/' %}active{% endif %}" href={% url 'admin_profile' %}>
+              <i class="bi bi-person menu-icon"></i>
+              <span class="menu-text">Profile</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/admin-ticket-counter/' %}active{% endif %}" href={% url 'ticket_counter_list' %}>
+              <i class="bi bi-ticket-perforated menu-icon"></i>
+              <span class="menu-text">Ticket Counter</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/users-management/' %}active{% endif %}" href={% url 'manage_users'%}>
+              <i class="bi bi-people menu-icon"></i>
+              <span class="menu-text">User Management</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/driver-staff/' %}active{% endif %}" href={% url 'manage_driver_and_staff'%}>
+              <i class="bi bi-person-badge menu-icon"></i>
+              <span class="menu-text">Driver & Staff</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/buses-management' %}active{% endif %}" href={%url 'bus_list'%}>
+              <i class="bi bi-bus-front menu-icon"></i>
+              <span class="menu-text">Bus Management</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/reservations/' %}active{% endif %}" href={% url 'vehicle-reservation' %}>
+              <i class="bi bi-calendar2-check menu-icon"></i>
+              <span class="menu-text">Reservation Management</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/routes-management/' %}active{% endif %}" href={% url 'route_list_add' %}>
+              <i class="bi bi-map menu-icon"></i>
+              <span class="menu-text">Route Management</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/schedules-management/' %}active{% endif %}" href={% url 'schedule_list' %}>
+              <i class="bi bi-calendar3 menu-icon"></i>
+              <span class="menu-text">Schedule</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/booking-management/' %}active{% endif %}" href={% url 'booking_list' %}>
+              <i class="bi bi-journal-check menu-icon"></i>
+              <span class="menu-text">Booking Management</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/payment-details/' %}active{% endif %}" href={% url 'payments_details' %}>
+              <i class="bi bi-credit-card menu-icon"></i>
+              <span class="menu-text">Payment & Commission</span>
+            </a>
+          </li>
+          
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/reports/' %}active{% endif %}" href={% url 'report_analysis' %}>
+              <i class="bi bi-graph-up menu-icon"></i>
+              <span class="menu-text">Reports & Analytics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/notifications/' %}active{% endif %}" href="/notifications/">
+              <i class="bi bi-bell menu-icon"></i>
+              <span class="menu-text">Notifications</span>
+            </a>
+          </li>
+        {% elif user.is_staff %}
+          <!-- Sub Admin Menu Items -->
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="/admin-dashboard/">
+              <i class="bi bi-speedometer2 menu-icon"></i>
+              <span class="menu-text">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/admin-profile/' %}active{% endif %}" href="/admin-profile/">
+              <i class="bi bi-person menu-icon"></i>
+              <span class="menu-text">Profile</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/driver-staff/' %}active{% endif %}" href="/driver-staff/">
+              <i class="bi bi-person-badge menu-icon"></i>
+              <span class="menu-text">Driver & Staff</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/buses-management' %}active{% endif %}" href={%url 'bus_list'%}>
+              <i class="bi bi-bus-front menu-icon"></i>
+              <span class="menu-text">Bus Management</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/reservations/' %}active{% endif %}" href={% url 'vehicle-reservation' %}>
+              <i class="bi bi-calendar2-check menu-icon"></i>
+              <span class="menu-text">Reservation Management</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/routes-management/' %}active{% endif %}" href={% url 'route_list_add' %}>
+              <i class="bi bi-map menu-icon"></i>
+              <span class="menu-text">Route Management</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/schedules-management/' %}active{% endif %}" href={% url 'schedule_list' %}>
+              <i class="bi bi-calendar3 menu-icon"></i>
+              <span class="menu-text">Schedule</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/booking-management/' %}active{% endif %}" href="/booking-management/">
+              <i class="bi bi-journal-check menu-icon"></i>
+              <span class="menu-text">Booking Management</span>
+            </a>
+          </li>
+          
+        {% else %}
+          <!-- Regular User Menu Items -->
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/user-dashboard/' %}active{% endif %}" href="/user-dashboard/">
+              <i class="bi bi-speedometer2 menu-icon"></i>
+              <span class="menu-text">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/user-profile/' %}active{% endif %}" href="/user-profile/">
+              <i class="bi bi-person menu-icon"></i>
+              <span class="menu-text">Profile</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/user-book-ticket/' %}active{% endif %}" href="/user-book-ticket/">
+              <i class="bi bi-ticket-perforated menu-icon"></i>
+              <span class="menu-text">Book Ticket</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/user-bookings/' %}active{% endif %}" href="/user-bookings/">
+              <i class="bi bi-journal-check menu-icon"></i>
+              <span class="menu-text">My Bookings</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/user-payments/' %}active{% endif %}" href="/user-payments/">
+              <i class="bi bi-credit-card menu-icon"></i>
+              <span class="menu-text">Payment History</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/user-trips/' %}active{% endif %}" href="/user-trips/">
+              <i class="bi bi-signpost-split menu-icon"></i>
+              <span class="menu-text">My Trips</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/user-notifications/' %}active{% endif %}" href="/user-notifications/">
+              <i class="bi bi-bell menu-icon"></i>
+              <span class="menu-text">Notifications</span>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    {% if user.is_superuser %}
+    <div class="sidebar-footer">
+      <a href={% url 'system_settings' %} class="settings-link nav-link {% if request.path == '/settings/' %}active{% endif %} ">
+        <i class="bi bi-gear"></i>
+        <span class="settings-text">Settings</span>
+      </a>
+    </div>
+    {% endif %}
+  </nav>
+
+  <!-- Page Content -->
+  <div id="content">
+    <!-- Main content container -->
+    <div class="container-fluid main-content">
+      {% block content %}
+      {% endblock %}
+    </div>
+  </div>
+</div>
+
+{% block extra_css %}
+<style>
+  :root {
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 70px;
+    --sidebar-transition: 0.3s;
+  }
+
+  .wrapper {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    width: var(--sidebar-width);
+    background: white;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+    transition: all var(--sidebar-transition);
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1030;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar[data-collapsed="true"] {
+    width: var(--sidebar-collapsed-width);
+  }
+
+  .sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .sidebar-brand {
+    color: var(--text-dark);
+    font-weight: 600;
+    font-size: 1.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    background: var(--bg-light);
+    color: var(--text-dark);
+    transition: all var(--transition-speed);
+  }
+
+  .btn-icon:hover {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .sidebar[data-collapsed="true"] .btn-icon i {
+    transform: rotate(180deg);
+  }
+
+  .sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 0;
+  }
+
+  .nav-item {
+    padding: 0 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: var(--text-dark);
+    border-radius: var(--border-radius);
+    transition: all var(--transition-speed);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .nav-link:hover {
+    background: rgba(40, 167, 69, 0.05);
+    color: var(--primary-color);
+  }
+
+  .nav-link.active {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--primary-color);
+  }
+
+  .menu-icon {
+    font-size: 1.25rem;
+    min-width: 24px;
+    margin-right: 1rem;
+    transition: margin var(--sidebar-transition);
+  }
+
+  .menu-text {
+    transition: opacity var(--sidebar-transition);
+  }
+
+  .sidebar[data-collapsed="true"] .menu-text {
+    opacity: 0;
+  }
+
+  .sidebar[data-collapsed="true"] .menu-icon {
+    margin-right: 0;
+  }
+
+  .sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .settings-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: var(--text-dark);
+    text-decoration: none;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-speed);
+  }
+
+  .settings-link:hover {
+    background: rgba(40, 167, 69, 0.05);
+    color: var(--primary-color);
+  }
+
+  .settings-link i {
+    font-size: 1.25rem;
+    margin-right: 1rem;
+    transition: margin var(--sidebar-transition);
+  }
+
+  .settings-text {
+    transition: opacity var(--sidebar-transition);
+  }
+
+  .sidebar[data-collapsed="true"] .settings-text {
+    opacity: 0;
+  }
+
+  .sidebar[data-collapsed="true"] .settings-link i {
+    margin-right: 0;
+  }
+
+  #content {
+    flex: 1;
+    
+    transition: margin var(--sidebar-transition);
+    min-height: 100vh;
+    background: var(--bg-light);
+    padding: 2rem;
+  }
+
+
+  /* Mobile Styles */
+  @media (max-width: 991.98px) {
+    .sidebar {
+      transform: translateX(-100%);
+    }
+
+    .sidebar.show {
+      transform: translateX(0);
+    }
+
+    #content {
+      margin-left: 0 !important;
+      padding: 1rem;
+    }
+
+    .sidebar[data-collapsed="true"] {
+      width: var(--sidebar-width);
+    }
+
+    .sidebar[data-collapsed="true"] .menu-text,
+    .sidebar[data-collapsed="true"] .settings-text {
+      opacity: 1;
+    }
+
+    .sidebar[data-collapsed="true"] .menu-icon,
+    .sidebar[data-collapsed="true"] .settings-link i {
+      margin-right: 1rem;
+    }
+  }
+
+  /* Custom Scrollbar */
+  .sidebar-content::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-content::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+
+  .sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+  }
+</style>
+{% endblock %}
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
+    const wrapper = document.querySelector('.wrapper');
+
+    // Toggle sidebar collapse
+    sidebarCollapseBtn.addEventListener('click', function() {
+      const isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
+      sidebar.setAttribute('data-collapsed', !isCollapsed);
+      wrapper.setAttribute('data-sidebar-collapsed', !isCollapsed);
+    });
+
+    // Handle mobile menu
+    function handleResize() {
+      if (window.innerWidth <= 991.98) {
+        sidebar.classList.remove('show');
+        sidebar.setAttribute('data-collapsed', 'false');
+        wrapper.setAttribute('data-sidebar-collapsed', 'false');
+      }
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // Close sidebar on mobile when clicking a link
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 991.98) {
+          sidebar.classList.remove('show');
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

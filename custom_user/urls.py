@@ -5,6 +5,7 @@ from django.urls import path,include
 
 from . import views
 urlpatterns = [
+    
     # ===== User Dashboard ========
     path('user_dashboard/', views.UserDashboardView.as_view()),
     

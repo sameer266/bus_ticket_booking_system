@@ -1,0 +1,178 @@
+{% extends 'components/base.html' %}
+
+{% block title %}Edit Driver | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5" style="margin-top: 90px !important;">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-12">
+            <!-- Card -->
+            <div class="card shadow animate__animated animate__fadeIn">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                    <h2 class="h4 fw-bold text-primary mb-0">
+                        <i class="bi bi-person-circle me-2"></i>Edit Driver
+                    </h2>
+                    <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary rounded-pill">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="editDriverForm" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-4">
+                            <!-- Full Name -->
+                            <div class="col-md-6">
+                                <label for="full_name" class="form-label fw-bold">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control rounded-pill" id="full_name" name="full_name" value="{{ driver.full_name }}" placeholder="e.g., John Doe" required>
+                                <div class="invalid-feedback">Please enter the driver's full name.</div>
+                            </div>
+
+                            <!-- Phone Number -->
+                            <div class="col-md-6">
+                                <label for="phone_number" class="form-label fw-bold">Phone Number <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text rounded-start-pill"><i class="bi bi-telephone-fill"></i></span>
+                                    <input type="tel" class="form-control rounded-end-pill" id="phone_number" name="phone_number" value="{{ driver.phone_number }}" placeholder="e.g., +977-123-456-7890" pattern="^\+?[1-9]\d{1,14}$" required>
+                                </div>
+                                <small class="text-muted">Format: +977-123-456-7890</small>
+                                <div class="invalid-feedback">Please enter a valid phone number.</div>
+                            </div>
+
+                            <!-- Profile Photo -->
+                            <div class="col-md-6">
+                                <label for="driver_profile" class="form-label fw-bold">Profile Photo</label>
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control rounded-pill" id="driver_profile" name="driver_profile" accept="image/*">
+                                    <label class="input-group-text rounded-pill" for="driver_profile">
+                                        <i class="bi bi-upload"></i>
+                                    </label>
+                                </div>
+                                {% if driver.profile_photo %}
+                                <div class="mt-2 d-flex align-items-center">
+                                    <img src="{{ driver.profile_photo.url }}" alt="Current Profile Photo" class="rounded-circle me-2" style="width: 50px; height: 50px; object-fit: cover;" id="current_profile_preview">
+                                    <small class="text-muted">Current photo</small>
+                                </div>
+                                {% endif %}
+                                <div class="mt-2 d-none" id="profile_preview">
+                                    <img src="#" alt="Profile Preview" class="rounded-circle me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                    <small class="text-muted">New photo preview</small>
+                                </div>
+                            </div>
+
+                            <!-- Driver's License -->
+                            <div class="col-md-6">
+                                <label for="license_image" class="form-label fw-bold">Driver's License</label>
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control rounded-pill" id="license_image" name="license_image" accept="image/*">
+                                    <label class="input-group-text rounded-pill" for="license_image">
+                                        <i class="bi bi-upload"></i>
+                                    </label>
+                                </div>
+                                {% if driver.license_image %}
+                                <div class="mt-2 d-flex align-items-center">
+                                    <img src="{{ driver.license_image.url }}" alt="Current License Image" class="rounded me-2" style="width: 50px; height: 50px; object-fit: cover;" id="current_license_preview">
+                                    <small class="text-muted">Current license</small>
+                                </div>
+                                {% endif %}
+                                <div class="mt-2 d-none" id="license_preview">
+                                    <img src="#" alt="License Preview" class="rounded me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                    <small class="text-muted">New license preview</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-3 mt-4">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill flex-grow-1">
+                                <i class="bi bi-x-circle me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">
+                                <i class="bi bi-check-circle me-1"></i> Update Driver
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    .card {
+        border-radius: 1rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 1rem 1rem 0 0;
+    }
+    .form-control:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: #0d6efd;
+    }
+    .input-group-text {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+    .btn {
+        transition: all 0.3s ease;
+    }
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    @media (max-width: 576px) {
+        .btn {
+            width: 100%;
+        }
+        .d-flex {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Preview Profile Photo
+        document.getElementById('driver_profile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('profile_preview');
+            const previewImg = preview.querySelector('img');
+            if (file) {
+                previewImg.src = URL.createObjectURL(file);
+                preview.classList.remove('d-none');
+            } else {
+                preview.classList.add('d-none');
+            }
+        });
+
+        // Preview License Image
+        document.getElementById('license_image').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('license_preview');
+            const previewImg = preview.querySelector('img');
+            if (file) {
+                previewImg.src = URL.createObjectURL(file);
+                preview.classList.remove('d-none');
+            } else {
+                preview.classList.add('d-none');
+            }
+        });
+
+        // Form Validation
+        document.getElementById('editDriverForm').addEventListener('submit', function(event) {
+            const phone = document.getElementById('phone_number').value;
+            const phonePattern = /^\+?[1-9]\d{1,14}$/;
+            if (!phonePattern.test(phone)) {
+                event.preventDefault();
+                alert('Please enter a valid phone number (e.g., +977-123-456-7890)');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -16,7 +16,7 @@ class Route(models.Model):
     image=models.ImageField(upload_to="route-img/",null=True,blank=True)
     destination = models.CharField(max_length=255, null=False, help_text="Ending point of the route")
     distance = models.DecimalField(max_digits=6, decimal_places=2, help_text="Distance in kilometers")
-    estimated_time = models.TimeField(null=True, help_text="Estimated travel time (hh:mm:ss)")
+    estimated_time = models.PositiveIntegerField(null=True,default=0, help_text="Estimated travel time in Hour")
 
     def delete(self,*args,**kwargs):
         """ Delete the Image  """

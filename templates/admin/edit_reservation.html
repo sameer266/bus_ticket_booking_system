@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Reservation</title>
+</head>
+<body>
+    <h1>Edit Reservation</h1>
+
+    <form method="POST" action="{% url 'vehicle-reservation-detail' reservation.id %}">
+        {% csrf_token %}
+        <label>Name: <input type="text" name="name" value="{{ reservation.name }}"></label><br>
+        <label>Type: 
+            <select name="type">
+                {% for vechicle_type in vechicle_types %}
+                <option value="{{ vechicle_type.name }}" {% if vechicle_type.name == reservation.type.name %}selected{% endif %}>
+                    {{ vechicle_type.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </label><br>
+        <label>Vehicle Number: <input type="text" name="vehicle_number" value="{{ reservation.vechicle_number }}"></label><br>
+        <label>Vehicle Model: <input type="text" name="vehicle_model" value="{{ reservation.vechicle_model }}"></label><br>
+        <label>Color: <input type="text" name="color" value="{{ reservation.color }}"></label><br>
+        <label>Driver: 
+            <select name="driver_id">
+                <option value="">None</option>
+                {% for driver in unassigned_drivers %}
+                <option value="{{ driver.id }}" {% if driver.id == reservation.driver.id %}selected{% endif %}>
+                    {{ driver.full_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </label><br>
+        <label>Staff: 
+            <select name="staff_id">
+                <option value="">None</option>
+                {% for staff in unassigned_staff %}
+                <option value="{{ staff.id }}" {% if staff.id == reservation.staff.id %}selected{% endif %}>
+                    {{ staff.full_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </label><br>
+        <label>Total Seats: <input type="number" name="total_seats" value="{{ reservation.total_seats }}"></label><br>
+        <label>Price: <input type="number" name="price" value="{{ reservation.price }}"></label><br>
+        <button type="submit">Update Reservation</button>
+    </form>
+</body>
+</html>

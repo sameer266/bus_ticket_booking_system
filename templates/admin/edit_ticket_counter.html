@@ -1,0 +1,188 @@
+{% extends 'components/base.html' %}
+{% block title %}Edit Ticket Counter | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="container py-4 mt-5">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0" style="color: #2c3e50;">
+                <i class="bi bi-pencil-square me-2"></i>Edit Ticket Counter
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb" style="font-size: 0.9rem;">
+                    <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}" class="text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'ticket_counter_list' %}" class="text-decoration-none">Counters</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                </ol>
+            </nav>
+        </div>
+        <a href="{% url 'ticket_counter_list' %}" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Back to Counters
+        </a>
+    </div>
+
+    <!-- Edit Form Card -->
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0">
+                <i class="bi bi-ticket-perforated me-2"></i>Update Counter Details
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Counter Information Section -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                        <i class="bi bi-info-circle me-1"></i>Counter Information
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="counterName" class="form-label fw-semibold">Counter Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-ticket-perforated text-primary"></i></span>
+                                <input type="text" id="counterName" name="counter_name" class="form-control" 
+                                       value="{{ ticket_counter.counter_name }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a counter name.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="location" class="form-label fw-semibold">Location</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-geo-alt text-primary"></i></span>
+                                <input type="text" id="location" name="location" class="form-control" 
+                                       value="{{ ticket_counter.location }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a location.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banking Information Section -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                        <i class="bi bi-bank me-1"></i>Banking Information
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="bankName" class="form-label fw-semibold">Bank Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-building text-primary"></i></span>
+                                <input type="text" id="bankName" name="bank_name" class="form-control" 
+                                       value="{{ ticket_counter.bank_name }}">
+                                <div class="invalid-feedback">
+                                    Please provide bank name.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="bankAccount" class="form-label fw-semibold">Account Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-credit-card text-primary"></i></span>
+                                <input type="text" id="bankAccount" name="bank_account" class="form-control" 
+                                       value="{{ ticket_counter.bank_account }}">
+                                <div class="invalid-feedback">
+                                    Please provide account number.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Information Section -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                        <i class="bi bi-person-gear me-1"></i>Admin Information
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="fullName" class="form-label fw-semibold">Full Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-person text-primary"></i></span>
+                                <input type="text" id="fullName" name="full_name" class="form-control" 
+                                       value="{{ user.full_name }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide admin's full name.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-semibold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-envelope text-primary"></i></span>
+                                <input type="email" id="email" name="email" class="form-control" 
+                                       value="{{ user.email }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a valid email.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label fw-semibold">Phone</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-telephone text-primary"></i></span>
+                                <input type="text" id="phone" name="phone" class="form-control" 
+                                       value="{{ user.phone }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a phone number.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="gender" class="form-label fw-semibold">Gender</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-gender-ambiguous text-primary"></i></span>
+                                <select id="gender" name="gender" class="form-select" required>
+                                    <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+                                    <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+                                    <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="reset" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                    </button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-check-circle me-1"></i> Update Counter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Form Validation Script -->
+<script>
+// Example starter JavaScript for disabling form submissions if there are invalid fields
+(function () {
+    'use strict'
+    
+    // Fetch all the forms we want to apply custom Bootstrap validation styles to
+    var forms = document.querySelectorAll('.needs-validation')
+    
+    // Loop over them and prevent submission
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+</script>
+{% endblock %}

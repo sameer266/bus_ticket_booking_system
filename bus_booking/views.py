@@ -1,5 +1,9 @@
 from django.contrib.auth import authenticate
 from django.db.models import Count
+from django.shortcuts import render,redirect
+from django.contrib.auth import login,logout
+from custom_user.models import CustomUser
+from django.contrib.auth import authenticate
 from datetime import datetime
 
 from custom_user.models import CustomUser,UserOtp,System
@@ -19,12 +23,78 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import authentication_classes, permission_classes
+
 
        
 
 
+# =======  Login ========
 
+def Login(request):
+    if request.method == 'POST':
+        phone = request.POST.get('phone')
+        password = request.POST.get('password')
+        user = authenticate(phone=phone, password=password)
+        if user:
+            login(request, user)
+            print(user)
+            return redirect('admin_dashboard')
+        else:
+            error_message = "Invalid phone number or password"
+            return render(request, 'pages/login.html', {'error_message': error_message})
+    return render(request,'pages/login.html')
+
+
+def Logout(request):
+    logout(request)
+    return redirect('login')
+
+
+
+
+def Send_otp(request):
+    if request.method == 'POST':
+        try:
+            phone = request.POST.get('phone')
+            full_name = request.POST.get('full_name')
+
+            # Check if the phone number already exists
+            if CustomUser.objects.filter(phone=phone).exists():
+                return render(request, 'send_otp.html', {'error': 'Phone number already exists'})
+
+            otp_number = UserOtp.generate_otp()
+            # Store the OTP in the database with a reference to the phone number
+            UserOtp.objects.create(otp=otp_number, phone=phone, temp_name=full_name)
+
+            # Redirect to OTP verification page with success message
+            return render(request, 'pages/verify_otp.html', {'phone': phone, 'message': 'OTP has been sent. Please verify!'})
+
+        except Exception as e:
+            return render(request, 'pages/send_otp.html', {'error': str(e)})
+    return render(request, 'pages/send_otp.html')
+
+
+def Verify_otp(request):
+    if request.method == 'POST':
+       
+        otp = request.POST.get('otp')
+        try:
+            user_otp = UserOtp.objects.get(otp=otp)
+            user = user_otp.user
+            user_otp.delete()
+            login(request, user)
+            return redirect('admin_dashboard')
+        except UserOtp.DoesNotExist:
+            return render(request, 'pages/verify_otp.html', {'error': 'Invalid OTP'})
+    return render(request, 'pages/verify_otp.html')
+        
+        
+
+
+
+
+
+# ======== Api ============
 # ======Login ======
 class LoginView(APIView):
     def post(self, request):
@@ -121,7 +191,6 @@ class ForgetPassword(APIView):
 
 # ========= Reset password ======
 class ResetPassword(APIView):
-    
     def post(self,request):
         try:
             password=request.data.get('password')
@@ -503,10 +572,3 @@ class BusLayoutApiView(APIView):
             return Response({"success": False, "error": "Bus layout not found"}, status=404)
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
-    
-
-class NavAndContactDataApiView(APIView):
-    def get(self,request):
-        settings=System.objects.all().first()
-        serializer=SystemSerializer(settings)
-        return Response({'success':True,'data':serializer.data},status=200)

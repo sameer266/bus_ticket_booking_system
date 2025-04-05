@@ -1,0 +1,429 @@
+{% extends 'components/base.html' %}
+
+{% block title %}
+    System Settings
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="dashboard-sidebar">
+        {% include 'components/sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="dashboard-content  " style="margin-top:75px !important;">
+        <!-- Header -->
+        <div class="settings-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="page-title">
+                        <i class="bi bi-gear-fill text-primary me-2"></i>System Settings
+                    </h1>
+                    
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="alerts-container">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi {% if message.tags == 'success' %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Settings Form -->
+        <div class="settings-card">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-sliders text-primary me-2"></i>General Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row g-4">
+                            <!-- System Info -->
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="name" name="name" 
+                                           value="{{ system.name }}" placeholder="System Name" required>
+                                    <label for="name">System Name <span class="text-danger">*</span></label>
+                                    <div class="invalid-feedback">
+                                        Please provide a system name.
+                                    </div>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ system.email }}" placeholder="Email" required>
+                                    <label for="email">Email <span class="text-danger">*</span></label>
+                                    <div class="invalid-feedback">
+                                        Please provide a valid email.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           value="{{ system.phone }}" placeholder="Phone" required>
+                                    <label for="phone">Phone <span class="text-danger">*</span></label>
+                                    <div class="invalid-feedback">
+                                        Please provide a phone number.
+                                    </div>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="address" name="address" 
+                                           value="{{ system.address }}" placeholder="Address" required>
+                                    <label for="address">Address <span class="text-danger">*</span></label>
+                                    <div class="invalid-feedback">
+                                        Please provide an address.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Logo Section -->
+                            <div class="col-12">
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-image text-primary me-2"></i>System Logo
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-6 mb-3 mb-md-0">
+                                                <div class="logo-preview">
+                                                    {% if system.image %}
+                                                    <img src="{{ system.image.url }}" alt="System Logo" 
+                                                         class="img-thumbnail" id="logoPreview">
+                                                    {% else %}
+                                                    <div class="no-logo-placeholder">
+                                                        <i class="bi bi-building"></i>
+                                                        <span>No logo uploaded</span>
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="image" class="form-label">Upload New Logo</label>
+                                                    <input type="file" class="form-control" id="image" name="image"
+                                                           accept="image/png, image/jpeg" onchange="previewLogo(this)">
+                                                    <div class="form-text">
+                                                        Recommended: 300x300px, PNG or JPG (max 2MB)
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            
+
+                            <!-- Form Actions -->
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end gap-3">
+                                    <button type="reset" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-counterclockwise me-2"></i>Reset
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save me-2"></i>Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{% block extra_css %}
+<style>
+    :root {
+        --sidebar-width: 280px;
+        --header-height: 120px;
+        --primary-color: #4361ee;
+        --secondary-color: #3f37c9;
+        --light-bg: #f8f9fa;
+        --card-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
+    }
+
+    /* Dashboard Layout */
+    .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+        background-color: var(--light-bg);
+    }
+
+      .sidebar {
+     
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        background-color: #fff;
+        transition: all 0.3s;
+    }
+    #sidebar-wrapper {
+        min-height: 100vh;
+        width: 250px;
+        transition: margin 0.25s ease-out;
+        background-color: white;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        z-index: 1;
+    }
+
+    .dashboard-content {
+        flex: 1;
+        margin-left: var(--sidebar-width);
+        min-height: 100vh;
+        padding: 2rem;
+    }
+
+    /* Header Styles */
+    .settings-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #2b2d42;
+        margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        font-size: 0.875rem;
+    }
+
+    .breadcrumb-item a {
+        color: #6c757d;
+        text-decoration: none;
+    }
+
+    .breadcrumb-item.active {
+        color: var(--primary-color);
+    }
+
+    /* Card Styles */
+    .card {
+        border: none;
+        border-radius: 0.75rem;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        background: white;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 1.25rem 1.5rem;
+        border-radius: 0.75rem 0.75rem 0 0 !important;
+    }
+
+    .card-title {
+        font-weight: 600;
+        color: #2b2d42;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Form Styles */
+    .form-floating {
+        position: relative;
+    }
+
+    .form-floating label {
+        color: #495057;
+        font-weight: 500;
+    }
+
+    .form-control {
+        border-radius: 0.5rem;
+        padding: 1rem;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.15);
+    }
+
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .form-switch .form-check-input {
+        width: 2.5em;
+        height: 1.5em;
+    }
+
+    /* Logo Preview */
+    .logo-preview {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 180px;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        border: 1px dashed #dee2e6;
+    }
+
+    .logo-preview img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .no-logo-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #6c757d;
+    }
+
+    .no-logo-placeholder i {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn {
+        border-radius: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Alerts */
+    .alert {
+        border-radius: 0.5rem;
+        border: none;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 991.98px) {
+        .dashboard-sidebar {
+            transform: translateX(-100%);
+            z-index: 1050;
+        }
+
+        .dashboard-sidebar.show {
+            transform: translateX(0);
+        }
+
+        .dashboard-content {
+            margin-left: 0;
+            padding: 1.5rem;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .dashboard-content {
+            padding: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .logo-preview {
+            height: 120px;
+            margin-bottom: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    (function() {
+        'use strict';
+        
+        const forms = document.querySelectorAll('.needs-validation');
+        
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+
+    // Logo preview functionality
+    function previewLogo(input) {
+        const preview = document.getElementById('logoPreview');
+        const placeholder = document.querySelector('.no-logo-placeholder');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                if (!preview) {
+                    const img = document.createElement('img');
+                    img.id = 'logoPreview';
+                    img.className = 'img-thumbnail';
+                    img.src = e.target.result;
+                    if (placeholder) {
+                        placeholder.replaceWith(img);
+                    } else {
+                        document.querySelector('.logo-preview').appendChild(img);
+                    }
+                } else {
+                    preview.src = e.target.result;
+                }
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

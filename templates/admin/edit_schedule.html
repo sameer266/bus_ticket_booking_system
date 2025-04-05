@@ -1,0 +1,50 @@
+{% extends 'components/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Edit Schedule</h2>
+
+    <form method="POST" action="{% url 'schedule_edit' schedule.id %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="route" class="form-label">Route:</label>
+            <select class="form-select" id="route" name="route" required>
+                {% for route in all_routes %}
+                    <option value="{{ route.id }}" {% if route.id == schedule.route.id %}selected{% endif %}>
+                        {{ route.source }} → {{ route.destination }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="bus" class="form-label">Bus:</label>
+            <select class="form-select" id="bus" name="bus" required>
+                {% for bus in all_buses %}
+                    <option value="{{ bus.id }}" {% if bus.id == schedule.bus.id %}selected{% endif %}>
+                        {{ bus.bus_number }} - {{ bus.get_bus_type_display }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="departure_time" class="form-label">Departure Time:</label>
+            <input type="time" class="form-control" id="departure_time" name="departure_time" value="{{ schedule.departure_time|time:'H:i' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="arrival_time" class="form-label">Arrival Time:</label>
+            <input type="time" class="form-control" id="arrival_time" name="arrival_time" value="{{ schedule.arrival_time|time:'H:i' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="price" class="form-label">Price (NRP):</label>
+            <input type="number" class="form-control" id="price" name="price" value="{{ schedule.price }}" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update Schedule</button>
+        <a href="{% url 'schedule_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

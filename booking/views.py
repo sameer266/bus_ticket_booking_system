@@ -1,6 +1,15 @@
 from django.contrib.auth import authenticate
 from django.db.models import Count
-from datetime import datetime
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.views import View
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.core.paginator import Paginator
+from django.utils.timezone import now
+from django.db.models import Count, Sum,F
+
+
 import json
 from rest_framework.viewsets import ModelViewSet
 
@@ -11,164 +20,111 @@ from booking.models import Commission, Booking,Payment,Rate,BusReservationBookin
 
 from custom_user.serializers import CustomUserSerializer,SystemSerializer
 from route.serializers import (
-    RouteSerializer, ScheduleSerializer, BookingSerializer, TripSerializer, TicketCounterSerializer,
-    BusSerializer,DriverSerializer,StaffSerializer,PaymentSerializer,CommissionSerializer,
+    BusSerializer,PaymentSerializer,CommissionSerializer,
     RateSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleReservationBookingSerializer,
-    BusLayoutSerializer
+   
 )
 
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework import status
 
 
    
         
-# ====== admin dashboard Homedata =====
-class AdminDashboardData(APIView):
-    def get(self,request):
-        try:
-            data={}
-            user_count=CustomUser.objects.filter(role="customer").count()
-            bus_count=Bus.objects.filter(is_active=True).count()
-            commission=Commission.objects.all()
-            total_amount=0
-            for i in commission:
-                total_amount+=i.total_commission
-            
-            booking=Booking.objects.filter(booking_status="pending").count()
-            trip=Trip.objects.filter(status="completed").count()
-            booking_completed=Booking.objects.filter(booking_status='booked').count()
-            data["total_revenue"]=total_amount
-            data['total_booking_pending']=booking
-            data['total_trip_completed']=trip
-            data['ticket_booked']=booking_completed
-            data["total_active_bus"]=bus_count
-            data["total_user"]=user_count
-            
-            booking_obj=Booking.objects.all().order_by('-booked_at')[ :8]
-            booking_serializer=BookingSerializer(booking_obj,many=True)
-            
-            trip=Trip.objects.all()[ :8]
-            trip_serializer=TripSerializer(trip,many=True)
+def is_admin(user):
+    return user.is_authenticated and user.role == "admin"
+
+def is_subadmin(user):
+    return user.is_authenticated and user.role=="sub_admin"
+
+@login_required
+# @user_passes_test(is_admin,is_subadmin)
+def admin_dashboard(request):
+        """
+        Render the admin dashboard with overview statistics and recent data
+        """
+  
+        # Gather stats data
+        data = {}
+        user_count = CustomUser.objects.filter(role="customer").count()
+        bus_count = Bus.objects.filter(is_active=True).count()
         
-            return Response({'success':True,"data":data,"recent_booking":booking_serializer.data,"trip_data":trip_serializer.data},status=200)    
+        # Calculate total commission
+        commissions = Commission.objects.all()
+        total_amount = sum(commission.total_commission for commission in commissions)
         
-            
-        except Exception as e:
-            return Response({'success':False,"error":str(e)},status=400)
+        # Get booking and trip counts
+        pending_bookings = Booking.objects.filter(booking_status="pending").count()
+        completed_trips = Trip.objects.filter(status="completed").count()
+        booked_tickets = Booking.objects.filter(booking_status='booked').count()
         
+        # Build data dictionary
+        data["total_revenue"] = total_amount
+        data['total_booking_pending'] = pending_bookings
+        data['total_trip_completed'] = completed_trips
+        data['ticket_booked'] = booked_tickets
+        data["total_active_bus"] = bus_count
+        data["total_user"] = user_count
+        
+        # Get recent bookings and trips
+        recent_booking = Booking.objects.all().order_by('-booked_at')[:8]
+        trip_data = Trip.objects.all()[:8]
+        
+        context = {
+            'data': data,
+            'recent_booking': recent_booking,
+            'trip_data': trip_data,
+        }
+        
+        return render(request, 'admin/dashboard.html', context)
+        
+    
 
 
 
 # ========== Admin dashboard sidebar all views ==============
-
-
-class AdminProfile(APIView):
-    authentication_classes = [JWTAuthentication]
- 
-    def get(self, request):
+@login_required
+def admin_profile(request):
+    if request.method == "POST":
         try:
             user = request.user
-            serializer = CustomUserSerializer(user)
-            return Response({"success": True, "data": serializer.data}, status=200)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-    
-    def patch(self,request):
-        try:
-            user=request.user
-            full_name=request.data.get('full_name')
-            email=request.data.get('email')
-            phone=request.data.get('phone')
-            gender=request.data.get('gender')
-            user.full_name=full_name
-            user.email=email
-            user.phone=phone
-            user.gender=gender
+            user.full_name = request.POST.get("full_name")
+            user.email = request.POST.get("email")
+            user.phone = request.POST.get("phone")
+            user.gender = request.POST.get("gender")
             user.save()
-            
-            serializer=CustomUserSerializer(user)
-            return Response({"success":True,"data":serializer.data,"message":"Data Updated Successfully"},status=200)
-        except Exception as e:
-            print(str(e))
-            return Response({"success":True,"error":str(e)},status=400)
 
+            messages.success(request, "Profile Updated Successfully")
+            return redirect("admin_profile")  # Redirect to avoid form resubmission on refresh
+        except Exception as e:
+            messages.error(request, str(e))
+    
+    return render(request, "admin/profile.html", {"user": request.user})
+        
 
 # ======= Ticket Counter  ===========
-class TicketCounterView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+@login_required
+def ticket_counter_list(request):
+    counters = TicketCounter.objects.all().order_by('-created_at')
+    sub_admins = CustomUser.objects.filter(role='sub_admin')
 
-    def get(self, request):
-        try:
-            print(request.user)
-            tickets = TicketCounter.objects.all().order_by('-created_at')
-            serializer = TicketCounterSerializer(tickets, many=True)
-            sub_admins=CustomUser.objects.filter(role='sub_admin')
-            sub_admin_serializer=CustomUserSerializer(sub_admins,many=True)
-            return Response({"success": True, "data": serializer.data,'sub_admins':sub_admin_serializer.data}, status=200)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
+    if request.method == "POST":
+        # Get data from the request
+        counter_name = request.POST.get('counter_name')
+        location = request.POST.get('location')
+        full_name = request.POST.get('full_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        gender = request.POST.get('gender')
 
-    def patch(self, request, id):
-        try:
-    
-            # Fetch the TicketCounter instance based on ID
-            ticket = TicketCounter.objects.get(id=id)
-            user = ticket.user  # Get the related user object
-            
-            # Extract the data from the request
-            counter_name = request.data.get('counter_name')
-            location = request.data.get('location')
-            
-            # Correct way to access the nested 'user' data
-            user_data = request.data.get('user', {})  # Safely extract the 'user' dictionary
-            
-            full_name = user_data.get('full_name')
-            email = user_data.get('email')
-            gender = user_data.get('gender')
-            phone = user_data.get('phone')
-            
-            # Update the TicketCounter instance
-            ticket.counter_name = counter_name
-            ticket.location = location
-            
-            # Update the related user instance
-            user.full_name = full_name
-            user.email = email
-            user.phone = phone
-            user.gender = gender
-            
-            # Save the changes
-            ticket.save()
-            user.save()
-
-            return Response({"success": True, "message": "Ticket Counter and User updated successfully"}, status=200)
-        
-        except Exception as e:
-            # Handle any exceptions and return the error message
-            return Response({"success": False, "error": str(e)}, status=400)
-
-    
-    def post(self, request):
-        try:
-            location = request.data.get('location')
-            counter_name = request.data.get('counter_name')
-            
-            full_name = request.data.get('full_name')
-            email = request.data.get('email')
-            phone = request.data.get('phone')
-            gender = request.data.get('gender')
-            
-            # Check if user already exists by email or phone
-            if CustomUser.objects.filter(email=email).exists() or CustomUser.objects.filter(phone=phone).exists():
-                return Response({"success": False, "message": "User already exists"}, status=400)
-            
-            # Create new CustomUser if no existing user
+        # Check if user already exists
+        if CustomUser.objects.filter(email=email).exists() or CustomUser.objects.filter(phone=phone).exists():
+            messages.error(request, "User already exists!")
+        else:
+            # Create a new CustomUser
             user = CustomUser.objects.create(
                 role='sub_admin',
                 full_name=full_name,
@@ -176,8 +132,7 @@ class TicketCounterView(APIView):
                 phone=phone,
                 gender=gender
             )
-            password=f"counter@123"
-            user.set_password(password)
+            user.set_password("counter@123")  # Default Password
             user.save()
 
             # Create the TicketCounter
@@ -186,852 +141,890 @@ class TicketCounterView(APIView):
                 user=user,
                 location=location
             )
-            
-            return Response({"success": True, "message": "Counter added successfully"}, status=200)
 
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
+            messages.success(request, "Ticket Counter added successfully!")
+            return redirect("ticket_counter_list")
 
-        
-    def delete(self,request,id):
-            try:
-                ticket_obj=TicketCounter.objects.get(id=id)
-                ticket_obj.delete()
-                return Response({"success":True,"message":"Data deleted successfully"},status=200)
-            except Exception as e:
-                return Response({"success":False,"error":str(e)},status=400)
-            
-            
+    return render(request, "admin/ticket_counter.html", {
+        "counters": counters,
+        "sub_admins": sub_admins,
+    })
+
+
+@login_required
+def edit_ticket_counter(request, id):
+    ticket_counter = get_object_or_404(TicketCounter, id=id)
+    user = ticket_counter.user
+
+    if request.method == "POST":
+        # Get updated data from the request
+        ticket_counter.counter_name = request.POST.get('counter_name')
+        ticket_counter.bank_name=request.POST.get('bank_name')
+        ticket_counter.bank_account=request.POST.get('bank_account')
+        ticket_counter.location = request.POST.get('location')
+
+        user.full_name = request.POST.get('full_name')
+        user.email = request.POST.get('email')
+        user.phone = request.POST.get('phone')
+        user.gender = request.POST.get('gender')
+
+        # Save updated data
+        ticket_counter.save()
+        user.save()
+
+        messages.success(request, "Ticket Counter updated successfully!")
+        return redirect("ticket_counter_list")
+
+    return render(request, "admin/edit_ticket_counter.html", {
+        "ticket_counter": ticket_counter,
+        "user": user,
+    })
+
+
+@login_required
+def delete_ticket_counter(request, id):
+    ticket_counter = get_object_or_404(TicketCounter, id=id)
+    ticket_counter.delete()
+    messages.success(request, "Ticket Counter deleted successfully!")
+    return redirect("ticket_counter_list")
             
 
 # ========= User Managemnet ==========
-class UserListView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        try:
-            users = CustomUser.objects.filter(role='customer')
-            serializer = CustomUserSerializer(users, many=True)
-            return Response({"success": True, "data": serializer.data}, status=200)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-        
-    def post(self, request):
-        try:
-            email = request.data.get('email')  # You forgot to extract 'email'
-            pass  # Implement your logic here
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-    
-    def patch(self, request, *args, **kwargs):
-        try:
-            user_id = kwargs.get('id')  # Extract `id` from kwargs
-            user = CustomUser.objects.get(id=user_id)
-            
-            full_name = request.data.get('full_name')
-            email = request.data.get('email')
-            phone = request.data.get('phone')
-            gender = request.data.get('gender')
- 
-            user.full_name = full_name
-            user.email = email
-            user.phone = phone
-            user.gender = gender
-            user.save()
+@login_required
+def manage_users(request):
+    """List and add users from the same template."""
+    users = CustomUser.objects.filter(role='customer')
 
-            return Response({"success": True, "message": "User data updated successfully"})
-        except CustomUser.DoesNotExist:
-            return Response({"success": False, "message": "User not found"}, status=404)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-    
-    def delete(self, request, *args, **kwargs):
-        try:
-            user_id = kwargs.get('id')  # Extract `id` from kwargs
-            user = CustomUser.objects.get(id=user_id)
-            user.delete()
-            return Response({"success": True, "message": "User deleted successfully"}, status=200)
-        except CustomUser.DoesNotExist:
-            return Response({"success": False, "message": "User not found"}, status=404)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
+    if request.method == "POST":
+        full_name = request.POST.get('full_name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        gender = request.POST.get('gender')
+
+        if  CustomUser.objects.filter(phone=phone).exists():
+            messages.error(request,"Phone number already exists")
+
+        user = CustomUser.objects.create(
+            role='customer',
+            full_name=full_name,
+            email=email,
+            phone=phone,
+            gender=gender
+        )
+        user.set_password("counter@123")
+        user.save()
+        return redirect('manage_users')  # Reload page after adding user
+
+    return render(request, 'admin/manage_users.html', {'users': users})
+
+
+@login_required
+def delete_user(request, id):
+    """Delete a user and refresh the page."""
+    user = get_object_or_404(CustomUser, id=id)
+    user.delete()
+    return redirect('manage_users')
 
 
 
+# ======= Driver and staff management ========
+@login_required
+def manage_driver_and_staff(request):
+    """List and add drivers and staff from the same template."""
 
-# ======= Driver Management =========
-class DriverListView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
-    def get(self,request):
-        try:
-            user=request.user
-            transportation_company = getattr(user, "transportation_company", None)
-            drivers=Driver.objects.none()
-            if transportation_company:
-                drivers=Driver.objects.filter(transportation_company=transportation_company)
-            else:
-                drivers = Driver.objects.all()
-            serializer = DriverSerializer(drivers, many=True)
-            return Response({"success": True, "data": serializer.data}, status=200) 
-            
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-        
-    
-    def post(self,request):
-        try:
-            user=request.user
-            transportation_company = getattr(user, "transportation_company", None)
-            
-            full_name=request.data.get('full_name')
-            driver_profile=request.FILES.get('driver_profile')
-            license_image=request.FILES.get('license_image')
-            phone_number=request.data.get('phone_number')
+    drivers = Driver.objects.all()
+    staff = Staff.objects.all()
+
+    if request.method == "POST":
+        # Handle Driver Add
+        if 'add_driver' in request.POST:
+            full_name = request.POST.get('full_name')
+            phone_number = request.POST.get('phone_number')
+            driver_profile = request.FILES.get('driver_profile')
+            license_image = request.FILES.get('license_image')
+
             if Driver.objects.filter(phone_number=phone_number).exists():
-                return Response({"success":False,"message":"Driver already exists"},status=400)
-            
-            Driver.objects.create(full_name=full_name,
-                                  driver_profile=driver_profile,
-                                  license_image=license_image,
-                                  phone_number=phone_number,
-                                  transportation_company=transportation_company)
-            return Response({"success":True,"message":"Driver added successfully"},status=200)
-            
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-        
-    def patch(self,request,*args,**kwargs):
-        try:
-            id=kwargs.get('id')
-            driver=Driver.objects.get(id=id)
-            full_name=request.data.get('full_name')
-            driver_profile=request.FILES.get('driver_profile')
-            license_image=request.FILES.get('license_image')
-            phone_number=request.data.get('phone_number')
-            
-            driver.full_name=full_name
-            driver.driver_profile=driver_profile
-            driver.license_image=license_image
-            driver.phone_number=phone_number
-            driver.save()
-            return Response({"success":True,"message":"Driver Updated Successfully"},status=200)
-            
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-        
-    def delete(self,request,*args,**kwargs):
-        try:
-            id=kwargs.get('id')
-            driver=Driver.objects.get(id=id)
-            driver.delete()
-            return Response({"success":True,"message":"Driver deleted successfully"},status=200)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-        
+               messages.error(request,"Driver alraedy exists")
 
-# ======== Staff managment  ==========
-class StaffListView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
-    def get(self,request):
-        try:
-            user=request.user
-            transportation_company = getattr(user, "transportation_company", None)
-            staff=Staff.objects.none()
-            if transportation_company:
-                print(transportation_company)
-                staff=Staff.objects.filter(transportation_company=transportation_company)
-            else:
-                print("NoTicketConter")
-                staff=Staff.objects.all()
-            serializer=StaffSerializer(staff,many=True)
-            return Response({"success":True,"data":serializer.data},status=200)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=400)
-    
-    
-    def post(self,request):
-        try:
-            user=request.user
-            transportation_company = getattr(user, "transportation_company", None)
-            
-            full_name=request.data.get('full_name')
-            staff_profile=request.FILES.get('staff_profile')
-            phone_number=request.data.get('phone_number')
-            if Staff.objects.filter(phone_number=phone_number).exists():
-                return Response({"success":False,"message":"Staff already exists"},status=400)
-            Staff.objects.create(full_name=full_name,staff_profile=staff_profile,phone_number=phone_number,transportation_company=transportation_company)
-            return Response({"success":True,"message":"Staff added successfully"},status=200)
-        except Exception as e:
-            return Response({'success':True,'error':str(e)},status=400)
-    
-    def patch(self,request,*args,**kwargs):
-        try:
-            id=kwargs.get('id')
-            staff=Staff.objects.get(id=id)
-            full_name=request.data.get('full_name')
-            staff_profile=request.FILES.get('staff_profile')
-            phone_number=request.data.get('phone_number')
-            staff.full_name=full_name
-            staff.staff_profile=staff_profile
-            staff.phone_number=phone_number
-            staff.save()
-            return Response({'success':True,"message":"Staff Updated Successfully"},status=200)
-            
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
-
-    def delete(self,request,*args,**kwargs):
-        try:
-            id=kwargs.get('id')
-            staff=Staff.objects.get(id=id)
-            staff.delete()
-            return Response({'success':True,'message':"Staff deleted successfully"},status=200)
-        
-        except Exception as e:
-            return Response({'success':True,'error':str(e)},status=400)
-     
-# ========= Bus Management ========
-class BusListView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        try:
-            user = request.user
-            transportation_company = getattr(user, "transportation_company", None)
-
-            # Filter buses based on ticket counter
-            buses = Bus.objects.filter(transportation_company=transportation_company) if transportation_company else Bus.objects.all()
-
-            # Get all routes
-            routes = Route.objects.all()
-
-            # Get drivers not assigned to any bus
-            assigned_driver_ids = Bus.objects.filter(driver__isnull=False).values_list("driver__id", flat=True)
-            unassigned_drivers = Driver.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_driver_ids)
-
-            # Get staff not assigned to any bus
-            assigned_staff_ids = Bus.objects.filter(staff__isnull=False).values_list("staff__id", flat=True)
-            unassigned_staff = Staff.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_staff_ids)
-
-            # Serialize data
-            response_data = {
-                "success": True,
-                "data": BusSerializer(buses, many=True).data,
-                "all_routes": RouteSerializer(routes, many=True).data,
-                "all_drivers": DriverSerializer(unassigned_drivers, many=True).data,
-                "all_staff": StaffSerializer(unassigned_staff, many=True).data,
-            }
-
-            return Response(response_data, status=status.HTTP_200_OK)
-        
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    def post(self, request):
-        try:
-            print(request.data)
-            
-            # Extract and validate transportation_company
-            user = request.user
-            transportation_company = getattr(user, "transportation_company", None)
-            
-            # Extract and validate driver
-            driver_id = request.data.get('driver')
-            driver_obj = None
-            if driver_id:
-                driver_obj = Driver.objects.get(id=driver_id)
-                if Bus.objects.filter(driver=driver_obj).exists():
-                    return Response({"success": False, "error": "Driver already assigned"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Extract and validate staff
-            staff_id = request.data.get('staff')
-            staff_obj = None
-            if staff_id:
-                staff_obj = Staff.objects.get(id=staff_id)
-                if Bus.objects.filter(staff=staff_obj).exists():
-                    return Response({"success": False, "error": "Staff already assigned"}, status=status.HTTP_400_BAD_REQUEST)
-
-            # Extract and validate route
-            route_id = request.data.get('route')
-            route_obj = Route.objects.get(id=route_id)
-
-            # Extract other fields
-            bus_number = request.data.get('bus_number')
-            bus_type = request.data.get('bus_type', 'deluxe_bus')
-            bus_image = request.FILES.get('bus_image')
-            
-            # Parse JSON fields
-            features = request.data.get('features', '[]')
-            if isinstance(features, list):
-                features = features[0]
-            try:
-                features = json.loads(features) if isinstance(features, str) else features
-            except json.JSONDecodeError:
-                return Response({"success": False, "error": "Invalid features format"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            layout = request.data.get('layout', '{}')
-            if isinstance(layout, list):
-                layout = layout[0]
-            try:
-                layout = json.loads(layout) if isinstance(layout, str) else layout
-            except json.JSONDecodeError:
-                return Response({"success": False, "error": "Invalid layout format"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            rows = layout.get('rows')
-            columns = layout.get('columns')
-            layout_data = layout.get('seatLayout')
-            aisleAfterColumn = layout.get('aisleAfterColumn')
-            
-            # Extract total seats
-            total_seats_list = request.data.getlist('total_seats')
-            total_seats = int(total_seats_list[0]) if total_seats_list else 35
-            
-            # Convert boolean fields
-            def str_to_bool(value):
-                return str(value).lower() in ['true', '1', 'yes']
-            
-            is_active = str_to_bool(request.data.get('is_active'))
-            is_running = str_to_bool(request.data.get('is_running'))
-            
-            # Create bus object with transportation_company
-            bus = Bus.objects.create(
-                driver=driver_obj,
-                staff=staff_obj,
-                bus_number=bus_number,
-                bus_type=bus_type,
-                features=features,
-                bus_image=bus_image,
-                total_seats=total_seats,
-                available_seats=total_seats,
-                route=route_obj,
-                is_active=is_active,
-                is_running=is_running,
-                transportation_company=transportation_company  
+            Driver.objects.create(
+                full_name=full_name,
+                phone_number=phone_number,
+                driver_profile=driver_profile,
+                license_image=license_image
             )
-            
-            # Create Bus layout
-            BusLayout.objects.create(bus=bus, rows=rows, column=columns, layout_data=layout_data, aisle_column=aisleAfterColumn)
-            
-            # Serialize response
-            bus_serializer = BusSerializer(bus)
-            return Response({"success": True, "message": "Bus created successfully", "data": bus_serializer.data}, status=status.HTTP_201_CREATED)
-        
-        except (Driver.DoesNotExist, Staff.DoesNotExist, Route.DoesNotExist) as e:
-            return Response({"success": False, "error": f"{e.__class__.__name__.replace('DoesNotExist', '')} not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+            return redirect('manage_driver_and_staff')  # Reload page after adding driver
 
-    
+        # Handle Staff Add
+        elif 'add_staff' in request.POST:
+            full_name = request.POST.get('full_name')
+            phone_number = request.POST.get('phone_number')
+            staff_profile = request.FILES.get('staff_profile')
+            transportation_company = request.user.transportation_company
 
-    def patch(self, request, *args, **kwargs):
+            if Staff.objects.filter(phone_number=phone_number).exists():
+                messages.error(request, "Staff already exists!")
+                return redirect('manage_driver_and_staff')
+
+            Staff.objects.create(
+                full_name=full_name,
+                staff_profile=staff_profile,
+                phone_number=phone_number,
+                transportation_company=transportation_company
+            )
+            return redirect('manage_driver_and_staff')  # Reload page after adding staff
+
+    return render(request, 'admin/managedriver_staff.html', {'drivers': drivers, 'staff': staff})
+
+@login_required
+def edit_driver(request, driver_id):
+    """Edit an existing driver."""
+    driver = get_object_or_404(Driver, id=driver_id)
+
+    if request.method == "POST":
+        driver.full_name = request.POST.get('full_name')
+        driver.phone_number = request.POST.get('phone_number')
+        if 'driver_profile' in request.FILES:
+            driver.driver_profile = request.FILES['driver_profile']
+        if 'license_image' in request.FILES:
+            driver.license_image = request.FILES['license_image']
+        driver.save()
+        return redirect('manage_driver_and_staff')
+
+    return render(request, 'admin/edit_driver.html', {'driver': driver})
+
+
+@login_required
+def delete_driver(request, driver_id):
+    """Delete a driver."""
+    driver = get_object_or_404(Driver, id=driver_id)
+    driver.delete()
+    return redirect('manage_driver_and_staff')
+
+
+# ======== Edit staff ==========
+@login_required
+def edit_staff(request, staff_id):
+    """Edit an existing staff member."""
+    staff = get_object_or_404(Staff, id=staff_id)
+
+    if request.method == "POST":
+        staff.full_name = request.POST.get('full_name')
+        staff.phone_number = request.POST.get('phone_number')
+        if 'staff_profile' in request.FILES:
+            staff.staff_profile = request.FILES['staff_profile']
+        staff.save()
+        return redirect('manage_driver_and_staff')
+
+    return render(request, 'admin/edit_staff.html', {'staff': staff})
+
+
+# ======== delete Staff ==========
+@login_required
+def delete_staff(request, staff_id):
+    """Delete a staff member."""
+    staff = get_object_or_404(Staff, id=staff_id)
+    staff.delete()
+    return redirect('manage_driver_and_staff')
+
+
+
+
+# ========= Bus Management ========
+
+
+@login_required
+def bus_list(request):
+    user = request.user
+    transportation_company = getattr(user, "transportation_company", None)
+
+    buses = Bus.objects.filter(transportation_company=transportation_company) if transportation_company else Bus.objects.all()
+    routes = Route.objects.all()
+
+    assigned_driver_ids = Bus.objects.filter(driver__isnull=False).values_list("driver__id", flat=True)
+    unassigned_drivers = Driver.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_driver_ids)
+
+    assigned_staff_ids = Bus.objects.filter(staff__isnull=False).values_list("staff__id", flat=True)
+    unassigned_staff = Staff.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_staff_ids)
+
+    context = {
+        'buses': buses,
+        'all_routes': routes,
+        'all_drivers': unassigned_drivers,
+        'all_staff': unassigned_staff,
+        'bus_types': Bus.VEHICLE_CHOICES,
+        'features': Bus.FEATURE_CHOICES
+    }
+
+    return render(request, 'admin/manage_bus.html', context)
+
+
+@login_required
+def create_bus(request):
+    try:
+        # Extract form data
+        bus_number = request.POST.get('bus_number')
+        bus_type = request.POST.get('bus_type')
+        driver_id = request.POST.get('driver')
+        staff_id = request.POST.get('staff')
+        route_id = request.POST.get('route')
+        total_seats = int(request.POST.get('total_seats', 0))
+        is_active = request.POST.get('is_active') == 'on'
+        is_running = request.POST.get('is_running') == 'on'
+        features = request.POST.get('features', '[]')
+        bus_image = request.FILES.get('bus_image')
+
+        # Get related objects
+        driver = Driver.objects.get(id=driver_id) if driver_id else None
+        staff = Staff.objects.get(id=staff_id) if staff_id else None
+        route = Route.objects.get(id=route_id)
+
+        # Create bus
+        bus = Bus.objects.create(
+            bus_number=bus_number,
+            bus_type=bus_type,
+            driver=driver,
+            staff=staff,
+            route=route,
+            total_seats=total_seats,
+            available_seats=total_seats,
+            is_active=is_active,
+            is_running=is_running,
+            features=json.loads(features) if isinstance(features, str) else features,
+            bus_image=bus_image,
+            transportation_company=getattr(request.user, "transportation_company", None)
+        )
+
+        # Create Bus layout if layout data is provided
+        layout = request.POST.get('layout', '{}')
         try:
-            print(request.data)
-            bus_id = kwargs.get('id')
-            bus = Bus.objects.get(id=bus_id)
+            layout_data = json.loads(layout) if isinstance(layout, str) else layout
+            rows = layout_data.get('rows')
+            columns = layout_data.get('columns')
+            seat_layout = layout_data.get('seatLayout')
+            aisle_column = layout_data.get('aisleAfterColumn')
 
-            driver_id = request.data.get('driver')
-            if driver_id:
-                driver_obj = Driver.objects.get(id=driver_id)
-                bus.driver = driver_obj 
+            if rows and columns and seat_layout:
+                BusLayout.objects.create(
+                    bus=bus,
+                    rows=rows,
+                    column=columns,
+                    layout_data=seat_layout,
+                    aisle_column=aisle_column
+                )
+        except json.JSONDecodeError:
+            pass  # Handle invalid layout format silently
 
-            staff_id = request.data.get('staff')
-            if staff_id:
-                staff_obj = Staff.objects.get(id=staff_id)
-                bus.staff = staff_obj
+        return redirect('bus_list')
+    except Exception as e:
+        # Handle errors and redisplay form
+        routes = Route.objects.all()
+        drivers = Driver.objects.filter(transportation_company=getattr(request.user, "transportation_company", None))
+        staff = Staff.objects.filter(transportation_company=getattr(request.user, "transportation_company", None))
 
-            
-            bus_number = request.data.get('bus_number')
-            bus.bus_number = bus_number
-
-            bus_type = request.data.get('bus_type')
-            bus.bus_type = bus_type
-           
-            features = request.data.get('features')
-            if features:
-                bus.features = json.loads(features)  # Convert JSON string to Python list
-                
-            bus_image = request.FILES.get('bus_image')
-            if bus_image:
-                bus.bus_image = bus_image
-
-            # Convert total_seats to integer before updating
-            total_seats=request.data.get('total_seats')
-            if total_seats:
-                try:
-                    if isinstance(total_seats, list):  # If it's a list, take the first value
-                        total_seats = total_seats[0]
-                    bus.total_seats = int(total_seats)  # Convert from string to int
-                except ValueError:
-                    return Response({"success": False, "error": "Invalid total_seats value"}, status=status.HTTP_400_BAD_REQUEST)
-
-            route_id = request.data.get('route')
-            if route_id:
-                bus.route = Route.objects.get(id=route_id)
-
-            is_active = request.data.get('is_active')
-            if is_active is not None:
-                bus.is_active = is_active == 'true'
-
-            is_running = request.data.get('is_running')
-            if is_running is not None:
-                bus.is_running = is_running == 'true'
-                
-            
-            bus.save()
-                
-            bus_layout=BusLayout.objects.get(bus=bus)
-            layout = request.data.get('layout')
-            layout=json.loads(layout)
-            
-            bus_layout.rows=layout.get('rows')
-            bus_layout.column=layout.get('columns')
-            bus_layout.aisle_column=layout.get('aisleAfterColumn')
-            bus_layout.layout_data=layout.get('seatLayout')
-            bus_layout.save()
-            
-            return Response({
-                "success": True,
-                "message": "Bus updated successfully",
-            }, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        context = {
+            'error': str(e),
+            'bus_number': request.POST.get('bus_number'),
+            'bus_type': request.POST.get('bus_type'),
+            'selected_driver': request.POST.get('driver'),
+            'selected_staff': request.POST.get('staff'),
+            'selected_route': request.POST.get('route'),
+            'total_seats': request.POST.get('total_seats'),
+            'is_active': request.POST.get('is_active') == 'on',
+            'is_running': request.POST.get('is_running') == 'on',
+            'features': request.POST.get('features'),
+            'all_routes': routes,
+            'all_drivers': drivers,
+            'all_staff': staff,
+            'bus_types': Bus.VEHICLE_CHOICES,
+            'features': Bus.FEATURE_CHOICES
+        }
+        return render(request, 'admin/manage_bus.html', context)
 
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            bus_id = kwargs.get('id')
-            if not bus_id:
-                return Response({"success": False, "error": "Bus ID not provided"}, status=status.HTTP_400_BAD_REQUEST)
-            bus = Bus.objects.get(id=bus_id)
-            bus.delete()
-            return Response({"success": True, "message": "Bus deleted successfully"}, status=status.HTTP_200_OK)
-        
-        except Bus.DoesNotExist:
-            return Response({"success": False, "error": "Bus not found"}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({"success": False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+@login_required
+def edit_bus(request, bus_id):
+    try:
+        bus = get_object_or_404(Bus, id=bus_id)
+
+        # Update bus with form data
+        if 'bus_number' in request.POST:
+            bus.bus_number = request.POST.get('bus_number')
+
+        if 'bus_type' in request.POST:
+            bus.bus_type = request.POST.get('bus_type')
+
+        if 'driver' in request.POST:
+            driver_id = request.POST.get('driver')
+            bus.driver = Driver.objects.get(id=driver_id) if driver_id else None
+
+        if 'staff' in request.POST:
+            staff_id = request.POST.get('staff')
+            bus.staff = Staff.objects.get(id=staff_id) if staff_id else None
+
+        if 'route' in request.POST:
+            route_id = request.POST.get('route')
+            bus.route = Route.objects.get(id=route_id)
+
+        if 'total_seats' in request.POST:
+            bus.total_seats = int(request.POST.get('total_seats', 0))
+
+        if 'is_active' in request.POST:
+            bus.is_active = request.POST.get('is_active') == 'on'
+
+        if 'is_running' in request.POST:
+            bus.is_running = request.POST.get('is_running') == 'on'
+
+        if 'features' in request.POST:
+            features = request.POST.get('features')
+            bus.features = json.loads(features) if isinstance(features, str) else features
+
+        if 'bus_image' in request.FILES:
+            bus.bus_image = request.FILES['bus_image']
+
+        bus.save()
+
+        # Update bus layout if provided
+        if 'layout' in request.POST:
+            try:
+                bus_layout, created = BusLayout.objects.get_or_create(bus=bus)
+                layout = request.POST.get('layout')
+                layout_data = json.loads(layout) if isinstance(layout, str) else layout
+
+                bus_layout.rows = layout_data.get('rows', bus_layout.rows)
+                bus_layout.column = layout_data.get('columns', bus_layout.column)
+                bus_layout.aisle_column = layout_data.get('aisleAfterColumn', bus_layout.aisle_column)
+                bus_layout.layout_data = layout_data.get('seatLayout', bus_layout.layout_data)
+                bus_layout.save()
+            except json.JSONDecodeError:
+                pass  # Handle invalid layout format silently
+
+        return redirect('bus_list')
+    except Exception as e:
+        # Handle errors and redisplay form
+        routes = Route.objects.all()
+        drivers = Driver.objects.filter(transportation_company=bus.transportation_company)
+        staff = Staff.objects.filter(transportation_company=bus.transportation_company)
+
+        context = {
+            'bus': bus,
+            'error': str(e),
+            'all_routes': routes,
+            'all_drivers': drivers,
+            'all_staff': staff,
+            'bus_types': Bus.VEHICLE_CHOICES,
+            'features': Bus.FEATURE_CHOICES,
+            'selected_driver': bus.driver.id if bus.driver else None,
+            'selected_staff': bus.staff.id if bus.staff else None,
+            'selected_route': bus.route.id if bus.route else None,
+        }
+        return render(request, 'admin/manage_bus.html', context)
+
+
+@login_required
+def delete_bus(request, bus_id):
+    bus = get_object_or_404(Bus, id=bus_id)
+    if request.method == 'POST':
+        bus.delete()
+        return redirect('bus_list')
+    return render(request, 'admin/bus_confirm_delete.html', {'bus': bus})
 
 
 
 
-# ========= Schedule =========
 
-class ScheduleView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+from django.core.serializers.json import DjangoJSONEncoder
+# ======================
+# Vehicle Reservation (Django Template View)
+# =======================
+@login_required
+def vehicle_reservation(request, id=None):
+    """
+    Handles GET (list), POST (create/update/delete) requests for vehicle reservations.
+    """
+    user = request.user
+    transportation_company = getattr(user, 'transportation_company', None)
 
-    def get(self, request):
-        try:
-            user = request.user
-            transportation_company = getattr(user, "transportation_company", None)
-            schedules=Schedule.objects.none()
-            if transportation_company:
-                schedules=Schedule.objects.filter(transportation_company=transportation_company)
-            else:
-                schedules = Schedule.objects.all()
-            # Fetch all schedules
-            all_buses = Bus.objects.all()
-            print(all_buses)
-            assigned_bus_ids = Schedule.objects.values_list('bus_id', flat=True).distinct()
-            unassigned_buses = all_buses.exclude(id__in=assigned_bus_ids)
-            bus_serializer = BusSerializer(unassigned_buses, many=True)
-            
-            
-            routes = Route.objects.all()
-            schedule_serializer = ScheduleSerializer(schedules, many=True)
-            route_serializer = RouteSerializer(routes, many=True)
-            return Response({
-                "success": True,
-                "data": schedule_serializer.data,
-                "all_route": route_serializer.data,
-                "all_buses":bus_serializer.data
-                
-                
-            }, status=status.HTTP_200_OK)
+    # Common context data
+    reservations = BusReservation.objects.none()
+    if transportation_company:
+        reservations = BusReservation.objects.filter(transportation_company=transportation_company)
+    else:
+        reservations = BusReservation.objects.all()
 
-        except Exception as e:
-           
-            return Response({
-                "success": False,
-                "error": str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-    
-    def post(self,request):
-        try:
-            user = request.user
-            transportation_company = getattr(user, "transportation_company", None)
-            
-            route_id=request.data.get('route')
-            route_obj=Route.objects.get(id=route_id)
-            
-            bus_id=request.data.get('bus')
-            bus_obj=Bus.objects.get(id=bus_id)
-            departure=request.data.get('departure_time')
-            arrival_time=request.data.get('arrival_time')
-            price= request.data.get('price')
-            
-            Schedule.objects.create(bus=bus_obj,route=route_obj,departure_time=departure,arrival_time=arrival_time,price=price,transportation_company=transportation_company)
-            return Response({"success":True,"message":"Schedule added successfully"})
-        except Exception as e:
-            return Response({'success':True,'error':str(e)},status=400)
-    
-    def patch(self,request,*args,**kwargs):
-        try:
-            
-            schedule_id= kwargs.get('id')
-            schedule=Schedule.objects.get(id=schedule_id)
-            
-            route_id=request.data.get('route')
-            route_obj=Route.objects.get(id=route_id)
-            
-            bus_id=request.data.get('bus')
-            bus_obj=Bus.objects.get(id=bus_id)
-            
-            departure=request.data.get('departure_time')
-            arrival_time=request.data.get('arrival_time')
-            price= request.data.get('price')
-            
-            schedule.bus=bus_obj
-            schedule.route=route_obj
-            schedule.departure_time=departure,
-            schedule.arrival_time=arrival_time
-            schedule.price=price
-            schedule.save()
-            return Response({'success':True,"message":"Schedule Updated Successfully"},status=200)
-            
-        except Exception as e:
-            return Response({'success':False,"error":str(e)},status=400)
-        
-    
-    def delete(self,request,*args,**kwargs):
-        try:
-            id=kwargs.get('id')
-            print(id)
-            schedule=Schedule.objects.get(id=id)
-            print(schedule)
-            schedule.delete()
-            return Response({"success":True,"message":"Schedule deleted Successfully"})            
-        except Exception as e:
-            return Response({'success':False,"error":str(e)},status=400)
-        
+    assigned_driver_ids = BusReservation.objects.filter(driver__isnull=False).values_list('driver__id', flat=True)
+    unassigned_drivers = Driver.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_driver_ids)
+
+    assigned_staff_ids = BusReservation.objects.filter(staff__isnull=False).values_list('staff__id', flat=True)
+    unassigned_staff = Staff.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_staff_ids)
+
+    vechicle_types = VechicleType.objects.all()
+
+    # Prepare JSON data for each reservation
+    reservation_json = json.dumps([
+        {
+            'id': r.id,
+            'name': r.name,
+            'type_id': r.type_id,
+            'vechicle_number': r.vechicle_number,
+            'vechicle_model': r.vechicle_model,
+            'color': r.color,
+            'driver_id': r.driver_id,
+            'staff_id': r.staff_id,
+            'total_seats': r.total_seats,
+            'price': float(r.price) if r.price is not None else None,
+            # Note: image and document are file fields, so we'll skip their full paths here
+        } for r in reservations
+    ], cls=DjangoJSONEncoder)
+
+    context = {
+        'reservations': reservations,
+        'unassigned_drivers': unassigned_drivers,
+        'unassigned_staff': unassigned_staff,
+        'vechicle_types': vechicle_types,
+        'reservation_json': reservation_json,
+    }
+
+    if request.method == 'POST':
+        if id:  # Update or Delete
+            reservation = get_object_or_404(BusReservation, id=id)
+            try:
+                if 'delete_reservation' in request.POST:
+                    reservation.delete()
+                    return redirect('vehicle-reservation')
+
+                # Update reservation
+                reservation.name = request.POST.get('name', reservation.name)
+                type_id = request.POST.get('type')
+                if type_id:
+                    reservation.type = VechicleType.objects.get(id=type_id)
+
+                reservation.vechicle_number = request.POST.get('vechicle_number', reservation.vechicle_number)
+                reservation.vechicle_model = request.POST.get('vechicle_model', reservation.vechicle_model)
+                if 'image' in request.FILES:
+                    reservation.image = request.FILES['image']
+                if 'document' in request.FILES:
+                    reservation.document = request.FILES['document']
+                reservation.color = request.POST.get('color', reservation.color)
+
+                driver_id = request.POST.get('driver_id')
+                reservation.driver = Driver.objects.get(id=driver_id) if driver_id else None
+
+                staff_id = request.POST.get('staff_id')
+                reservation.staff = Staff.objects.get(id=staff_id) if staff_id else None
+
+                reservation.total_seats = request.POST.get('total_seats', reservation.total_seats)
+                reservation.price = request.POST.get('price', reservation.price)
+
+                reservation.save()
+                return redirect('vehicle-reservation')
+            except Exception as e:
+                print(f"Error updating reservation: {str(e)}")
+                context['error'] = str(e)
+                context['reservation'] = reservation
+
+        elif 'add_reservation' in request.POST:  # Create
+            try:
+                name = request.POST.get('name')
+                type_id = request.POST.get('type')
+                vechicle_number = request.POST.get('vechicle_number')
+                vechicle_model = request.POST.get('vechicle_model')
+                image = request.FILES.get('image')
+                document = request.FILES.get('document')
+                color = request.POST.get('color')
+                driver_id = request.POST.get('driver_id')
+                staff_id = request.POST.get('staff_id')
+                total_seats = request.POST.get('total_seats', 35)
+                price = request.POST.get('price')
+
+                type_obj = VechicleType.objects.get(id=type_id) if type_id else None
+                driver_obj = Driver.objects.get(id=driver_id) if driver_id else None
+                staff_obj = Staff.objects.get(id=staff_id) if staff_id else None
+
+                BusReservation.objects.create(
+                    name=name,
+                    type=type_obj,
+                    vechicle_number=vechicle_number,
+                    vechicle_model=vechicle_model,
+                    image=image,
+                    document=document,
+                    color=color,
+                    driver=driver_obj,
+                    staff=staff_obj,
+                    total_seats=total_seats,
+                    price=price,
+                    transportation_company=transportation_company
+                )
+                return redirect('vehicle-reservation')
+            except Exception as e:
+                print(f"Error creating reservation: {str(e)}")
+                context['error'] = str(e)
+
+    # GET request: Render the list
+    return render(request, 'admin/manage_reservation.html', context)
+
+# =============
+#   Route
+# ============
+
+def route_list_and_add(request):
+    if request.method == 'POST':
+        source = request.POST.get('source')
+        destination = request.POST.get('destination')
+        distance = request.POST.get('distance')
+        estimated_time = request.POST.get('estimated_time')
+
+        if source and destination and distance and estimated_time:
+            Route.objects.create(
+                source=source,
+                destination=destination,
+                distance=distance,
+                estimated_time=estimated_time
+            )
+            return redirect('route_list_add')  # Redirect to avoid form resubmission
+
+    routes = Route.objects.all()
+    return render(request, 'admin/manage_routes.html', {'routes': routes})
 
 
-# ======= Bus  details schedule =========
-class BusDetailsScheduleApiView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
-    def get(self,request,*args,**kwargs):
-        try:
-            bus_id=kwargs.get('id')
-            bus_obj=Bus.objects.get(id=bus_id)
-            serializer_bus=BusSerializer(bus_obj)
-            
-            
-            layout_obj=BusLayout.objects.get(bus=bus_obj)
-            schedule_obj=Schedule.objects.get(bus=bus_obj)
-            booked_seat=bus_obj.total_seats-bus_obj.available_seats
-            total_amount=schedule_obj.price*booked_seat
-            serializer_layout=BusLayoutSerializer(layout_obj)
-            
-            booking=Booking.objects.filter(bus=bus_obj)
-            serializer_booking=BookingSerializer(booking,many=True)
-            
-            return Response({'success':True,'bus_data':serializer_bus.data,"bus_layout":serializer_layout.data,"total_amount":total_amount,"booking_data":serializer_booking.data},status=200)
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
-        
-        
-    
-# =========== Routes Manangemnet ========
 
-class RouteApiView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
-    
-    def get(self,request):
-        try:
-            route=Route.objects.all()
-            serializer=RouteSerializer(route,many=True)
-            return Response({'success':True,'data':serializer.data},status=200)    
-        
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
-        
-        
-    def post(self,request):
-        try:
-            print(request.data)
-            source=request.data.get('source')
-            destination=request.data.get('destination')
-            distance=request.data.get('distance')
-            estimated_time=request.data.get('estimated_time')
-            Route.objects.create(source=source,destination=destination,distance=distance,estimated_time=estimated_time)
-            
-            return Response({'success':True,'message':'Route added successfully'},status=200)
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
-            
-    
-    def patch(self,request,*args,**kwargs):
-        try:
-            print(request.data)
-            id=kwargs.get('id')
-            route=Route.objects.get(id=id)
-            source=request.data.get('source')
-            destination=request.data.get('destination')
-            distance=request.data.get('distance')
-            
-            route.destination=destination
-            route.source=source
-            route.distance=distance
-            route.save()
-            return Response({'success':True,'message':'Route data updated succesfully '})
-            
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
-            
-    
-    def delete(self,request,*args,**kwargs):
-        try:
-            
-            id=kwargs.get('id')
-            route=Route.objects.get(id=id)
-            route.delete()
-            return Response({'success':True,'message':"Route deleetd successfully "})
-            
-            
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
+def edit_route(request, id):
+    route = get_object_or_404(Route, id=id)
+
+    if request.method == 'POST':
+        route.source = request.POST.get('source')
+        route.destination = request.POST.get('destination')
+        route.distance = request.POST.get('distance')
+        route.estimated_time = request.POST.get('estimated_time')
+        route.save()
+        return redirect('route_list')
+
+    return render(request, 'admin/edit_route.html', {'route': route})
+
+
+def delete_route(request, id):
+    route = get_object_or_404(Route, id=id)
+    if request.method == 'POST':
+        route.delete()
+        return redirect('route_list')
+
+    return render(request, 'delete_route.html', {'route': route})
+
 
 
 
 # ======= Bus List of one Route ========
-class RouteBusListAPiView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
+def route_bus_list(request, id):
+    route = get_object_or_404(Route, id=id)
+    buses = Bus.objects.filter(schedule__route_id=id).distinct()
+    
+    total_buses = buses.count()
+
+    context = {
+        'route': route,
+        'buses': buses,
+        'total_buses': total_buses,
+    }
+    return render(request, 'admin/route_buslist.html', context)
+
+
+# ====== Json data for bus data of Route  =======
+class BusDetails(APIView):
     
     def get(self,request,*args,**kwargs):
-        try:
-            route_id=kwargs.get('id')
-            route=Route.objects.get(id=route_id)
-            bus_obj=Bus.objects.filter(schedule__route_id=route_id).distinct()
-            total_bus=Bus.objects.filter(schedule__route_id=route_id).distinct().count()
-            source=route.source
-            destination=route.destination
-            
-            serializer=BusSerializer(bus_obj,many=True)
-            return Response({'success':True,'data':serializer.data,"total_bus":total_bus,"source":source,"destination":destination},status=200)
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
+        bus_id=kwargs.get('id')
+        bus=Bus.objects.get(id=bus_id)
+        serializer=BusSerializer(bus)
+        return Response({'success':True,'data':serializer.data},status=200)
         
-# ========== Booking Management  =================
-class BookingAPiView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
-    def get(self,request):
-        try:
-            bus_reserve=BusReservationBooking.objects.all().order_by('-created_at')
-            serializer_bus=VechicleReservationBookingSerializer(bus_reserve,many=True)
-            
-            booking=Booking.objects.all().order_by('-booked_at')
-            serializer=BookingSerializer(booking,many=True)
-            return Response({'success':True,'data':serializer.data,"bus_reserve":serializer_bus.data},status=200)
-            
-        except Exception as e:
-            return Response({'success':False,"error":str(e)},status=400)
-    
-    
-    def patch(self,request,*args,**kwargs):
-        try:
-            print(request.data)
-            id=kwargs.get('id')
-            booking_obj=Booking.objects.get(id=id)
-            
-            booking_status=request.data.get('booking_status')
-            booking_obj.booking_status=booking_status
-            booking_obj.save()
-            return Response({'success':True,'message':"Booking Status Updated Successfully"})
-        except Exception as e:
-            return Response({'success':True,'error':str(e)},status=400)
         
+
+# ========= Schedule =========
+def schedule_list(request):
+    if request.method == "POST":
+        route_id = request.POST.get("route")
+        bus_id = request.POST.get("bus")
+        departure_time = request.POST.get("departure_time")
+        arrival_time = request.POST.get("arrival_time")
+        price = request.POST.get("price")
+
+        route = Route.objects.get(id=route_id)
+        bus = Bus.objects.get(id=bus_id)
+
+        Schedule.objects.create(route=route, bus=bus, departure_time=departure_time, arrival_time=arrival_time, price=price)
+        return redirect("schedule_list")
+
+    schedules = Schedule.objects.all()
+    all_routes = Route.objects.all()
+    all_buses = Bus.objects.all()
+
+    return render(request, "admin/manage_schedule.html", {
+        "schedules": schedules,
+        "all_routes": all_routes,
+        "all_buses": all_buses
+    })
+
+def schedule_edit(request, id):
+    schedule = get_object_or_404(Schedule, id=id)
+    
+    if request.method == "POST":
+        schedule.route = Route.objects.get(id=request.POST.get("route"))
+        schedule.bus = Bus.objects.get(id=request.POST.get("bus"))
+        schedule.departure_time = request.POST.get("departure_time")
+        schedule.arrival_time = request.POST.get("arrival_time")
+        schedule.price = request.POST.get("price")
+        schedule.save()
+        return redirect("schedule_list")
+
+    all_routes = Route.objects.all()
+    all_buses = Bus.objects.all()
+    
+    return render(request, "admin/manage_schedule.html", {
+        "schedule": schedule,
+        "all_routes": all_routes,
+        "all_buses": all_buses
+    })
+
+def schedule_delete(request, id):
+    schedule = get_object_or_404(Schedule, id=id)
+    schedule.delete()
+    return redirect("schedule_list")
+
+
+
+
+
+
+# ======= Bus  details schedule =========
+def schedule_bus_details(request, id):
+    bus = get_object_or_404(Bus, id=id)
+    layout = get_object_or_404(BusLayout, bus=bus)
+    schedule = get_object_or_404(Schedule, bus=bus)
+    
+    seat_layout_with_bookings = []
+    booked_seats = {}
+    booked_seat = 0
+    
+    for booking in Booking.objects.filter(bus=bus):
+        for seat in booking.seat:
+            booked_seats[seat] = {
+                "user": booking.user.full_name,
+                "booking_id": booking.id
+            }
+            booked_seat += 1
+
+    total_amount = booked_seat * schedule.price
+
+    for row in layout.layout_data:
+        enhanced_row = []
+        for seat in row:
+            if seat == 0:
+                enhanced_row.append(0)
+            else:
+                seat_name = seat["seat"]
+                seat_status = seat["status"]
+                seat_info = {
+                    "seat": seat_name,
+                    "status": seat_status,
+                    "user": booked_seats.get(seat_name, {}).get("user", None) if seat_status == "booked" else None,
+                    "booking_id": booked_seats.get(seat_name, {}).get("booking_id", None) if seat_status == "booked" else None
+                }
+                enhanced_row.append(seat_info)
+        seat_layout_with_bookings.append(enhanced_row)
+
+    return render(request, 'admin/schedule_buslist.html', {
+        'bus': bus,
+        'layout': layout,
+        'schedule': schedule,
+        'seat_layout': seat_layout_with_bookings,
+        'total_amount': total_amount,
+        'booked_seat': booked_seat,
+    })
 
 # ======= Bookinglist of one User ==============
-class BookingScheduleOneUserDetails(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
+def booking_details(request, id):
+    booking = get_object_or_404(Booking, id=id)
+    count = len(booking.seat)
+    total_price = count * booking.schedule.price
     
-    def get(self,request,*args,**kwargs):
-        try:
-            booking_id=kwargs.get('id')
-            booking_obj=Booking.objects.get(id=booking_id)
-            print(booking_id)
-            count=len(booking_obj.seat)
-            total_price=count*booking_obj.schedule.price
-            data = {    'user':booking_obj.user.full_name,
-                        'user_phone':booking_obj.user.phone,
-                        'bus_number': booking_obj.bus.bus_number,
-                        'source': booking_obj.bus.route.source,
-                        'destination': booking_obj.bus.route.destination,
-                        'booking_status': booking_obj.booking_status,
-                        'seat': booking_obj.seat,
-                        'booked_at': booking_obj.booked_at,
-                        'total_price': total_price,
-                        'total_seat': count,
-                        
-            }
-            return Response({'success':True,'data':data},status=200)
+    data = {
+        'user': booking.user.full_name,
+        'user_phone': booking.user.phone,
+        'bus_number': booking.bus.bus_number,
+        'source': booking.bus.route.source,
+        'destination': booking.bus.route.destination,
+        'booking_status': booking.booking_status,
+        'seat': booking.seat,
+        'booked_at': booking.booked_at,
+        'total_price': total_price,
+        'total_seat': count,
+    }
+    
+    return JsonResponse(data)
+
         
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
 
-# ======================
-# Vehicle Reservation
-# =======================
+
+# ========== Booking Management  =================
+def booking_management(request):
+    try:
+        # Fetch all bus reservations
+        bus_reserve_data = BusReservationBooking.objects.all().order_by('-created_at')
+        # Paginate the bus reservation data
+        bus_reserve_paginator = Paginator(bus_reserve_data, 8)  # 8 items per page
+        page_number_bus_reserve = request.GET.get('page')
+        bus_reserve_page = bus_reserve_paginator.get_page(page_number_bus_reserve)
+
+        # Fetch all bookings
+        booking_data = Booking.objects.all().order_by('-booked_at')
+        # Paginate the booking data
+        booking_paginator = Paginator(booking_data, 10)  # 10 items per page
+        page_number_booking = request.GET.get('page')
+        booking_page = booking_paginator.get_page(page_number_booking)
+
+        return render(request, 'admin/manage_booking.html', {
+            'bus_reserve_data': bus_reserve_page,
+            'booking_data': booking_page,
+        })
+    except Exception as e:
+        return render(request, 'admin/manage_booking.html', {'error': str(e)})
 
     
-class VechicleReservationView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    def get(self, request):
-        try:
-            user=request.user
-            transportation_company=getattr(user,'transportation_company',None)
-            bus_reserve = BusReservation.objects.none()
-            if transportation_company:
-                bus_reserve=BusReservation.objects.filter(transportation_company)
-            else:
-                bus_reserve = BusReservation.objects.all()
-            serializer = BusReservationSerializer(bus_reserve, many=True)
+    
+# ========== Reports details  ===========
 
-            # Fetch drivers not assigned to any reservation
-            assigned_driver_ids = BusReservation.objects.filter(driver__isnull=False).values_list('driver__id', flat=True)
-            unassigned_drivers = Driver.objects.exclude(id__in=assigned_driver_ids)
-            driver_serializer = DriverSerializer(unassigned_drivers, many=True)
+def report_analysis_view(request):
+    current_month, current_year = now().month, now().year
+    prev_month = current_month - 1 if current_month > 1 else 12
+    prev_year = current_year if current_month > 1 else current_year - 1
+
+    # Current Month Data
+    monthly_revenue = Payment.objects.filter(created_at__month=current_month, created_at__year=current_year).aggregate(total=Sum('price'))['total'] or 0
+    monthly_commission = Payment.objects.filter(created_at__month=current_month, created_at__year=current_year).aggregate(total=Sum('commission_deducted'))['total'] or 0
+    total_bookings = Booking.objects.filter(booked_at__month=current_month, booked_at__year=current_year).count()
+    canceled_bookings = Booking.objects.filter(booked_at__month=current_month, booked_at__year=current_year, booking_status='canceled').count()
+    top_buses = Booking.objects.filter(booked_at__month=current_month, booked_at__year=current_year).values(bus_number=F('bus__bus_number')).annotate(total_bookings=Count('id')).order_by('-total_bookings')[:5]
+    top_customers = Booking.objects.filter(booked_at__month=current_month, booked_at__year=current_year).values(customer=F('user__full_name')).annotate(total_bookings=Count('id')).order_by('-total_bookings')[:5]
+
+    # Previous Month Data (for comparison)
+    prev_revenue = Payment.objects.filter(created_at__month=prev_month, created_at__year=prev_year).aggregate(total=Sum('price'))['total'] or 0
+    prev_bookings = Booking.objects.filter(booked_at__month=prev_month, booked_at__year=prev_year).count()
+
+    # Format numbers with commas using Python's locale-independent method
+    def format_number(value):
+        return "{:,}".format(int(value)) if value else "0"
+
+    # Calculate differences and cancellation rate in the view
+    revenue_diff = monthly_revenue - prev_revenue
+    bookings_diff = total_bookings - prev_bookings
+    cancellation_rate = (canceled_bookings / total_bookings * 100) if total_bookings > 0 else 0
+
+    return render(request, 'admin/report_analysis.html', {
+        "month_year": f"{current_month}-{current_year}",
+        "monthly_revenue": format_number(monthly_revenue),
+        "monthly_commission": format_number(monthly_commission),
+        "total_bookings": format_number(total_bookings),
+        "canceled_bookings": format_number(canceled_bookings),
+        "top_buses": top_buses,
+        "top_customers": top_customers,
+        "prev_revenue": format_number(prev_revenue),
+        "prev_bookings": format_number(prev_bookings),
+        "revenue_diff": format_number(abs(revenue_diff)),
+        "bookings_diff": format_number(abs(bookings_diff)),
+        "revenue_diff_positive": revenue_diff > 0,
+        "bookings_diff_positive": bookings_diff > 0,
+        "cancellation_rate": cancellation_rate,
+    })
+    
+
+# ========================
+# Settings 
+#=========================
+def system_settings_view(request):
+    system = System.objects.first()
+
+    if request.method == "POST":
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        address = request.POST.get('address')
+        image = request.FILES.get('image')
+
+        if system:
+            system.name = name
+            system.email = email
+            system.phone = phone
+            system.address = address
             
-            assigned_staff_ids = BusReservation.objects.filter(staff__isnull=False).values_list('staff__id', flat=True)
-            unassigned_staff = Staff.objects.exclude(id__in=assigned_staff_ids)
-            staff_serializer = StaffSerializer(unassigned_staff, many=True)
+            system.image = image
+            system.save()
+            messages.success(request, "System settings updated successfully!")
+        else:
+            messages.error(request, "Error: No system settings found.")
 
-            vechicle_types = VechicleType.objects.all()
-            vechicle_type_serializer = VechicleTypeSerializer(vechicle_types, many=True)
+        return redirect("system_settings")
 
-            return Response({
-                'success': True,
-                'data': serializer.data,
-                'unassigned_drivers': driver_serializer.data,
-                'unassigned_staff': staff_serializer.data,
-                'vechicle_types': vechicle_type_serializer.data
-            }, status=200)
-        except Exception as e:
-            return Response({'success': False, 'error': str(e)}, status=400)
-
-    def post(self, request):
-        try:
-            print(request.data)
-            user=request.user
-            transportation_company=getattr(user,'transportation_company',None)
-            name = request.data.get('name')
-            type_name = request.data.get('type')
-            vechicle_number = request.data.get('vehicle_number')
-            vechicle_model = request.data.get('vehicle_model')
-            color = request.data.get('color')
-            driver_name = request.data.get('driver_id')
-            staff_name = request.data.get('staff_id')
-            total_seats = request.data.get('total_seats', 35)
-            price = request.data.get('price')
-
-            # Validate and fetch related objects
-            type_obj = VechicleType.objects.get(name=type_name) if type_name else None
-            driver_obj = Driver.objects.get(full_name=driver_name) if driver_name else None
-            staff_obj = Staff.objects.get(full_name=staff_name) if staff_name else None
-
-            # Create the reservation
-            reservation = BusReservation.objects.create(
-                name=name,
-                type=type_obj,
-                vechicle_number=vechicle_number,
-                vechicle_model=vechicle_model,
-                color=color,
-                driver=driver_obj,
-                staff=staff_obj,
-                total_seats=total_seats,
-                price=price,
-                transportation_company=transportation_company
-            )
-
-            serializer = BusReservationSerializer(reservation)
-            return Response({'success': True, 'message': 'Reservation created successfully', 'data': serializer.data}, status=201)
-        except Exception as e:
-            return Response({'success': False, 'error': str(e)}, status=400)
+    return render(request, "admin/manage_settings.html", {"system": system})
 
 
-    def patch(self, request, *args, **kwargs):
-        try:
-            print(request.data)
-            reservation_id = kwargs.get('id')
-            reservation = BusReservation.objects.get(id=reservation_id)
+    
+ 
 
-            name = request.data.get('name')
-            type_name = request.data.get('type')
-            vechicle_number = request.data.get('vehicle_number')
-            vechicle_model = request.data.get('vehicle_model')
-            color = request.data.get('color')
-            driver_name = request.data.get('driver_id')
-            staff_name = request.data.get('staff_id')
-            total_seats = request.data.get('total_seats')
-            price = request.data.get('price')
+#========= Payment and Commission =============
+@login_required
+def payment_details(request):
+    # Get all completed payments ordered by date
+    payments = Payment.objects.filter(payment_status='completed').order_by('-created_at')
+    
+    # Get commission rate
+    rate = Rate.objects.first()
+    
+    # Calculate totals
+    total_payments = payments.aggregate(
+        total_amount=Sum('price'),
+        total_commission=Sum('commission_deducted')
+    )
+    
+    total_received = (total_payments['total_amount'] or 0) - (total_payments['total_commission'] or 0)
+    
+    # Calculate per-bus statistics
+    bus_stats = Payment.objects.filter(payment_status='completed').values(
+        'bus__id', 
+        'bus__bus_number',
+        'bus__route__source',
+        'bus__route__destination'
+    ).annotate(
+        total_earnings=Sum('price'),
+        total_commission=Sum('commission_deducted'),
+        payment_count=Count('id')
+    ).order_by('-total_earnings')
+    
+    context = {
+        'payments': payments,
+        'rate': rate,
+        'total_amount': total_payments['total_amount'] or 0,
+        'total_commission': total_payments['total_commission'] or 0,
+        'total_received': total_received,
+        'bus_stats': bus_stats,
+    }
+    return render(request, 'admin/payment_details.html', context)
 
-            # Update fields if provided
-            if name:
-                reservation.name = name
-            if type_name:
-                reservation.type = VechicleType.objects.get(name=type_name)
-            if vechicle_number:
-                reservation.vechicle_number = vechicle_number
-            if vechicle_model:
-                reservation.vechicle_model = vechicle_model
-            if color:
-                reservation.color = color
-            if driver_name:
-                reservation.driver = Driver.objects.get(full_name=driver_name)
-            if staff_name:
-                reservation.staff = Staff.objects.get(full_name=staff_name)
-            if total_seats:
-                reservation.total_seats = total_seats
-            if price:
-                reservation.price = price
 
-            reservation.save()
-            serializer = BusReservationSerializer(reservation)
-            return Response({'success': True, 'message': 'Reservation updated successfully', 'data': serializer.data}, status=200)
-        except BusReservation.DoesNotExist:
-            return Response({'success': False, 'message': 'Reservation not found'}, status=404)
-        except Exception as e:
-            return Response({'success': False, 'error': str(e)}, status=400)
+@login_required
+def update_rate(request):
+    rate = Rate.objects.first()
+    
+    if request.method == "POST":
+        new_rate = request.POST.get('rate')
+        if new_rate:
+            rate.rate = new_rate
+            rate.save()
+            return redirect('payments_details')  # Redirect back to payment page
 
-    def delete(self, request, *args, **kwargs):
-        try:
-            reservation_id = kwargs.get('id')
-            reservation = BusReservation.objects.get(id=reservation_id)
-            reservation.delete()
-            return Response({'success': True, 'message': 'Reservation deleted successfully'}, status=200)
-        except BusReservation.DoesNotExist:
-            return Response({'success': False, 'message': 'Reservation not found'}, status=404)
-        except Exception as e:
-            return Response({'success': False, 'error': str(e)}, status=400)
+    return render(request, 'admin/payment_details.html', {'rate': rate})
+
+        
+
+
 
 # ================
 # Vehicle Type
@@ -1041,132 +1034,4 @@ class VehicleTypeViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = VechicleType.objects.all()
     serializer_class = VechicleTypeSerializer
-        
-
-#========= Payment and Commission =============
-class PaymentApiView(APIView):
-    
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
-    def get(self, request):
-        try:
-            payment = Payment.objects.all().order_by('-created_at')
-            serializer_payment = PaymentSerializer(payment, many=True)
-            commission = Commission.objects.all()
-            serializer_commission = CommissionSerializer(commission, many=True)
-            rate = Rate.objects.first()
-            serializer_rate = RateSerializer(rate)
-            
-            return Response({
-                'success': True,
-                'payment_data': serializer_payment.data,
-                'commission_data': serializer_commission.data,
-                'rate_data': serializer_rate.data
-            }, status=200)
-        
-        except Exception as e:
-            return Response({'success': False, 'error': str(e)}, status=400)
-
-#   ======= Rate ============
-
-class RateApiView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
-    def patch(self,request,*args,**kwargs):
-        try:
-            print(request.data)
-            id=kwargs.get('id')
-            rate=request.data.get('rate')
-            rate_obj = Rate.objects.get(id=id)
-            rate_obj.rate=rate
-            return Response({'success':True,'message':'Commission Rate Updated Successfully'},status=200)
-            
-        except Exception as e:
-            return Response({'success':False,'error':str(e)},status=400)
-        
-        
-from django.db.models import Sum, Count, F
-from django.utils.timezone import now
-
-
-# ========== Report and analysis =========
-class ReportAnalysisApiView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes = [IsAuthenticated]  # Optional: Restrict access to logged-in admins
-
-    def get(self, request):
-        month, year = now().month, now().year  # Get current month & year
-        
-        # 1️ Monthly Revenue & Commission
-        monthly_revenue = Payment.objects.filter(created_at__month=month, created_at__year=year).aggregate(total=Sum('price'))['total'] or 0
-        monthly_commission = Payment.objects.filter(created_at__month=month, created_at__year=year).aggregate(total=Sum('commission_deducted'))['total'] or 0
-
-        # 2️ Monthly Bookings & Cancellations
-        total_bookings = Booking.objects.filter(booked_at__month=month, booked_at__year=year).count()
-        canceled_bookings = Booking.objects.filter(booked_at__month=month, booked_at__year=year, booking_status='canceled').count()
-
-        # 3️ Top Performing Buses
-        top_buses = Booking.objects.values(bus_number=F('bus__bus_number')) \
-            .annotate(total_bookings=Count('id')) \
-            .order_by('-total_bookings')[:5]
-
-        # 4️ Top Active Customers
-        top_customers = Booking.objects.values(customer=F('user__full_name')) \
-            .annotate(total_bookings=Count('id')) \
-            .order_by('-total_bookings')[:5]
-
-        return Response({
-            "success":True,
-            "month": f"{month}-{year}",
-            "monthly_revenue": monthly_revenue,
-            "monthly_commission": monthly_commission,
-            "monthly_bookings": total_bookings,
-            "monthly_canceled": canceled_bookings,
-            "top_buses": list(top_buses),
-            "top_customers": list(top_customers)
-        }) 
-
-
-
-
-
-# ========================
-# Settings 
-#=========================
-
-class SettingsApiView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
-    
-    def get(self,request):
-        system=System.objects.all().first()
-        serializer=SystemSerializer(system)
-        return Response({"success":True,"data":serializer.data},status=200)
-    
-    
-    def patch(self,request,*args,**kwargs):
-        try:
-            print(request.data)
-            id=kwargs.get('id')
-            system=System.objects.get(id=id)
-            name=request.data.get('name')
-            email=request.data.get('email')
-            phone=request.data.get('phone')
-            image=request.FILES.get('image')
-            address=request.data.get('address')
-            
-            system.name=name
-            system.email=email
-            system.phone=phone
-            system.image=image
-            system.address=address
-            system.save()
-            return Response({"success":True,'message':"System data upated successfully"},status=201)
-        
-        except Exception as e:
-            return Response({"success":False,"error":str(e)},status=400)
-        
-        
-        
+       

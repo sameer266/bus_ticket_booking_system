@@ -33,10 +33,22 @@ admin.sites.AdminSite.index_title = 'Admin Panel'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('login/',views.Login,name='login'),
+    path('signup/',views.Send_otp,name='signup'),
+    path('logout/',views.Logout,name='logout'),
+    path('verify_otp/',views.Verify_otp,name='verify_otp'),
     
     
-    # ===== Data For Navbar and Contact ========
-    path('api/nav_contact/',views.NavAndContactDataApiView.as_view()),
+        # ===== Admin Dashboard ==========
+    path('',include('booking.urls')),
+    
+    # ========= Normal User ============
+    path('api/',include('custom_user.urls')),
+    
+  
+
+    
+# ========== Mobile Apps  api =  =======
     
     # ====== Authentication api =========
     path('api/login/', views.LoginView.as_view(), name='token_obtain_login'),
@@ -45,7 +57,7 @@ urlpatterns = [
     path('api/forget_password/',views.ForgetPassword.as_view()),
     path('api/reset_password/',views.ResetPassword.as_view()),
     
-    
+    # ======= Otp  =================
     path('api/send_otp/',views.SendOtp.as_view()),
     path('api/verify_otp/',views.VerifyOtp.as_view()),
     path('api/register_user/',views.RegisterUserOtp.as_view()),
@@ -60,20 +72,19 @@ urlpatterns = [
     # ====== Popular routes =========
     path('api/popular_routes/',views.PopularRoutes.as_view()),
     
+    # ========== Reviews and Buses list =============
     path('api/all_reviews/',views.AllReveiews().as_view()),
     path('api/all_buses/',views.AllBuses.as_view()),
     path('api/routes_all_buses/<int:id>/',views.RoutesBusList.as_view()),
     
  
-    
     #======== Vechicle Type and Reservation  ============
     path('api/vechicle_types/',views.VechicleTypeList.as_view()),
     path('api/vechicle_list/type/<id>/',views.VechicleReservationList.as_view()), #List all vehicle  one type reservation list
     path('api/vechicle_detail/<int:id>/',views.VehicleOneDetails.as_view()),
     path('api/vechicle_reservation_create/',views.VechicleReeservationBookingApiView.as_view()),
-    
-#============ For Mobile App api ====================
-#  One User Vechcile Reservation and Seat Booking List
+
+# ====== One User Vechcile Reservation and Seat Booking List ========
     path('api/vechicle_reservation_booking_list/',views.UserVechicleReservationBookingListApiView.as_view()),
     path('api/bus_seat_booking_list/',views.UserSeatBookingListApiView.as_view()),
     
@@ -82,13 +93,6 @@ urlpatterns = [
     path('api/admin_buslayout/<int:id>/',views.BusLayoutApiView.as_view()),
     
     
-    # ===== Admin Dashboard ==========
-    path('api/',include('booking.urls')),
-    
-    # ========= Normal User ============
-    path('api/',include('custom_user.urls')),
-    
-  
 
   
     
