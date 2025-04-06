@@ -5,14 +5,15 @@ from django.contrib.auth import login,logout
 from custom_user.models import CustomUser
 from django.contrib.auth import authenticate
 from datetime import datetime
+from django.contrib import messages
 
-from custom_user.models import CustomUser,UserOtp,System
-from route.models import Route,Schedule,Trip,CustomerReview
-from bus.models import Bus,BusReservation,BusLayout,Driver,Staff,VechicleType
-from booking.models import Commission,Booking,BusReservationBooking
+from custom_user.models import CustomUser,UserOtp
+from route.models import Route,Schedule,CustomerReview
+from bus.models import Bus,BusReservation,BusLayout,VechicleType
+from booking.models import Booking,BusReservationBooking
 from django.shortcuts import get_object_or_404
-from custom_user.serializers import CustomUserSerializer,SystemSerializer
-from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleUserReservationBookingSerializer,UserBookingSerilaizer
+from custom_user.serializers import CustomUserSerializer
+from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleUserReservationBookingSerializer,UserBookingSerilaizer,VechicleReservationBookingSerializer,BookingSerializer
 
 
 
@@ -25,34 +26,38 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 
+
        
 
 
 # =======  Login ========
 
-def Login(request):
+def login_view(request):
     if request.method == 'POST':
         phone = request.POST.get('phone')
         password = request.POST.get('password')
+        if password == "counter@123":
+            messages.info("Please reset password")
+            redirect('reset_password')
         user = authenticate(phone=phone, password=password)
         if user:
-            login(request, user)
+            login(request,user)
             print(user)
             return redirect('admin_dashboard')
         else:
             error_message = "Invalid phone number or password"
             return render(request, 'pages/login.html', {'error_message': error_message})
-    return render(request,'pages/login.html')
+    return render(request, 'pages/login.html')
 
 
-def Logout(request):
+def logout_view(request):
     logout(request)
     return redirect('login')
 
 
 
 
-def Send_otp(request):
+def send_otp(request):
     if request.method == 'POST':
         try:
             phone = request.POST.get('phone')
@@ -74,7 +79,7 @@ def Send_otp(request):
     return render(request, 'pages/send_otp.html')
 
 
-def Verify_otp(request):
+def verify_otp(request):
     if request.method == 'POST':
        
         otp = request.POST.get('otp')
@@ -89,6 +94,27 @@ def Verify_otp(request):
     return render(request, 'pages/verify_otp.html')
         
         
+
+from django.contrib.auth.hashers import make_password
+
+def reset_password(request):
+    message = ""
+    try:
+        
+        user = request.user
+        if request.method == "POST":
+            p1 = request.POST.get("new_password")
+            p2 = request.POST.get("confirm_password")
+            if p1 == p2:
+                user.password = make_password(p1)
+                user.save()
+                message = "Password has been reset. You can now log in."
+            else:
+                message = "Passwords do not match."
+    except CustomUser.DoesNotExist:
+        message = "Invalid reset link."
+    
+    return render(request, 'admin/reset_password.html', {'message': message})
 
 
 
@@ -552,6 +578,24 @@ class UserSeatBookingListApiView(APIView):
         except Exception as e:
             return Response({'success':False,'error':str(e)},status=400)
         
+
+# ========== Booking Management  =================
+class BookingAPiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request):
+        try:
+            bus_reserve=BusReservationBooking.objects.all().order_by('-created_at')
+            serializer_bus=VechicleReservationBookingSerializer(bus_reserve,many=True)
+            
+            booking=Booking.objects.all().order_by('-booked_at')
+            serializer=BookingSerializer(booking,many=True)
+            return Response({'success':True,'data':serializer.data,"bus_reserve":serializer_bus.data},status=200)
+            
+        except Exception as e:
+            return Response({'success':False,"error":str(e)},status=400)
+    
 
 # ========= Bus Layout =========
 class BusLayoutApiView(APIView):

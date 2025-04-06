@@ -71,8 +71,11 @@
                 </div>
 
                 <button class="btn btn-primary edit-btn" onclick="toggleEdit()">
-                    <i class="bi bi-pencil-square"></i> Edit Profile
+                    <i class="bi bi-pencil-square "></i> Edit Profile
                 </button>
+                <a href="{% url 'reset_password' %}" class="btn btn-danger edit-btn">
+                    <i class="bi bi-pencil-square"></i> Reset Password
+                </a>
             </div>
 
             <!-- Edit Mode -->

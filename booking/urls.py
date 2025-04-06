@@ -43,7 +43,7 @@ urlpatterns = [
     path('route_bus_details/<int:id>/',views.BusDetails.as_view(),name="route_bus_details"),
     
     
-    
+  # ======= Bus Management ==========
     path('buses-management', views.bus_list, name='bus_list'),
     path('add-bus/', views.create_bus, name='create_bus'),
     path('edit-bus/<int:bus_id>/edit/', views.edit_bus, name='edit_bus'),
