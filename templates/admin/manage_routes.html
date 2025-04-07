@@ -40,17 +40,17 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    <!-- Add scrollable-wrapper here -->
-                    <div class="table-responsive-sm">
+                    <!-- Table with improved horizontal scrolling -->
+                    <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-3">Image</th>
-                                    <th>Source</th>
-                                    <th>Destination</th>
-                                    <th class="d-none d-md-table-cell">Distance</th>
-                                    <th class="d-none d-md-table-cell">Est. Time</th>
-                                    <th class="text-end pe-3">Actions</th>
+                                    <th class="ps-3" style="min-width: 80px;">Image</th>
+                                    <th style="min-width: 120px;">Source</th>
+                                    <th style="min-width: 120px;">Destination</th>
+                                    <th style="min-width: 100px;">Distance</th>
+                                    <th style="min-width: 100px;">Est. Time</th>
+                                    <th class="text-end pe-3" style="min-width: 100px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -66,28 +66,24 @@
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div>
-                                            <a href="{% url 'route_bus_list' route.id %}" class="text-decoration-none fw-medium">{{ route.source }}</a>
-                                            <small class="text-muted d-md-none d-block">→ {{ route.destination }}</small>
-                                            <small class="text-muted d-md-none d-block">{{ route.distance }} km, {{ route.estimated_time }} hr</small>
-                                        </div>
+                                        <a href="{% url 'route_bus_list' route.id %}" class="text-decoration-none fw-medium">{{ route.source }}</a>
                                     </td>
-                                    <td class="d-none d-md-table-cell">{{ route.destination }}</td>
-                                    <td class="d-none d-md-table-cell">{{ route.distance }} km</td>
-                                    <td class="d-none d-md-table-cell">{{ route.estimated_time }} hour</td>
+                                    <td>{{ route.destination }}</td>
+                                    <td>{{ route.distance }} km</td>
+                                    <td>{{ route.estimated_time }} hour</td>
                                     <td class="text-end pe-3">
-                                        <div class="dropdown action-dropdown"> <!-- Changed to standard dropdown -->
-                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <div class="action-dropdown">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle action-btn" data-action="toggle">
                                                 <i class="bi bi-three-dots"></i>
                                             </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                                <li><a class="dropdown-item edit-route-btn" href="{% url 'edit_route' route.id %}">
+                                            <div class="action-menu shadow-sm">
+                                                <a class="action-item edit-route-btn" href="{% url 'edit_route' route.id %}">
                                                     <i class="bi bi-pencil-square text-warning me-2"></i> Edit
-                                                </a></li>
-                                                <li><a class="dropdown-item delete-route-btn" href="#" data-route-id="{{ route.id }}" data-route-name="{{ route.source }} - {{ route.destination }}">
+                                                </a>
+                                                <a class="action-item delete-route-btn" href="#" data-route-id="{{ route.id }}" data-route-name="{{ route.source }} - {{ route.destination }}">
                                                     <i class="bi bi-trash text-danger me-2"></i> Delete
-                                                </a></li>
-                                            </ul>
+                                                </a>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -110,9 +106,8 @@
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-</div>
+            
+           
 
 <!-- Add Route Modal -->
 <div class="modal fade" id="addRouteModal" tabindex="-1" aria-labelledby="addRouteModalLabel" aria-hidden="true">
@@ -219,69 +214,117 @@
         border-bottom: 1px solid #e9ecef;
     }
     
-    /* Improved dropdown menu visibility */
-    .dropdown-menu {
-        position: absolute !important;
-        z-index: 1060 !important; /* Higher z-index to ensure it appears above other elements */
-    }
-    
-    /* Make sure dropdowns are visible on mobile */
-    .action-dropdown {
-        position: relative;
-    }
-    
-    /* Fix for modal backdrop issue */
-    .modal {
-        z-index: 1055 !important;
-    }
-    .modal-backdrop {
-        z-index: 1050 !important;
-    }
-    
-    /* Table scrolling for mobile */
-    .table-responsive-sm {
+    /* Improved table responsiveness */
+    .table-responsive {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        max-width: 100%;
+        scrollbar-width: thin;
     }
     
-    /* Better touch target size for mobile */
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+    }
+    
+    .table-responsive::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 3px;
+    }
+    
+    /* Custom dropdown for actions */
+    .action-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .action-btn {
+        min-width: 38px;
+        min-height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .action-menu {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        z-index: 1060;
+        display: none;
+        min-width: 160px;
+        padding: 0.5rem 0;
+        margin: 0.125rem 0 0;
+        font-size: 0.875rem;
+        color: #212529;
+        text-align: left;
+        list-style: none;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid rgba(0,0,0,.15);
+        border-radius: 0.25rem;
+    }
+    
+    .action-menu.show {
+        display: block;
+    }
+    
+    .action-item {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        clear: both;
+        font-weight: 400;
+        color: #212529;
+        text-align: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: transparent;
+        border: 0;
+    }
+    
+    .action-item:hover {
+        color: #1e2125;
+        background-color: #f8f9fa;
+        text-decoration: none;
+    }
+    
+    /* Mobile card view */
+    .route-card {
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.07);
+    }
+    
+    /* Modal improvements */
+    .modal {
+        z-index: 1065 !important;
+    }
+    
+    .modal-backdrop {
+        z-index: 1060 !important;
+    }
+    
+    /* Responsive adjustments */
     @media (max-width: 767.98px) {
-        .dropdown-item {
+        .table-view {
+            display: none;
+        }
+        
+        /* Better touch target sizes for mobile */
+        .action-item {
             padding: 0.75rem 1rem;
             font-size: 1rem;
         }
         
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.875rem;
-        }
-        
-        /* Improve touch target for action buttons */
-        .action-dropdown .btn {
+        .action-btn {
             min-width: 40px;
             min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .sidebar {
-            position: static;
-            height: auto;
-        }
-        
-        /* Ensure scrollable table content on mobile */
-        .table-responsive-sm {
-            max-height: 70vh;
         }
     }
     
-    /* Ensure dropdown is always visible when shown */
-    .dropdown-menu.show {
-        display: block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
+    @media (min-width: 768px) {
+        .route-cards {
+            display: none;
+        }
     }
 </style>
 {% endblock %}
@@ -289,15 +332,16 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Bootstrap modals using the proper way
+        // Initialize Bootstrap modals
         const addRouteModal = new bootstrap.Modal(document.getElementById('addRouteModal'));
         const deleteRouteModal = new bootstrap.Modal(document.getElementById('deleteRouteModal'));
         
-        // Show Add Route Modal
+        // Show Add Route Modal functions
         const addButtons = [
             document.getElementById('addRouteBtn'),
             document.getElementById('mobileAddRouteBtn'),
-            document.getElementById('emptyAddRouteBtn')
+            document.getElementById('emptyAddRouteBtn'),
+            document.getElementById('emptyAddRouteBtnMobile')
         ];
         
         addButtons.forEach(button => {
@@ -313,89 +357,125 @@
         if (searchInput) {
             searchInput.addEventListener('input', function() {
                 const searchTerm = this.value.toLowerCase();
-                const rows = document.querySelectorAll('.route-row');
-                rows.forEach(row => {
+                
+                // Search in table rows
+                const tableRows = document.querySelectorAll('.route-row');
+                tableRows.forEach(row => {
                     const source = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                    const destination = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
+                    const destination = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
                     const isVisible = source.includes(searchTerm) || destination.includes(searchTerm);
                     row.style.display = isVisible ? '' : 'none';
                 });
+                
+                // Search in card view
+                const routeCards = document.querySelectorAll('.route-card');
+                routeCards.forEach(card => {
+                    const routeText = card.textContent.toLowerCase();
+                    card.style.display = routeText.includes(searchTerm) ? '' : 'none';
+                });
             });
         }
+        
+        // Custom dropdown handling for action buttons
+        document.addEventListener('click', function(e) {
+            // Close all dropdowns when clicking outside
+            if (!e.target.closest('.action-dropdown')) {
+                document.querySelectorAll('.action-menu').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+                return;
+            }
+            
+            // Toggle dropdown when clicking the button
+            if (e.target.closest('[data-action="toggle"]')) {
+                const actionBtn = e.target.closest('[data-action="toggle"]');
+                const actionMenu = actionBtn.closest('.action-dropdown').querySelector('.action-menu');
+                
+                // Close all other dropdowns first
+                document.querySelectorAll('.action-menu.show').forEach(menu => {
+                    if (menu !== actionMenu) {
+                        menu.classList.remove('show');
+                    }
+                });
+                
+                // Toggle this dropdown
+                actionMenu.classList.toggle('show');
+                
+                // Position the dropdown properly
+                if (actionMenu.classList.contains('show')) {
+                    const rect = actionBtn.getBoundingClientRect();
+                    const windowHeight = window.innerHeight;
+                    const menuHeight = actionMenu.offsetHeight;
+                    
+                    if (windowHeight - rect.bottom < menuHeight && rect.top > menuHeight) {
+                        // If more space above than below, show above
+                        actionMenu.style.top = 'auto';
+                        actionMenu.style.bottom = '100%';
+                    } else {
+                        // Show below
+                        actionMenu.style.top = '100%';
+                        actionMenu.style.bottom = 'auto';
+                    }
+                }
+                
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
         
         // Delete Route Handling
         document.querySelectorAll('.delete-route-btn').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                e.stopPropagation();
                 
                 const routeId = this.getAttribute('data-route-id');
                 const routeName = this.getAttribute('data-route-name');
                 
                 document.getElementById('deleteRouteName').textContent = routeName;
                 const deleteForm = document.getElementById('deleteRouteForm');
-                deleteForm.action = `/delete_route/${routeId}/`; // Adjust URL as per your URLconf
+                deleteForm.action = `/delete_route/${routeId}/`;  // Adjust URL as per your URLconf
                 
                 // Close any open dropdowns
-                const dropdowns = document.querySelectorAll('.dropdown-menu.show');
-                dropdowns.forEach(dropdown => {
-                    dropdown.classList.remove('show');
+                document.querySelectorAll('.action-menu.show').forEach(menu => {
+                    menu.classList.remove('show');
                 });
                 
                 deleteRouteModal.show();
             });
         });
         
-        // Fix for Bootstrap dropdowns on mobile devices
-        document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(dropdownToggle => {
-            dropdownToggle.addEventListener('click', function(e) {
-                e.stopPropagation();
-                
-                const dropdownMenu = this.nextElementSibling;
-                if (!dropdownMenu.classList.contains('show')) {
-                    // Close all other dropdowns
-                    document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                        menu.classList.remove('show');
-                    });
-                    
-                    // Open this dropdown
-                    dropdownMenu.classList.add('show');
-                    this.setAttribute('aria-expanded', 'true');
-                    
-                    // Position the dropdown properly for mobile
-                    const rect = this.getBoundingClientRect();
-                    const windowHeight = window.innerHeight;
-                    const spaceBelow = windowHeight - rect.bottom;
-                    
-                    if (spaceBelow < 200 && rect.top > 200) {
-                        // If more space above than below, show dropdown above the button
-                        dropdownMenu.style.top = 'auto';
-                        dropdownMenu.style.bottom = '100%';
-                    } else {
-                        // Show dropdown below the button
-                        dropdownMenu.style.top = '100%';
-                        dropdownMenu.style.bottom = 'auto';
-                    }
-                } else {
-                    // Close this dropdown
-                    dropdownMenu.classList.remove('show');
-                    this.setAttribute('aria-expanded', 'false');
-                }
+        // Make table horizontally scrollable with touch feedback
+        const tableResponsive = document.querySelector('.table-responsive');
+        if (tableResponsive) {
+            let isDown = false;
+            let startX;
+            let scrollLeft;
+            
+            tableResponsive.addEventListener('mousedown', (e) => {
+                isDown = true;
+                tableResponsive.classList.add('active');
+                startX = e.pageX - tableResponsive.offsetLeft;
+                scrollLeft = tableResponsive.scrollLeft;
             });
-        });
-        
-        // Close dropdowns when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dropdown-menu') && !e.target.closest('[data-bs-toggle="dropdown"]')) {
-                document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
-                    menu.classList.remove('show');
-                    const toggle = menu.previousElementSibling;
-                    if (toggle) {
-                        toggle.setAttribute('aria-expanded', 'false');
-                    }
-                });
-            }
-        });
+            
+            tableResponsive.addEventListener('mouseleave', () => {
+                isDown = false;
+                tableResponsive.classList.remove('active');
+            });
+            
+            tableResponsive.addEventListener('mouseup', () => {
+                isDown = false;
+                tableResponsive.classList.remove('active');
+            });
+            
+            tableResponsive.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - tableResponsive.offsetLeft;
+                const walk = (x - startX) * 2; // Scroll speed
+                tableResponsive.scrollLeft = scrollLeft - walk;
+            });
+        }
     });
 </script>
 {% endblock %}

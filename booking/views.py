@@ -2,7 +2,6 @@ from django.contrib.auth import authenticate
 from django.db.models import Count
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.core.paginator import Paginator
@@ -20,8 +19,7 @@ from booking.models import Commission, Booking,Payment,Rate,BusReservationBookin
 
 from custom_user.serializers import CustomUserSerializer,SystemSerializer
 from route.serializers import (
-    BusSerializer,PaymentSerializer,CommissionSerializer,
-    RateSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleReservationBookingSerializer,
+    BusSerializer,VechicleTypeSerializer,
    
 )
 
@@ -184,9 +182,34 @@ def edit_ticket_counter(request, id):
 @login_required
 def delete_ticket_counter(request, id):
     ticket_counter = get_object_or_404(TicketCounter, id=id)
+    user = ticket_counter.user
+    user.delete()  
     ticket_counter.delete()
+
     messages.success(request, "Ticket Counter deleted successfully!")
     return redirect("ticket_counter_list")
+
+
+# ========= Sub Admin Bus List ==========
+@login_required
+def sub_admin_bus_list(request,id):
+    user = TransportationCompany.objects.filter(id=id).first()
+    buses = Bus.objects.filter(transportation_company=user)
+    bus_schedules = Schedule.objects.filter(bus__in=buses).values('bus__id').annotate()
+    bus_count = buses.count()
+    bus_schedule_count = Schedule.objects.filter(bus__in=buses).count()
+
+    paginator = Paginator(buses, 10)
+    page_number = request.GET.get('page')
+    buses_page = paginator.get_page(page_number)
+
+    context = {
+        'buses': buses_page,
+        'bus_schedules': bus_schedules,
+        'bus_count': bus_count,
+        'bus_schedule_count': bus_schedule_count,
+    }
+    return render(request, 'admin/sub_admin_bus_list.html', context)
             
 
 # ========= User Managemnet ==========
@@ -231,9 +254,17 @@ def delete_user(request, id):
 @login_required
 def manage_driver_and_staff(request):
     """List and add drivers and staff from the same template."""
-
-    drivers = Driver.objects.all()
-    staff = Staff.objects.all()
+    
+        
+    drivers=Driver.objects.none()
+    staff=Staff.objects.none()
+    transportation_company=getattr(request.user,"transportation_company",None)
+    if transportation_company:
+        drivers = Driver.objects.filter(transportation_company=transportation_company)
+        staff = Staff.objects.filter(transportation_company=transportation_company)
+    else:
+        drivers = Driver.objects.all()
+        staff = Staff.objects.all()
 
     if request.method == "POST":
         # Handle Driver Add
@@ -250,7 +281,8 @@ def manage_driver_and_staff(request):
                 full_name=full_name,
                 phone_number=phone_number,
                 driver_profile=driver_profile,
-                license_image=license_image
+                license_image=license_image,
+                transportation_company=request.user.transportation_company
             )
             return redirect('manage_driver_and_staff')  # Reload page after adding driver
 
@@ -352,7 +384,7 @@ def bus_list(request):
         'all_drivers': unassigned_drivers,
         'all_staff': unassigned_staff,
         'bus_types': Bus.VEHICLE_CHOICES,
-        'features': Bus.FEATURE_CHOICES
+        'FEATURE_CHOICES': Bus.FEATURE_CHOICES  # Make sure this is passed
     }
 
     return render(request, 'admin/manage_bus.html', context)
@@ -440,84 +472,129 @@ def create_bus(request):
         }
         return render(request, 'admin/manage_bus.html', context)
 
-
+from django.core.exceptions import ValidationError
 @login_required
 def edit_bus(request, bus_id):
-    try:
-        bus = get_object_or_404(Bus, id=bus_id)
-
-        # Update bus with form data
-        if 'bus_number' in request.POST:
-            bus.bus_number = request.POST.get('bus_number')
-
-        if 'bus_type' in request.POST:
-            bus.bus_type = request.POST.get('bus_type')
-
-        if 'driver' in request.POST:
-            driver_id = request.POST.get('driver')
+    bus = get_object_or_404(Bus, id=bus_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update basic fields
+            bus.bus_number = request.POST.get('bus_number', bus.bus_number)
+            bus.bus_type = request.POST.get('bus_type', bus.bus_type)
+            
+            # Handle driver
+            driver_id = request.POST.get('driver', '')
             bus.driver = Driver.objects.get(id=driver_id) if driver_id else None
-
-        if 'staff' in request.POST:
-            staff_id = request.POST.get('staff')
+            
+            # Handle staff
+            staff_id = request.POST.get('staff', '')
             bus.staff = Staff.objects.get(id=staff_id) if staff_id else None
-
-        if 'route' in request.POST:
+            
+            # Handle route
             route_id = request.POST.get('route')
-            bus.route = Route.objects.get(id=route_id)
-
-        if 'total_seats' in request.POST:
-            bus.total_seats = int(request.POST.get('total_seats', 0))
-
-        if 'is_active' in request.POST:
+            if route_id:
+                bus.route = Route.objects.get(id=route_id)
+            
+            # Handle numeric and boolean fields
+            total_seats = request.POST.get('total_seats', bus.total_seats)
+            bus.total_seats = int(total_seats) if total_seats else bus.total_seats
             bus.is_active = request.POST.get('is_active') == 'on'
-
-        if 'is_running' in request.POST:
             bus.is_running = request.POST.get('is_running') == 'on'
-
-        if 'features' in request.POST:
-            features = request.POST.get('features')
-            bus.features = json.loads(features) if isinstance(features, str) else features
-
-        if 'bus_image' in request.FILES:
-            bus.bus_image = request.FILES['bus_image']
-
-        bus.save()
-
-        # Update bus layout if provided
-        if 'layout' in request.POST:
-            try:
+            
+            # Handle features
+            features = request.POST.getlist('features')
+            if features:
+                bus.features = features
+                
+            # Handle image
+            if 'bus_image' in request.FILES:
+                bus.bus_image = request.FILES['bus_image']
+            
+            # Validate before saving
+            bus.full_clean()
+            bus.save()
+            
+            # Handle layout
+            if 'layout' in request.POST:
+                layout_data = json.loads(request.POST['layout'])
                 bus_layout, created = BusLayout.objects.get_or_create(bus=bus)
-                layout = request.POST.get('layout')
-                layout_data = json.loads(layout) if isinstance(layout, str) else layout
-
+                
                 bus_layout.rows = layout_data.get('rows', bus_layout.rows)
                 bus_layout.column = layout_data.get('columns', bus_layout.column)
                 bus_layout.aisle_column = layout_data.get('aisleAfterColumn', bus_layout.aisle_column)
-                bus_layout.layout_data = layout_data.get('seatLayout', bus_layout.layout_data)
+                bus_layout.layout_data = layout_data.get('layout', bus_layout.layout_data)
+                bus_layout.full_clean()
                 bus_layout.save()
-            except json.JSONDecodeError:
-                pass  # Handle invalid layout format silently
+            
+            return JsonResponse({
+                'success': True,
+                'redirect': '/buses-management/'
+            })
+        except (ValidationError, json.JSONDecodeError, ValueError) as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': 'An unexpected error occurred'
+            }, status=500)
+    
+    # GET request handling
+    routes = Route.objects.all()
+    drivers = Driver.objects.filter(transportation_company=bus.transportation_company)
+    staff = Staff.objects.filter(transportation_company=bus.transportation_company)
+    
+    # Get bus layout if it exists
+    bus_layout = BusLayout.objects.filter(bus=bus).first()
+    
+    context = {
+        'bus': bus,
+        'all_routes': routes,
+        'all_drivers': drivers,
+        'all_staff': staff,
+        'bus_types': Bus.VEHICLE_CHOICES,
+        'features': Bus.FEATURE_CHOICES,
+        'selected_driver': bus.driver.id if bus.driver else None,
+        'selected_staff': bus.staff.id if bus.staff else None,
+        'selected_route': bus.route.id if bus.route else None,
+        'bus_layout': bus_layout,
+    }
+    return render(request, 'admin/manage_bus.html', context)
 
-        return redirect('bus_list')
-    except Exception as e:
-        # Handle errors and redisplay form
-        routes = Route.objects.all()
-        drivers = Driver.objects.filter(transportation_company=bus.transportation_company)
-        staff = Staff.objects.filter(transportation_company=bus.transportation_company)
 
-        context = {
-            'bus': bus,
-            'error': str(e),
-            'all_routes': routes,
-            'all_drivers': drivers,
-            'all_staff': staff,
-            'bus_types': Bus.VEHICLE_CHOICES,
-            'features': Bus.FEATURE_CHOICES,
-            'selected_driver': bus.driver.id if bus.driver else None,
-            'selected_staff': bus.staff.id if bus.staff else None,
-            'selected_route': bus.route.id if bus.route else None,
+# Add this view to fetch bus data
+@login_required
+def get_bus(request, bus_id):
+    bus = get_object_or_404(Bus, id=bus_id)
+    try:
+        layout = BusLayout.objects.get(bus=bus)
+        layout_data = {
+            'rows': layout.rows,
+            'columns': layout.column,
+            'aisleAfterColumn': layout.aisle_column,
+            
+            'layout': layout.layout_data,
+            
         }
-        return render(request, 'admin/manage_bus.html', context)
+    except BusLayout.DoesNotExist:
+        layout_data = {}
+
+    data = {
+        'bus_id': bus.id,
+        'bus_number': bus.bus_number,
+        'bus_type': bus.bus_type,
+        'route': bus.route.id if bus.route else None,
+        'total_seats': bus.total_seats,
+        'driver': bus.driver.id if bus.driver else None,
+        'staff': bus.staff.id if bus.staff else None,
+        'is_active': bus.is_active,
+        'features': bus.features,
+        'layout': json.dumps(layout_data)
+    }
+    return JsonResponse(data)
 
 
 @login_required
@@ -740,6 +817,7 @@ class BusDetails(APIView):
 
 # ========= Schedule =========
 def schedule_list(request):
+    
     if request.method == "POST":
         route_id = request.POST.get("route")
         bus_id = request.POST.get("bus")
@@ -755,7 +833,12 @@ def schedule_list(request):
 
     schedules = Schedule.objects.all()
     all_routes = Route.objects.all()
-    all_buses = Bus.objects.all()
+    all_buses = Bus.objects.none()
+    transportation_company = getattr(request.user, "transportation_company", None)
+    if transportation_company:
+        all_buses = Bus.objects.filter(transportation_company=transportation_company)
+    else:
+        all_buses = Bus.objects.all()
 
     return render(request, "admin/manage_schedule.html", {
         "schedules": schedules,

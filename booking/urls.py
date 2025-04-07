@@ -16,6 +16,8 @@ urlpatterns = [
     path("admin-ticket-counter/edit/<int:id>/", views.edit_ticket_counter, name="edit_ticket_counter"),
     path("admin-ticket-counter/delete/<int:id>/",views.delete_ticket_counter, name="delete_ticket_counter"),
     
+    # ======= sub admin buslist ===========
+    path('subadmin-buslist/<int:id>/', views.sub_admin_bus_list, name='subadmin_bus_list'),
     
     
     # ======= user Management ==========
@@ -48,6 +50,7 @@ urlpatterns = [
     path('add-bus/', views.create_bus, name='create_bus'),
     path('edit-bus/<int:bus_id>/edit/', views.edit_bus, name='edit_bus'),
     path('delete-bus/<int:bus_id>/delete/', views.delete_bus, name='delete_bus'),
+    path('get_bus/<int:bus_id>/',views.get_bus, name='get_bus'),
     
     
     # ======  Schedule ======

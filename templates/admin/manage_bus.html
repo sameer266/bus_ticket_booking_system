@@ -544,6 +544,22 @@
                 document.body.style.paddingRight = '';
             });
         });
+
+        // Fix the grid template columns to properly account for aisles
+function updateGridLayout(containerId, columns, aisleAfter) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Create a grid template that accounts for aisles
+    let gridTemplateColumns = '';
+    for (let i = 0; i < columns; i++) {
+        if (i === aisleAfter) {
+            gridTemplateColumns += '0.5fr '; // Aisle is smaller
+        }
+        gridTemplateColumns += '1fr ';
+    }
+    container.style.gridTemplateColumns = gridTemplateColumns.trim();
+}
         
         // Show Add Bus Modal
         const addButtons = [
@@ -565,79 +581,101 @@
         let editSelectedSeats = {};
         
         // Generate 2D array and seat layout for a given container
+      
         function generateSeatLayout(containerId, rows, columns, aisleAfter, includeBackRow, backRowSeats, seatsObj) {
             const container = document.getElementById(containerId);
-            if (!container) return; // Prevent errors if container is missing
+            if (!container) return;
             container.innerHTML = '';
-            container.style.setProperty('--columns', columns);
+            
+            // Update grid layout
+            updateGridLayout(containerId, columns, aisleAfter);
             
             let totalSeats = 0;
             const layout = [];
             
+            // Main seat rows
             for (let r = 0; r < rows; r++) {
                 const row = [];
-                let seatIndex = 0;
                 for (let c = 0; c < columns; c++) {
+                    // Create aisle space if needed
                     if (c === aisleAfter) {
-                        row.push(0);
                         const aisleElement = document.createElement('div');
                         aisleElement.className = 'seat-item aisle';
                         aisleElement.textContent = ' ';
                         container.appendChild(aisleElement);
-                    } else {
-                        const colLetter = String.fromCharCode(65 + seatIndex);
-                        const seatNumber = `${colLetter}${r + 1}`;
-                        row.push({ seat: seatNumber, status: 'available' });
-                        seatIndex++;
-                        
-                        const seatElement = document.createElement('div');
-                        seatElement.className = 'seat-item';
-                        seatElement.textContent = seatNumber;
-                        seatElement.dataset.row = r;
-                        seatElement.dataset.col = c;
-                        
-                        const seatKey = `${r}-${c}`;
-                        if (seatsObj[seatKey]) {
-                            seatElement.classList.add('selected');
-                            totalSeats++;
-                        }
-                        
-                        seatElement.addEventListener('click', function() {
-                            if (!this.classList.contains('aisle')) {
-                                const key = `${this.dataset.row}-${this.dataset.col}`;
-                                if (this.classList.contains('selected')) {
-                                    this.classList.remove('selected');
-                                    delete seatsObj[key];
-                                    totalSeats--;
-                                } else {
-                                    this.classList.add('selected');
-                                    seatsObj[key] = seatNumber;
-                                    totalSeats++;
-                                }
-                                
-                                const countElement = containerId === 'seatLayoutContainer' ? 'selectedSeatsCount' : 'edit_selectedSeatsCount';
-                                const totalSeatsInput = containerId === 'seatLayoutContainer' ? 'totalSeatsInput' : 'edit_total_seats';
-                                document.getElementById(countElement).textContent = totalSeats;
-                                document.getElementById(totalSeatsInput).value = totalSeats;
-                                updateLayoutData(containerId === 'seatLayoutContainer');
-                            }
-                        });
-                        
-                        container.appendChild(seatElement);
+                        row.push(0); // Mark as aisle in data structure
                     }
+                    
+                    // Calculate seat letter (skipping aisle position in the labeling)
+                    let seatLetter = '';
+                    if (c < aisleAfter) {
+                        seatLetter = String.fromCharCode(65 + c);
+                    } else {
+                        seatLetter = String.fromCharCode(65 + c - 1);
+                    }
+                    
+                    const seatNumber = `${seatLetter}${r + 1}`;
+                    const seatElement = document.createElement('div');
+                    seatElement.className = 'seat-item';
+                    seatElement.textContent = seatNumber;
+                    seatElement.dataset.row = r;
+                    seatElement.dataset.col = c;
+                    
+                    const seatKey = `${r}-${c}`;
+                    if (seatsObj[seatKey]) {
+                        seatElement.classList.add('selected');
+                        totalSeats++;
+                    }
+                    
+                    seatElement.addEventListener('click', function() {
+                        if (!this.classList.contains('aisle')) {
+                            const key = `${this.dataset.row}-${this.dataset.col}`;
+                            if (this.classList.contains('selected')) {
+                                this.classList.remove('selected');
+                                delete seatsObj[key];
+                                totalSeats--;
+                            } else {
+                                this.classList.add('selected');
+                                seatsObj[key] = seatNumber;
+                                totalSeats++;
+                            }
+                            
+                            const countElement = containerId === 'seatLayoutContainer' ? 'selectedSeatsCount' : 'edit_selectedSeatsCount';
+                            const totalSeatsInput = containerId === 'seatLayoutContainer' ? 'totalSeatsInput' : 'edit_total_seats';
+                            document.getElementById(countElement).textContent = totalSeats;
+                            document.getElementById(totalSeatsInput).value = totalSeats;
+                            updateLayoutData(containerId === 'seatLayoutContainer');
+                        }
+                    });
+                    
+                    container.appendChild(seatElement);
+                    row.push({ seat: seatNumber, status: 'available' });
                 }
                 layout.push(row);
             }
             
+            // Handle back row
             if (includeBackRow) {
                 const backRow = [];
+                const backRowStart = document.createElement('div');
+                backRowStart.className = 'w-100 text-center mt-3 mb-2';
+                backRowStart.textContent = 'Back Row';
+                backRowStart.style.gridColumn = '1 / -1';
+                container.appendChild(backRowStart);
+                
+                // Create a separate container for back row to ensure proper alignment
+                const backRowContainer = document.createElement('div');
+                backRowContainer.className = 'd-flex justify-content-center w-100';
+                backRowContainer.style.gridColumn = '1 / -1';
+                container.appendChild(backRowContainer);
+                
                 for (let c = 0; c < backRowSeats; c++) {
-                    const colLetter = String.fromCharCode(65 + c);
-                    const seatNumber = `${colLetter}${rows + 1}`;
+                    const seatLetter = String.fromCharCode(65 + c);
+                    const seatNumber = `${seatLetter}${rows + 1}`;
                     backRow.push({ seat: seatNumber, status: 'available' });
                     
                     const seatElement = document.createElement('div');
-                    seatElement.className = 'seat-item';
+                    seatElement.className = 'seat-item mx-1';
                     seatElement.textContent = seatNumber;
                     seatElement.dataset.row = rows;
                     seatElement.dataset.col = c;
@@ -667,14 +705,7 @@
                         updateLayoutData(containerId === 'seatLayoutContainer');
                     });
                     
-                    container.appendChild(seatElement);
-                }
-                while (backRow.length < columns) {
-                    backRow.push(0);
-                    const emptyElement = document.createElement('div');
-                    emptyElement.className = 'seat-item aisle';
-                    emptyElement.textContent = ' ';
-                    container.appendChild(emptyElement);
+                    backRowContainer.appendChild(seatElement);
                 }
                 layout.push(backRow);
             }
@@ -683,10 +714,10 @@
             const totalSeatsInput = containerId === 'seatLayoutContainer' ? 'totalSeatsInput' : 'edit_total_seats';
             document.getElementById(countElement).textContent = totalSeats;
             document.getElementById(totalSeatsInput).value = totalSeats;
-            updateLayoutData(containerId === 'seatLayoutContainer');
             
             return layout;
         }
+
         
         function updateLayoutData(isAddModal = true) {
             const prefix = isAddModal ? '' : 'edit_';
@@ -823,46 +854,76 @@
         });
         
         // Edit Bus Button Handling
-        document.querySelectorAll('.edit-bus-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const busId = this.dataset.busId;
-                document.getElementById('edit_bus_id').value = busId;
-                // Replace with actual AJAX call in production
-                fetch(`/get_bus/${busId}/`) // Adjust URL
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('edit_bus_number').value = data.bus_number;
-                        document.getElementById('edit_bus_type').value = data.bus_type;
-                        document.getElementById('edit_route').value = data.route;
-                        document.getElementById('edit_total_seats').value = data.total_seats;
-                        document.getElementById('edit_driver').value = data.driver || '';
-                        document.getElementById('edit_staff').value = data.staff || '';
-                        document.getElementById('edit_isActive').checked = data.is_active;
-                        document.getElementById('edit_isRunning').checked = data.is_running;
-                        
-                        // Populate features
-                        const features = data.features || [];
-                        document.querySelectorAll('#edit_features_container .form-check-input').forEach(checkbox => {
-                            checkbox.checked = features.includes(checkbox.value);
-                        });
-                        
-                        // Populate layout
-                        const layout = JSON.parse(data.layout || '{}');
-                        document.getElementById('edit_rowsInput').value = layout.rows || 6;
-                        document.getElementById('edit_columnsInput').value = layout.columns || 5;
-                        document.getElementById('edit_aisleAfterInput').value = layout.aisleAfterColumn || 2;
-                        document.getElementById('edit_includeBackRow').checked = layout.includeBackRow !== false;
-                        document.getElementById('edit_backRowSeatsInput').value = layout.backRowSeats || 5;
-                        editSelectedSeats = layout.selectedSeats || {};
-                        
-                        document.getElementById('edit_backRowSeatsContainer').style.display = layout.includeBackRow !== false ? 'block' : 'none';
-                        initializeEditSeatLayout();
-                        
-                        editBusModal.show();
-                    })
-                    .catch(error => console.error('Error fetching bus data:', error));
-            });
-        });
+        // Edit Bus Button Handling
+document.querySelectorAll('.edit-bus-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const busId = this.dataset.busId;
+        document.getElementById('editBusForm').action = `/edit-bus/${busId}/edit/`;
+        document.getElementById('edit_bus_id').value = busId;
+        
+        fetch(`/get_bus/${busId}/`)
+            .then(response => response.json())
+            .then(data => {
+                // Populate form fields
+                document.getElementById('edit_bus_number').value = data.bus_number;
+                document.getElementById('edit_bus_type').value = data.bus_type;
+                document.getElementById('edit_route').value = data.route;
+                document.getElementById('edit_total_seats').value = data.total_seats;
+                document.getElementById('edit_driver').value = data.driver;
+                document.getElementById('edit_staff').value = data.staff;
+                document.getElementById('edit_isActive').checked = data.is_active;
+                document.getElementById('edit_isRunning').checked = data.is_running;
+                
+                // Features
+                document.querySelectorAll('#edit_features_container .form-check-input').forEach(checkbox => {
+                    checkbox.checked = data.features.includes(checkbox.value);
+                });
+                
+                // Layout
+                const layout = JSON.parse(data.layout);
+                document.getElementById('edit_rowsInput').value = layout.rows || 6;
+                document.getElementById('edit_columnsInput').value = layout.columns || 5;
+                document.getElementById('edit_aisleAfterInput').value = layout.aisleAfterColumn || 2;
+                document.getElementById('edit_includeBackRow').checked = layout.includeBackRow !== false;
+                document.getElementById('edit_backRowSeatsInput').value = layout.backRowSeats || 5;
+                editSelectedSeats = layout.selectedSeats || {};
+                
+                document.getElementById('edit_backRowSeatsContainer').style.display = 
+                    layout.includeBackRow !== false ? 'block' : 'none';
+                
+                initializeEditSeatLayout();
+                editBusModal.show();
+            })
+            .catch(error => console.error('Error:', error));
+    });
+});
+
+// Add form submission handling
+document.getElementById('editBusForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    updateLayoutData(false); // Update layout data before submission
+    
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            editBusModal.hide();
+            window.location.href = data.redirect;
+        } else {
+            alert(data.error);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
+        
         
         // Delete Bus Button Handling
         document.querySelectorAll('.delete-bus-btn').forEach(button => {
