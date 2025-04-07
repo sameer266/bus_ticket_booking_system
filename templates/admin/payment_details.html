@@ -12,56 +12,109 @@
     </div>
 
     <!-- Main Content -->
-    <main class="dashboard-content" style="margin-top: 70px;">
-        <!-- Summary Cards -->
-        <div class="row mb-4">
-            <div class="col-md-4">
-                <div class="card summary-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Total Payments</h6>
-                                <h3 class="mb-0 text-primary">NRP {{ total_amount|floatformat:2 }}</h3>
-                            </div>
-                            <div class="icon-circle bg-primary-soft">
-                                <i class="bi bi-cash-stack text-primary"></i>
-                            </div>
-                        </div>
-                    </div>
+
+<main class="dashboard-content" style="margin-top: 80px;">
+    <!-- Summary Cards -->
+    <div class="row">
+
+        <!-- Earnings from Bookings (Sub-admin) -->
+{% if not is_admin %}
+<div class="col-md-4">
+    <div class="card summary-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Earnings from Bookings</h6>
+                    <h3 class="mb-0 text-success">NRP {{ earnings_from_bookings|floatformat:2 }}</h3>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card summary-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Total Commission</h6>
-                                <h3 class="mb-0 text-indigo">NRP {{ total_commission|floatformat:2 }}</h3>
-                            </div>
-                            <div class="icon-circle bg-indigo-soft">
-                                <i class="bi bi-percent text-indigo"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card summary-card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="text-muted mb-2">Net Received</h6>
-                                <h3 class="mb-0 text-blue">NRP {{ total_received|floatformat:2 }}</h3>
-                            </div>
-                            <div class="icon-circle bg-blue-soft">
-                                <i class="bi bi-wallet2 text-blue"></i>
-                            </div>
-                        </div>
-                    </div>
+                <div class="icon-circle bg-success-soft">
+                    <i class="bi bi-coin text-success"></i>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
+<!-- Earnings from Reservations (Sub-admin) -->
+<div class="col-md-4">
+    <div class="card summary-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Earnings from Reservations</h6>
+                    <h3 class="mb-0 text-info">NRP {{ earnings_from_reservations|floatformat:2 }}</h3>
+                </div>
+                <div class="icon-circle bg-info-soft">
+                    <i class="bi bi-calendar-check text-info"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+<!-- Total Earnings (without commission deduction) (Admin Only) -->
+{% if is_admin %}
+<div class="col-md-4">
+    <div class="card summary-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Total Earnings (Without Commission Deduction)</h6>
+                    <h3 class="mb-0 text-success">NRP {{ total_amount|floatformat:2 }}</h3>
+                </div>
+                <div class="icon-circle bg-success-soft">
+                    <i class="bi bi-currency-exchange text-success"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Net Total (Admin Only) -->
+<div class="col-md-4">
+    <div class="card summary-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Net Total</h6>
+                    <h3 class="mb-0 text-blue">NRP {{ combined_earning|floatformat:2 }}</h3>
+                </div>
+                <div class="icon-circle bg-blue-soft">
+                    <i class="bi bi-wallet2 text-blue"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Total Commission Earned (Admin Only) -->
+<div class="col-md-4">
+    <div class="card summary-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted mb-2">Total Commission Earned</h6>
+                    <h3 class="mb-0 text-indigo">NRP {{ total_commission|floatformat:2 }}</h3>
+                </div>
+                <div class="icon-circle bg-indigo-soft">
+                    <i class="bi bi-percent text-indigo"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endif %}
+
+
+
+    
+        
+    </div>
+    
         <!-- Bus Statistics -->
         <div class="card mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -85,8 +138,8 @@
                                 <th>Total Earnings</th>
                                 <th>Commission</th>
                                 <th>Net Amount</th>
-                                <th>Trips</th>
-                                <th>Details</th>
+                            
+                              
                             </tr>
                         </thead>
                         <tbody>
@@ -113,12 +166,8 @@
                                 <td class="fw-bold text-primary">NRP {{ bus.total_earnings|floatformat:2 }}</td>
                                 <td class="text-indigo">NRP {{ bus.total_commission|floatformat:2 }}</td>
                                 <td class="text-blue">NRP {{ bus.total_earnings|add:bus.total_commission|floatformat:2 }}</td>
-                                <td><span class="badge bg-blue-soft text-blue">{{ bus.payment_count }}</span></td>
-                                <td>
-                                    <a href="#" class="btn btn-sm btn-outline-primary btn-rounded">
-                                        <i class="bi bi-eye me-1"></i> View
-                                    </a>
-                                </td>
+
+                                
                             </tr>
                             {% empty %}
                             <tr>
@@ -138,6 +187,52 @@
                 </div>
             </div>
         </div>
+
+
+        <!-- Recent Reservation Bookings -->
+        {% if reservation_bookings %}
+    <div class="col-md-12 mt-4">
+        <div class="card summary-card">
+            <div class="card-body">
+                <h5 class="card-title mb-4">
+                    <i class="bi bi-bus-front text-primary me-2"></i> Reservation Bookings
+                </h5>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            
+                            <th>Source</th>
+                            <th>Destination</th>
+                            <th>Start Date</th>
+                            <th>Duration</th>
+                            <th>Price</th>
+
+                            <th>Request At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in reservation_bookings %}
+                        <tr>
+                            <td>{{ booking.user.full_name }}  {{user.phone}}</td> 
+                          
+                            <td>{{ booking.source }}</td>
+                            <td>{{ booking.destination }}</td>
+                            <td>{{ booking.start_date }}</td>
+                            <td>{{ booking.date }} Days</td>
+                            <td>RS {{booking.bus_reserve.price}}</td>
+    
+                            <td>{{ booking.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <p>No reservation bookings found.</p>
+{% endif %}
 
         <!-- Recent Payments -->
         <div class="card">
@@ -258,6 +353,9 @@
             </div>
         </div>
 
+
+
+        {% if is_admin %}
         <!-- Commission Rate Update -->
         <div class="card mt-4">
             <div class="card-header bg-white">
@@ -284,6 +382,8 @@
                 </form>
             </div>
         </div>
+        {% endif %}
+
     </main>
 </div>
 

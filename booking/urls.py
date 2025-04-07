@@ -12,9 +12,9 @@ urlpatterns = [
     path('admin-profile/',views.admin_profile,name="admin_profile"), 
     
     # ===== Admin Ticket Counter =========
-    path("admin-ticket-counter/", views.ticket_counter_list, name="ticket_counter_list"),
-    path("admin-ticket-counter/edit/<int:id>/", views.edit_ticket_counter, name="edit_ticket_counter"),
-    path("admin-ticket-counter/delete/<int:id>/",views.delete_ticket_counter, name="delete_ticket_counter"),
+    path("admin-ticket-counter/", views.transportation_company_list, name="transportation_company_list"),
+    path("admin-ticket-counter/edit/<int:id>/", views.edit_transportation_company, name="edit_transportation_company"),
+    path("admin-ticket-counter/delete/<int:id>/",views.delete_transportation_company, name="delete_transportation_company"),
     
     # ======= sub admin buslist ===========
     path('subadmin-buslist/<int:id>/', views.sub_admin_bus_list, name='subadmin_bus_list'),
@@ -82,11 +82,7 @@ urlpatterns = [
 #  ======== Payment ========
 path('payment-details/', views.payment_details, name='payments_details'),
 path('update-rate/', views.update_rate, name='update_rate'),
-    
-    # =========Vechicle Type =========
-    path('admin_vehicletype/', views.VehicleTypeViewSet.as_view({'get': 'list', 'post': 'create'})),
-    path('admin_vehicletype/<int:pk>/', views.VehicleTypeViewSet.as_view({ 'patch': 'update', 'delete': 'destroy'})),
- 
+
     
     
  

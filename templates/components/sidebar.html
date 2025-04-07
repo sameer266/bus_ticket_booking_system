@@ -36,7 +36,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/admin-ticket-counter/' %}active{% endif %}" href={% url 'ticket_counter_list' %}>
+            <a class="nav-link {% if request.path == '/admin-ticket-counter/' %}active{% endif %}" href={% url 'transportation_company_list' %}>
               <i class="bi bi-ticket-perforated menu-icon"></i>
               <span class="menu-text">Ticket Counter</span>
             </a>
@@ -54,7 +54,7 @@
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/buses-management' %}active{% endif %}" href={%url 'bus_list'%}>
+            <a class="nav-link {% if request.path == '/buses-management/' %}active{% endif %}" href={%url 'bus_list'%}>
               <i class="bi bi-bus-front menu-icon"></i>
               <span class="menu-text">Bus Management</span>
             </a>

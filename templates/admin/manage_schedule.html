@@ -1,7 +1,7 @@
 {% extends 'components/base.html' %}
 {% block title %}Bus Schedules | Go Sewa{% endblock %}
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid ">
     <div class="row g-0">
         <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
@@ -83,14 +83,16 @@
                             </thead>
                             <tbody id="scheduleTableBody">
                                 {% for schedule in schedules %}
-                                <tr class="schedule-row animate__animated animate__fadeIn" data-schedule-id="{{ schedule.id }}" data-schedule-date="{{ schedule.departure_date }}">
+                                <tr class="schedule-row animate__animated animate__fadeIn" 
+    data-schedule-id="{{ schedule.id }}" 
+    data-schedule-date="{{ schedule.departure_date|date:'Y-m-d' }}">
                                     <td class="ps-3">
                                         <div class="d-flex align-items-center">
                                             <div class="rounded bg-primary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 40px;">
                                                 <i class="bi bi-signpost-2"></i>
                                             </div>
                                             <div>
-                                               <a href="{% url 'bus_details' schedule.bus.id %}" class="text-decoration-none fw-medium"> <h6 class="mb-0">{{ schedule.route.source }} → {{ schedule.route.destination }}</h6> </a>
+                                               <a href="{% url 'bus_details' schedule.id %}" class="text-decoration-none fw-medium"> <h6 class="mb-0">{{ schedule.route.source }} → {{ schedule.route.destination }}</h6> </a>
                                                 <small class="text-muted d-md-none">{{ schedule.departure_time }} - {{ schedule.arrival_time }}</small>
                                                 <small class="text-muted d-md-none d-block">NPR {{ schedule.price }}</small>
                                             </div>
@@ -104,18 +106,23 @@
                                     <td class="d-none d-md-table-cell">{{ schedule.arrival_time }}</td>
                                     <td class="d-none d-md-table-cell">NPR {{ schedule.price }}</td>
                                     <td class="text-end pe-3">
-                                        <div class="dropdown action-dropdown">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="bi bi-three-dots"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                                <li><a class="dropdown-item edit-schedule-btn" href="#" data-schedule-id="{{ schedule.id }}">
-                                                    <i class="bi bi-pencil-square text-warning me-2"></i> Edit
-                                                </a></li>
-                                                <li><a class="dropdown-item delete-schedule-btn" href="#" data-schedule-id="{{ schedule.id }}">
-                                                    <i class="bi bi-trash text-danger me-2"></i> Delete
-                                                </a></li>
-                                            </ul>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <!-- Edit Button -->
+                                            <a  href={%  url 'schedule_edit' schedule.id %} class="btn btn-sm btn-outline-warning edit-schedule-btn" 
+                                                    data-schedule-id="{{ schedule.id }}"
+                                                   
+                                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Edit">
+                                                <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                            
+                                            <a  href={% url 'schedule_delete' schedule.id %} class="btn btn-sm btn-outline-danger delete-schedule-btn" 
+                                                    data-schedule-id="{{ schedule.id }}"
+                                                   
+                                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                        </a>
+                                            
+                                        
                                         </div>
                                     </td>
                                 </tr>
@@ -508,42 +515,63 @@
         }
         
         // Filter schedules by date
+       
         function filterSchedulesByDate(dateStr) {
             const rows = document.querySelectorAll('.schedule-row');
             let visibleCount = 0;
             
             rows.forEach(row => {
-                const scheduleDate = row.getAttribute('data-schedule-date');
-                if (scheduleDate === dateStr) {
-                    row.style.display = '';
-                    visibleCount++;
+                let scheduleDate = row.getAttribute('data-schedule-date');
+                
+                // Check if the date attribute is empty
+                if (!scheduleDate || scheduleDate.trim() === '') {
+                    // For debugging
+                    console.log('Found row with empty date, displaying for today');
+                    
+                    // If today's date matches the filter date, show the row
+                    const today = new Date();
+                    if (formatISODate(today) === dateStr) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
                 } else {
-                    row.style.display = 'none';
+                    // Regular date comparison
+                    scheduleDate = scheduleDate.split('T')[0];
+                    console.log('Comparing:', scheduleDate, 'with filter:', dateStr);
+                    
+                    if (scheduleDate === dateStr) {
+                        row.style.display = '';
+                        visibleCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
                 }
             });
+            
+            
+        }
             
             // Show/hide "no schedules" message
             const noSchedulesRow = document.getElementById('no-schedules-row');
             if (visibleCount === 0) {
                 if (!noSchedulesRow) {
                     const tbody = document.getElementById('scheduleTableBody');
-                    const newRow = document.createElement('tr');
-                    newRow.id = 'no-schedules-row';
-                    newRow.innerHTML = `
-                        <td colspan="6" class="text-center py-5">
-                            <div class="py-4">
-                                <i class="bi bi-calendar-x display-5 text-muted d-block mb-3"></i>
-                                <h5 class="text-muted">No schedules found for this date</h5>
-                                <p class="text-muted">Add a new bus schedule or select a different date</p>
-                                <button id="emptyAddScheduleBtn" class="btn btn-primary mt-2">
-                                    <i class="bi bi-plus-circle me-1"></i> Add Schedule
-                                </button>
-                            </div>
-                        </td>
+                    tbody.innerHTML = `
+                        <tr id="no-schedules-row">
+                            <td colspan="6" class="text-center py-5">
+                                <div class="py-4">
+                                    <i class="bi bi-calendar-x display-5 text-muted d-block mb-3"></i>
+                                    <h5 class="text-muted">No schedules found for this date</h5>
+                                    <p class="text-muted">Add a new bus schedule or select a different date</p>
+                                    <button id="emptyAddScheduleBtn" class="btn btn-primary mt-2">
+                                        <i class="bi bi-plus-circle me-1"></i> Add Schedule
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     `;
-                    tbody.appendChild(newRow);
-                    
-                    // Add event listener to the new button
                     document.getElementById('emptyAddScheduleBtn').addEventListener('click', function() {
                         addScheduleModal.show();
                     });
@@ -713,5 +741,7 @@
                 });
             });
         });
+
+        console.log('Schedule rows found:', document.querySelectorAll('.schedule-row').length);
     </script>
     {% endblock %}

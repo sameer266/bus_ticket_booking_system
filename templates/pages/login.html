@@ -1,14 +1,12 @@
-
 {% extends 'components/base.html' %}
 {% load static %}
-
 
 {% block content %}
 <!-- Toast Messages -->
 {% if messages %}
 <div class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1050;">
     {% for message in messages %}
-    <div class="toast show align-items-center {% if message.tags == 'success' %}text-bg-success{% elif message.tags == 'error' %}text-bg-danger{% endif %}" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast show align-items-center {% if message.tags == 'success' %}text-bg-success{% elif message.tags == 'error' %}text-bg-danger{% else %}text-bg-info{% endif %}" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
             <div class="toast-body">
                 {{ message }}
@@ -35,6 +33,14 @@
             </div>
             
             <div class="card-body p-4 p-sm-5">
+                <!-- Error message display -->
+                {% if error_message %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ error_message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+
                 <form method="post" action="{% url 'login' %}" class="needs-validation" novalidate>
                     {% csrf_token %}
                     
@@ -50,14 +56,15 @@
                                 type="tel" 
                                 id="phone" 
                                 name="phone" 
-                                class="form-control border-start-0 ps-0" 
+                                class="form-control border-start-0 ps-0 {% if error_message %}is-invalid{% endif %}" 
                                 placeholder="Enter your phone number" 
                                 pattern="[0-9]{10}"
                                 required
+                                value="{{ request.POST.phone|default:'' }}"
                             >
-                        </div>
-                        <div class="invalid-feedback">
-                            Please enter a valid 10-digit phone number.
+                            <div class="invalid-feedback">
+                                Please enter a valid 10-digit phone number.
+                            </div>
                         </div>
                     </div>
                     
@@ -78,7 +85,7 @@
                                 type="password" 
                                 id="password" 
                                 name="password" 
-                                class="form-control border-start-0 ps-0" 
+                                class="form-control border-start-0 ps-0 {% if error_message %}is-invalid{% endif %}" 
                                 placeholder="Enter your password" 
                                 required
                             >
@@ -97,7 +104,6 @@
                                 Sign In <i class="bi bi-arrow-right animation-pulse"></i>
                             </span>
                         </button>
-                      
                     </div>
                 </form>
             </div>
@@ -179,6 +185,10 @@
         box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     }
 
+    .alert {
+        margin-bottom: 1.5rem;
+    }
+
     @media (max-width: 576px) {
         .card-body {
             padding: 1.5rem !important;
@@ -234,6 +244,15 @@
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        });
+
+        // Auto-dismiss alerts
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 300);
             }, 5000);
         });
     });

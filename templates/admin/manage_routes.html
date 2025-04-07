@@ -50,7 +50,7 @@
                                     <th style="min-width: 120px;">Destination</th>
                                     <th style="min-width: 100px;">Distance</th>
                                     <th style="min-width: 100px;">Est. Time</th>
-                                    <th class="text-end pe-3" style="min-width: 100px;">Actions</th>
+                                    <th class="text-end pe-3" style="min-width: 120px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -72,18 +72,16 @@
                                     <td>{{ route.distance }} km</td>
                                     <td>{{ route.estimated_time }} hour</td>
                                     <td class="text-end pe-3">
-                                        <div class="action-dropdown">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle action-btn" data-action="toggle">
-                                                <i class="bi bi-three-dots"></i>
+                                        <div class="d-flex justify-content-end align-items-center">
+                                            <a href="{% url 'edit_route' route.id %}" class="btn btn-sm btn-icon btn-outline-warning me-2" title="Edit Route">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-icon btn-outline-danger delete-route-btn" 
+                                                    data-route-id="{{ route.id }}" 
+                                                    data-route-name="{{ route.source }} - {{ route.destination }}"
+                                                    title="Delete Route">
+                                                <i class="bi bi-trash"></i>
                                             </button>
-                                            <div class="action-menu shadow-sm">
-                                                <a class="action-item edit-route-btn" href="{% url 'edit_route' route.id %}">
-                                                    <i class="bi bi-pencil-square text-warning me-2"></i> Edit
-                                                </a>
-                                                <a class="action-item delete-route-btn" href="#" data-route-id="{{ route.id }}" data-route-name="{{ route.source }} - {{ route.destination }}">
-                                                    <i class="bi bi-trash text-danger me-2"></i> Delete
-                                                </a>
-                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -108,7 +106,6 @@
             </div>
             
            
-
 <!-- Add Route Modal -->
 <div class="modal fade" id="addRouteModal" tabindex="-1" aria-labelledby="addRouteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-md-down">
@@ -230,61 +227,37 @@
         border-radius: 3px;
     }
     
-    /* Custom dropdown for actions */
-    .action-dropdown {
-        position: relative;
-        display: inline-block;
+    /* Action buttons styling */
+    .action-buttons {
+        white-space: nowrap;
     }
     
-    .action-btn {
-        min-width: 38px;
-        min-height: 38px;
-        display: flex;
+    /* Custom styling for icon buttons */
+    .btn-icon {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
     }
     
-    .action-menu {
-        position: absolute;
-        right: 0;
-        top: 100%;
-        z-index: 1060;
-        display: none;
-        min-width: 160px;
-        padding: 0.5rem 0;
-        margin: 0.125rem 0 0;
-        font-size: 0.875rem;
+    /* Adjust icon size for better visibility */
+    .btn-icon i {
+        font-size: 1rem;
+    }
+    
+    /* Hover effects */
+    .btn-outline-warning:hover {
+        background-color: #ffc107;
         color: #212529;
-        text-align: left;
-        list-style: none;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid rgba(0,0,0,.15);
-        border-radius: 0.25rem;
     }
     
-    .action-menu.show {
-        display: block;
-    }
-    
-    .action-item {
-        display: block;
-        width: 100%;
-        padding: 0.5rem 1rem;
-        clear: both;
-        font-weight: 400;
-        color: #212529;
-        text-align: inherit;
-        text-decoration: none;
-        white-space: nowrap;
-        background-color: transparent;
-        border: 0;
-    }
-    
-    .action-item:hover {
-        color: #1e2125;
-        background-color: #f8f9fa;
-        text-decoration: none;
+    .btn-outline-danger:hover {
+        background-color: #dc3545;
+        color: #fff;
     }
     
     /* Mobile card view */
@@ -309,15 +282,14 @@
             display: none;
         }
         
-        /* Better touch target sizes for mobile */
-        .action-item {
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
+        /* Larger touch targets for mobile */
+        .btn-icon {
+            width: 44px;
+            height: 44px;
         }
         
-        .action-btn {
-            min-width: 40px;
-            min-height: 40px;
+        .btn-icon i {
+            font-size: 1.1rem;
         }
     }
     
@@ -325,6 +297,27 @@
         .route-cards {
             display: none;
         }
+    }
+    
+    /* Add tooltips for the action buttons */
+    [title] {
+        position: relative;
+    }
+    
+    [title]:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 5px 10px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1000;
+        pointer-events: none;
     }
 </style>
 {% endblock %}
@@ -340,8 +333,7 @@
         const addButtons = [
             document.getElementById('addRouteBtn'),
             document.getElementById('mobileAddRouteBtn'),
-            document.getElementById('emptyAddRouteBtn'),
-            document.getElementById('emptyAddRouteBtnMobile')
+            document.getElementById('emptyAddRouteBtn')
         ];
         
         addButtons.forEach(button => {
@@ -376,53 +368,6 @@
             });
         }
         
-        // Custom dropdown handling for action buttons
-        document.addEventListener('click', function(e) {
-            // Close all dropdowns when clicking outside
-            if (!e.target.closest('.action-dropdown')) {
-                document.querySelectorAll('.action-menu').forEach(menu => {
-                    menu.classList.remove('show');
-                });
-                return;
-            }
-            
-            // Toggle dropdown when clicking the button
-            if (e.target.closest('[data-action="toggle"]')) {
-                const actionBtn = e.target.closest('[data-action="toggle"]');
-                const actionMenu = actionBtn.closest('.action-dropdown').querySelector('.action-menu');
-                
-                // Close all other dropdowns first
-                document.querySelectorAll('.action-menu.show').forEach(menu => {
-                    if (menu !== actionMenu) {
-                        menu.classList.remove('show');
-                    }
-                });
-                
-                // Toggle this dropdown
-                actionMenu.classList.toggle('show');
-                
-                // Position the dropdown properly
-                if (actionMenu.classList.contains('show')) {
-                    const rect = actionBtn.getBoundingClientRect();
-                    const windowHeight = window.innerHeight;
-                    const menuHeight = actionMenu.offsetHeight;
-                    
-                    if (windowHeight - rect.bottom < menuHeight && rect.top > menuHeight) {
-                        // If more space above than below, show above
-                        actionMenu.style.top = 'auto';
-                        actionMenu.style.bottom = '100%';
-                    } else {
-                        // Show below
-                        actionMenu.style.top = '100%';
-                        actionMenu.style.bottom = 'auto';
-                    }
-                }
-                
-                e.preventDefault();
-                e.stopPropagation();
-            }
-        });
-        
         // Delete Route Handling
         document.querySelectorAll('.delete-route-btn').forEach(button => {
             button.addEventListener('click', function(e) {
@@ -434,11 +379,6 @@
                 document.getElementById('deleteRouteName').textContent = routeName;
                 const deleteForm = document.getElementById('deleteRouteForm');
                 deleteForm.action = `/delete_route/${routeId}/`;  // Adjust URL as per your URLconf
-                
-                // Close any open dropdowns
-                document.querySelectorAll('.action-menu.show').forEach(menu => {
-                    menu.classList.remove('show');
-                });
                 
                 deleteRouteModal.show();
             });

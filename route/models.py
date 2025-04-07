@@ -128,7 +128,7 @@ class Schedule(models.Model):
         super().delete(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.bus.bus_number} | {self.route.source} to {self.route.destination} at {self.date.strftime('%Y-%m-%d %H:%M:%S') } {self.status}"
+        return f"{self.bus.bus_number} | {self.route.source} to {self.route.destination} at {self.departure_time.strftime('%Y-%m-%d %H:%M:%S') } {self.status}"
 
 
 @receiver(post_save, sender=Schedule)
@@ -161,15 +161,15 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
             )
 
         # Create Trip if not exists
-        trip = Trip.objects.filter(bus=instance.bus, route=instance.route, scheduled_departure=instance.departure_time).first()
-        if not trip:
-            Trip.objects.create(
-                bus=instance.bus,
-                route=instance.route,
-                driver=instance.bus.driver,
-                scheduled_departure=instance.departure_time,
-                scheduled_arrival=instance.arrival_time,
-            )
+        # trip = Trip.objects.filter(bus=instance.bus, route=instance.route, scheduled_departure=instance.departure_time).first()
+        # if not trip:
+        #     Trip.objects.create(
+        #         bus=instance.bus,
+        #         route=instance.route,
+        #         driver=instance.bus.driver,
+        #         scheduled_departure=instance.departure_time,
+        #         scheduled_arrival=instance.arrival_time,
+        #     )
 
 
 # ======== Customer Review ============

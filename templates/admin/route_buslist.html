@@ -430,10 +430,12 @@
             button.addEventListener('click', async function() {
                 const busId = this.getAttribute('data-bus-id');
                 
-                try {
+            
                     // Fetch bus details from API
-                    const response = await fetch(`http://127.0.0.1:8000/route_bus_details/${busId}/`);
+                    const response = await fetch(`/route_bus_details/${busId}/`);
                     const data = await response.json();
+                    console.log(data.data)
+              
                     
                     if (data.success) {
                         const busData = data.data;
@@ -463,16 +465,16 @@
                         }
 
                         // Update Driver Information
-                        document.getElementById('modal-driver-name').textContent = busData.driver.full_name;
-                        document.getElementById('modal-driver-phone').textContent = busData.driver.phone_number;
+                        document.getElementById('modal-driver-name').textContent = busData.driver.full_name || "Nan";
+                        document.getElementById('modal-driver-phone').textContent = busData.driver.phone_number || "Nan";
                         document.getElementById('modal-driver-license').textContent = 'License Available';
-                        document.getElementById('modal-driver-image').src = busData.driver.driver_profile;
+                        document.getElementById('modal-driver-image').src = busData.driver.driver_profile  || "Nan";
 
                         // Update Staff Information
-                        document.getElementById('modal-staff-name').textContent = busData.staff.full_name;
-                        document.getElementById('modal-staff-phone').textContent = busData.staff.phone_number;
+                        document.getElementById('modal-staff-name').textContent = busData.staff.full_name || "Nan";
+                        document.getElementById('modal-staff-phone').textContent = busData.staff.phone_number || "Nan";
                         document.getElementById('modal-staff-role').textContent = 'Bus Staff';
-                        document.getElementById('modal-staff-image').src = busData.staff.staff_profile;
+                        document.getElementById('modal-staff-image').src = busData.staff.staff_profile || "Nan";
 
                         // Update seat availability color
                         const availableSeatsNum = parseInt(busData.available_seats);
@@ -489,10 +491,7 @@
                     } else {
                         alert('Failed to fetch bus details');
                     }
-                } catch (error) {
-                    console.error('Error fetching bus details:', error);
-                    alert('An error occurred while fetching bus details');
-                }
+                
             });
         });
     });

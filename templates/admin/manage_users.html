@@ -107,6 +107,57 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+
+                        <!-- Pagination -->
+{% if users.has_other_pages %}
+<div class="card-footer bg-white py-3">
+    <nav aria-label="User pagination">
+        <ul class="pagination justify-content-center mb-0">
+            <!-- Previous Button -->
+            {% if users.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            <!-- Page Numbers -->
+            {% for num in users.paginator.page_range %}
+                {% if users.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next Button -->
+            {% if users.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+
+
                     </div>
                 </div>
             </div>
@@ -186,6 +237,30 @@
         background-color: white;
         box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
         z-index: 1;
+    }
+
+    .pagination .page-link {
+        color: var(--primary-color);
+        border-radius: 0.5rem;
+        margin: 0 0.125rem;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.2s;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .pagination .page-item.disabled .page-link {
+        color: #6c757d;
+        background-color: transparent;
+        border-color: #dee2e6;
+    }
+    
+    .pagination .page-link:hover:not(.active) {
+        background-color: rgba(78, 115, 223, 0.1);
+        border-color: var(--primary-color);
     }
     
     .main-content {

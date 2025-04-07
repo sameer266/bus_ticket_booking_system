@@ -37,9 +37,10 @@ def login_view(request):
         phone = request.POST.get('phone')
         password = request.POST.get('password')
         if password == "counter@123":
-            messages.info("Please reset password")
-            redirect('reset_password')
+            message = "Please Reset Password"
+            return render(request, 'admin/reset_password.html', {"message": message})
         user = authenticate(phone=phone, password=password)
+        print(user)
         if user:
             login(request,user)
             print(user)
@@ -95,20 +96,23 @@ def verify_otp(request):
         
         
 
-from django.contrib.auth.hashers import make_password
-
 def reset_password(request):
     message = ""
     try:
         
         user = request.user
         if request.method == "POST":
-            p1 = request.POST.get("new_password")
+            print(request.POST)
+            p1 = request.POST.get("password")
             p2 = request.POST.get("confirm_password")
+           
             if p1 == p2:
-                user.password = make_password(p1)
+                print("YR")
+                user.set_password(p1)
                 user.save()
+                print("Yes ")
                 message = "Password has been reset. You can now log in."
+                return redirect('/login/')
             else:
                 message = "Passwords do not match."
     except CustomUser.DoesNotExist:

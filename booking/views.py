@@ -7,7 +7,8 @@ from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.utils.timezone import now
 from django.db.models import Count, Sum,F
-
+from datetime import datetime
+from django.db.models import Q
 
 import json
 from rest_framework.viewsets import ModelViewSet
@@ -31,55 +32,67 @@ from rest_framework import status
 
 
    
-        
-def is_admin(user):
-    return user.is_authenticated and user.role == "admin"
-
-def is_subadmin(user):
-    return user.is_authenticated and user.role=="sub_admin"
 
 @login_required
-# @user_passes_test(is_admin,is_subadmin)
 def admin_dashboard(request):
-        """
-        Render the admin dashboard with overview statistics and recent data
-        """
-  
-        # Gather stats data
-        data = {}
+    """
+    Render the admin dashboard with overview statistics and recent data.
+    Shows only company-specific stats if user is sub-admin.
+    """
+    user = request.user
+    user_company = getattr(user, 'transportation_company', None)
+    user_role = getattr(user, 'role', 'admin')  # default to admin if role not set
+
+    data = {}
+
+    if  user_company:
+        # Sub-admin: only show their own company's data
+        buses = Bus.objects.filter(transportation_company=user_company, is_active=True)
+        commissions = Commission.objects.filter(bus__in=buses)
+
+        user_count = CustomUser.objects.filter(
+            role="customer",
+            booking__bus__in=buses
+        ).distinct().count()
+
+        bus_count = buses.count()
+        total_amount = commissions.aggregate(total=Sum('total_commission'))['total'] or 0
+        pending_bookings = Booking.objects.filter(booking_status="pending", bus__in=buses).count()
+        completed_trips = Trip.objects.filter(status="completed", bus__in=buses).count()
+        booked_tickets = Booking.objects.filter(booking_status='booked', bus__in=buses).count()
+
+        recent_booking = Booking.objects.filter(bus__in=buses).order_by('-booked_at')[:8]
+        trip_data = Trip.objects.filter(bus__in=buses)[:8]
+
+    else:
+        # Admin: show all data
         user_count = CustomUser.objects.filter(role="customer").count()
         bus_count = Bus.objects.filter(is_active=True).count()
-        
-        # Calculate total commission
         commissions = Commission.objects.all()
-        total_amount = sum(commission.total_commission for commission in commissions)
-        
-        # Get booking and trip counts
+
+        total_amount = commissions.aggregate(total=Sum('total_commission'))['total'] or 0
         pending_bookings = Booking.objects.filter(booking_status="pending").count()
         completed_trips = Trip.objects.filter(status="completed").count()
         booked_tickets = Booking.objects.filter(booking_status='booked').count()
-        
-        # Build data dictionary
-        data["total_revenue"] = total_amount
-        data['total_booking_pending'] = pending_bookings
-        data['total_trip_completed'] = completed_trips
-        data['ticket_booked'] = booked_tickets
-        data["total_active_bus"] = bus_count
-        data["total_user"] = user_count
-        
-        # Get recent bookings and trips
+
         recent_booking = Booking.objects.all().order_by('-booked_at')[:8]
         trip_data = Trip.objects.all()[:8]
-        
-        context = {
-            'data': data,
-            'recent_booking': recent_booking,
-            'trip_data': trip_data,
-        }
-        
-        return render(request, 'admin/dashboard.html', context)
-        
-    
+
+    data["total_revenue"] = total_amount
+    data['total_booking_pending'] = pending_bookings
+    data['total_trip_completed'] = completed_trips
+    data['ticket_booked'] = booked_tickets
+    data["total_active_bus"] = bus_count
+    data["total_user"] = user_count
+
+    context = {
+        'data': data,
+        'recent_booking': recent_booking,
+        'trip_data': trip_data,
+    }
+
+    return render(request, 'admin/dashboard.html', context)
+
 
 
 
@@ -105,90 +118,111 @@ def admin_profile(request):
 
 # ======= Ticket Counter  ===========
 @login_required
-def ticket_counter_list(request):
-    counters = TicketCounter.objects.all().order_by('-created_at')
-    sub_admins = CustomUser.objects.filter(role='sub_admin')
-
+def transportation_company_list(request):
     if request.method == "POST":
         # Get data from the request
-        counter_name = request.POST.get('counter_name')
-        location = request.POST.get('location')
+        company_name = request.POST.get('company_name')
+        vat_number = request.POST.get('vat_number')
+        country = request.POST.get('country')
+        location_name = request.POST.get('location_name')
+        bank_name = request.POST.get('bank_name')
+        account_name = request.POST.get('account_name')
+        account_number = request.POST.get('account_number')
+        qr_image = request.FILES.get('qr_image')
         full_name = request.POST.get('full_name')
         email = request.POST.get('email')
         phone = request.POST.get('phone')
         gender = request.POST.get('gender')
 
         # Check if user already exists
-        if CustomUser.objects.filter(email=email).exists() or CustomUser.objects.filter(phone=phone).exists():
-            messages.error(request, "User already exists!")
+        if CustomUser.objects.filter(phone=phone).exists():
+            messages.error(request, "User with this phone number already exists!")
         else:
-            # Create a new CustomUser
+            # Create the user
             user = CustomUser.objects.create(
                 role='sub_admin',
                 full_name=full_name,
                 email=email,
                 phone=phone,
-                gender=gender
+                gender=gender,
+                is_staff=True
             )
-            user.set_password("counter@123")  # Default Password
+            user.set_password("company@123")  # Default Password
             user.save()
 
-            # Create the TicketCounter
-            TicketCounter.objects.create(
-                counter_name=counter_name,
+            # Create the TransportationCompany
+            TransportationCompany.objects.create(
                 user=user,
-                location=location
+                company_name=company_name,
+                vat_number=vat_number,
+                country=country,
+                location_name=location_name,
+                
+                bank_name=bank_name,
+                account_name=account_name,
+                account_number=account_number,
+                qr_image=qr_image
             )
 
-            messages.success(request, "Ticket Counter added successfully!")
-            return redirect("ticket_counter_list")
+            messages.success(request, "Transportation Company added successfully!")
+            return redirect("transportation_company_list")
 
-    return render(request, "admin/ticket_counter.html", {
-        "counters": counters,
-        "sub_admins": sub_admins,
+    return render(request, "admin/transportation_company.html", {
+        "companies": TransportationCompany.objects.all(),
     })
+
+@login_required
+def edit_transportation_company(request, id):
+        transportation_company = get_object_or_404(TransportationCompany, id=id)
+
+        if request.method == "POST":
+           
+            # Update related user fields
+            transportation_company.user.full_name = request.POST.get('full_name')
+            transportation_company.user.email = request.POST.get('email')
+            transportation_company.user.phone = request.POST.get('phone')
+            transportation_company.user.gender = request.POST.get('gender')
+
+            # Update TransportationCompany fields
+            if transportation_company:
+                transportation_company.company_name = request.POST.get('company_name')
+                transportation_company.vat_number = request.POST.get('vat_number')
+                transportation_company.country = request.POST.get('country')
+                transportation_company.location_name = request.POST.get('location_name')
+                transportation_company.bank_name = request.POST.get('bank_name')
+                transportation_company.account_name = request.POST.get('account_name')
+                transportation_company.account_number = request.POST.get('account_number')
+                if 'qr_image' in request.FILES:
+                    transportation_company.qr_image = request.FILES['qr_image']
+                transportation_company.save()
+
+           
+            transportation_company.user.save()
+
+            messages.success(request, "Ticket Counter updated successfully!")
+            return redirect("transportation_company_list")
+
+        return render(request, "admin/edit_transportation_company.html", {
+            
+            "transportation_company": transportation_company,
+        })
 
 
 @login_required
-def edit_ticket_counter(request, id):
-    ticket_counter = get_object_or_404(TicketCounter, id=id)
-    user = ticket_counter.user
+def delete_transportation_company(request, id):
+    try:
+        print(id)
+        transportation_company = get_object_or_404(TransportationCompany, id=id)
+        user = transportation_company.user
+        user.delete()  
+        transportation_company.delete()
 
-    if request.method == "POST":
-        # Get updated data from the request
-        ticket_counter.counter_name = request.POST.get('counter_name')
-        ticket_counter.bank_name=request.POST.get('bank_name')
-        ticket_counter.bank_account=request.POST.get('bank_account')
-        ticket_counter.location = request.POST.get('location')
-
-        user.full_name = request.POST.get('full_name')
-        user.email = request.POST.get('email')
-        user.phone = request.POST.get('phone')
-        user.gender = request.POST.get('gender')
-
-        # Save updated data
-        ticket_counter.save()
-        user.save()
-
-        messages.success(request, "Ticket Counter updated successfully!")
+        messages.success(request, "Ticket Counter deleted successfully!")
         return redirect("ticket_counter_list")
-
-    return render(request, "admin/edit_ticket_counter.html", {
-        "ticket_counter": ticket_counter,
-        "user": user,
-    })
-
-
-@login_required
-def delete_ticket_counter(request, id):
-    ticket_counter = get_object_or_404(TicketCounter, id=id)
-    user = ticket_counter.user
-    user.delete()  
-    ticket_counter.delete()
-
-    messages.success(request, "Ticket Counter deleted successfully!")
-    return redirect("ticket_counter_list")
-
+    except Exception as e:
+        print(str(e))
+        
+        
 
 # ========= Sub Admin Bus List ==========
 @login_required
@@ -215,8 +249,10 @@ def sub_admin_bus_list(request,id):
 # ========= User Managemnet ==========
 @login_required
 def manage_users(request):
-    """List and add users from the same template."""
     users = CustomUser.objects.filter(role='customer')
+    paginator = Paginator(users, 10)  # 10 users per page
+    page_number = request.GET.get('page')
+    users_page = paginator.get_page(page_number)
 
     if request.method == "POST":
         full_name = request.POST.get('full_name')
@@ -224,22 +260,21 @@ def manage_users(request):
         phone = request.POST.get('phone')
         gender = request.POST.get('gender')
 
-        if  CustomUser.objects.filter(phone=phone).exists():
-            messages.error(request,"Phone number already exists")
+        if CustomUser.objects.filter(phone=phone).exists():
+            messages.error(request, "Phone number already exists")
+        else:
+            user = CustomUser.objects.create(
+                role='customer',
+                full_name=full_name,
+                email=email,
+                phone=phone,
+                gender=gender
+            )
+            user.set_password("counter@123")
+            user.save()
+        return redirect('manage_users')
 
-        user = CustomUser.objects.create(
-            role='customer',
-            full_name=full_name,
-            email=email,
-            phone=phone,
-            gender=gender
-        )
-        user.set_password("counter@123")
-        user.save()
-        return redirect('manage_users')  # Reload page after adding user
-
-    return render(request, 'admin/manage_users.html', {'users': users})
-
+    return render(request, 'admin/manage_users.html', {'users': users_page})
 
 @login_required
 def delete_user(request, id):
@@ -868,7 +903,7 @@ class BusDetails(APIView):
         try:
             bus = Bus.objects.get(id=bus_id)
             serializer = BusSerializer(bus)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response({"success":True,'data':serializer.data}, status=200)
         except Bus.DoesNotExist:
             return Response({"error": "Bus not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -878,14 +913,37 @@ def schedule_list(request):
     if request.method == "POST":
         route_id = request.POST.get("route")
         bus_id = request.POST.get("bus")
+        departure_date = request.POST.get("departure_date")  # Get this from the form
         departure_time = request.POST.get("departure_time")
+        arrival_date = request.POST.get("arrival_date")  # Get this from the form
         arrival_time = request.POST.get("arrival_time")
         price = request.POST.get("price")
 
         route = Route.objects.get(id=route_id)
         bus = Bus.objects.get(id=bus_id)
-
-        Schedule.objects.create(route=route, bus=bus, departure_time=departure_time, arrival_time=arrival_time, price=price)
+        
+        # Properly combine date and time
+        if departure_date:
+            departure_datetime = datetime.strptime(f"{departure_date} {departure_time}", "%Y-%m-%d %H:%M")
+        else:
+            # Fallback to current date if no date provided
+            current_date = datetime.now().date()
+            departure_datetime = datetime.strptime(f"{current_date} {departure_time}", "%Y-%m-%d %H:%M")
+            
+        if arrival_date:
+            arrival_datetime = datetime.strptime(f"{arrival_date} {arrival_time}", "%Y-%m-%d %H:%M")
+        else:
+            # Fallback to current date if no date provided
+            current_date = datetime.now().date()
+            arrival_datetime = datetime.strptime(f"{current_date} {arrival_time}", "%Y-%m-%d %H:%M")
+        
+        Schedule.objects.create(
+            route=route, 
+            bus=bus, 
+            departure_time=departure_datetime, 
+            arrival_time=arrival_datetime, 
+            price=price
+        )
         return redirect("schedule_list")
 
     schedules = Schedule.objects.all()
@@ -904,6 +962,14 @@ def schedule_list(request):
     })
 
 def schedule_edit(request, id):
+    
+    user = request.user
+    all_buses = Bus.objects.none()
+    transportation_company = getattr(user, 'transportation_company', None)
+    if transportation_company:
+        all_buses = Bus.objects.filter(transportation_company=transportation_company)
+    else:
+        all_buses = Bus.objects.all()
     schedule = get_object_or_404(Schedule, id=id)
     
     if request.method == "POST":
@@ -916,9 +982,9 @@ def schedule_edit(request, id):
         return redirect("schedule_list")
 
     all_routes = Route.objects.all()
-    all_buses = Bus.objects.all()
     
-    return render(request, "admin/manage_schedule.html", {
+    
+    return render(request, "admin/edit_schedule.html", {
         "schedule": schedule,
         "all_routes": all_routes,
         "all_buses": all_buses
@@ -927,6 +993,7 @@ def schedule_edit(request, id):
 def schedule_delete(request, id):
     schedule = get_object_or_404(Schedule, id=id)
     schedule.delete()
+    messages.succes("Schedule Deleted Successfully")
     return redirect("schedule_list")
 
 
@@ -936,50 +1003,56 @@ def schedule_delete(request, id):
 
 # ======= Bus  details schedule =========
 def schedule_bus_details(request, id):
-    bus = get_object_or_404(Bus, id=id)
-    layout = get_object_or_404(BusLayout, bus=bus)
-    schedule = get_object_or_404(Schedule, bus=bus)
-    
-    seat_layout_with_bookings = []
-    booked_seats = {}
-    booked_seat = 0
-    
-    for booking in Booking.objects.filter(bus=bus):
-        for seat in booking.seat:
-            booked_seats[seat] = {
-                "user": booking.user.full_name,
-                "booking_id": booking.id
-            }
-            booked_seat += 1
-
-    total_amount = booked_seat * schedule.price
-
-    for row in layout.layout_data:
-        enhanced_row = []
-        for seat in row:
-            if seat == 0:
-                enhanced_row.append(0)
-            else:
-                seat_name = seat["seat"]
-                seat_status = seat["status"]
-                seat_info = {
-                    "seat": seat_name,
-                    "status": seat_status,
-                    "user": booked_seats.get(seat_name, {}).get("user", None) if seat_status == "booked" else None,
-                    "booking_id": booked_seats.get(seat_name, {}).get("booking_id", None) if seat_status == "booked" else None
+        print(id)
+        schedule = get_object_or_404(Schedule, id=id)
+        print(schedule.bus)
+        bus = schedule.bus
+        layout = get_object_or_404(BusLayout, bus=bus)
+        
+        
+        seat_layout_with_bookings = []
+        booked_seats = {}
+        booked_seat = 0
+        
+        for booking in Booking.objects.filter(bus=bus):
+            for seat in booking.seat:
+                booked_seats[seat] = {
+                    "user": booking.user.full_name,
+                    "booking_id": booking.id
                 }
-                enhanced_row.append(seat_info)
-        seat_layout_with_bookings.append(enhanced_row)
+                booked_seat += 1
 
-    return render(request, 'admin/schedule_buslist.html', {
-        'bus': bus,
-        'layout': layout,
-        'schedule': schedule,
-        'seat_layout': seat_layout_with_bookings,
-        'total_amount': total_amount,
-        'booked_seat': booked_seat,
-    })
+        total_amount = booked_seat * schedule.price
 
+        for row in layout.layout_data:
+            enhanced_row = []
+            for seat in row:
+                if seat == 0:
+                    enhanced_row.append(0)
+                else:
+                    seat_name = seat["seat"]
+                    seat_status = seat["status"]
+                    seat_info = {
+                        "seat": seat_name,
+                        "status": seat_status,
+                        "user": booked_seats.get(seat_name, {}).get("user", None) if seat_status == "booked" else None,
+                        "booking_id": booked_seats.get(seat_name, {}).get("booking_id", None) if seat_status == "booked" else None
+                    }
+                    enhanced_row.append(seat_info)
+            seat_layout_with_bookings.append(enhanced_row)
+
+        return render(request, 'admin/schedule_buslist.html', {
+            'bus': bus,
+            'layout': layout,
+            'schedule': schedule,
+            'seat_layout': seat_layout_with_bookings,
+            'total_amount': total_amount,
+            'booked_seat': booked_seat,
+        })
+ 
+        
+        
+        
 # ======= Bookinglist of one User ==============
 def booking_details(request, id):
     booking = get_object_or_404(Booking, id=id)
@@ -1110,39 +1183,51 @@ def system_settings_view(request):
  
 
 #========= Payment and Commission =============
-#========= Payment and Commission =============
+
 @login_required
 def payment_details(request):
-    # Get the user's transportation company
-    user_company = getattr(request.user, 'transpotation_company', None)
-    
-    # Get payments based on user's company
-    payments = Payment.objects.filter(payment_status='completed')
+    user = request.user
+    user_company = getattr(user, 'transportation_company', None)
+    user_role = getattr(user, 'role', 'admin')
+
+    # Get buses for the current user
+    buses = Bus.objects.all()
     if user_company:
-        # Filter payments to only include buses from user's company
-        payments = payments.filter(bus__transpotation_company=user_company)
-    
-    # Order payments by date
-    payments = payments.order_by('-created_at')
-    
+        buses = buses.filter(transportation_company=user_company)
+
+    # Completed payments for user's buses
+    payments = Payment.objects.filter(payment_status='completed', bus__in=buses).order_by('-created_at')
+
     # Get commission rate
     rate = Rate.objects.first()
-    
-    # Calculate totals
-    total_payments = payments.aggregate(
-        total_amount=Sum('price'),
-        total_commission=Sum('commission_deducted')
-    )
-    
-    total_received = (total_payments['total_amount'] or 0) - (total_payments['total_commission'] or 0)
-    
-    # Calculate per-bus statistics
-    bus_stats = Payment.objects.filter(payment_status='completed')
+    commission_rate = rate.rate if rate else 0
+
+    # Get all commission records
+    commissions = Commission.objects.all()
     if user_company:
-        bus_stats = bus_stats.filter(bus__transpotation_company=user_company)
-    
-    bus_stats = bus_stats.values(
-        'bus__id', 
+        commissions = commissions.filter(
+            Q(bus__transportation_company=user_company) |
+            Q(bus_reserve__transportation_company=user_company)
+        )
+
+    # Aggregate commission-related values
+    commission_stats = commissions.aggregate(
+        total_amount=Sum('total_earnings'),
+        total_commission=Sum('total_commission'),
+        reservation_total=Sum('total_earnings', filter=Q(bus_reserve__isnull=False)),
+        booking_total=Sum('total_earnings', filter=Q(bus__isnull=False)),
+    )
+
+    total_amount = commission_stats['total_amount'] or 0
+    total_commission = commission_stats['total_commission'] or 0
+    reservation_totals = commission_stats['reservation_total'] or 0
+    booking_totals = commission_stats['booking_total'] or 0
+
+    total_received = total_amount - total_commission
+
+    # Per-bus statistics
+    bus_stats = payments.values(
+        'bus__id',
         'bus__bus_number',
         'bus__route__source',
         'bus__route__destination'
@@ -1151,16 +1236,54 @@ def payment_details(request):
         total_commission=Sum('commission_deducted'),
         payment_count=Count('id')
     ).order_by('-total_earnings')
-    
+
+    # Bus reservations
+    bus_reservations = BusReservation.objects.all().order_by('-created_at')
+    if user_role != 'admin' and user_company:
+        bus_reservations = bus_reservations.filter(transportation_company=user_company)
+
+    reservation_bookings = BusReservationBooking.objects.filter(
+        bus_reserve__in=bus_reservations
+    ).order_by('-created_at')[:6]  # last 6 bookings
+
+    # Calculate earnings and commission from reservations
+    reservation_total = reservation_bookings.aggregate(
+        total_earning=Sum('bus_reserve__price'),
+        total_commission=Sum(F('bus_reserve__price') * commission_rate / 100)
+    )
+
+    reservation_earning = (reservation_total['total_earning'] or 0) - (reservation_total['total_commission'] or 0)
+    reservation_commission = reservation_total['total_commission'] or 0
+
+    # Combined net earnings
+    combined_earning = total_received + reservation_earning - reservation_commission
+
+    # Build context
     context = {
         'payments': payments,
         'rate': rate,
-        'total_amount': total_payments['total_amount'] or 0,
-        'total_commission': total_payments['total_commission'] or 0,
         'total_received': total_received,
         'bus_stats': bus_stats,
+        'reservation_earning': reservation_earning,
+        'combined_earning': combined_earning,
+        'is_admin': user_role == 'admin',
+        'reservation_bookings': reservation_bookings,
     }
+
+    # Admin: show gross and commission
+    if user_role == 'admin':
+        context['total_amount'] = total_amount
+        context['total_commission'] = total_commission
+        context['booking_totals'] = booking_totals
+        context['reservation_totals'] = reservation_totals
+
+    # Sub-admin: hide commission, show only earning parts
+    elif user_role == 'sub_admin':
+        context['earnings_from_bookings'] = booking_totals
+        context['earnings_from_reservations'] = reservation_earning
+
     return render(request, 'admin/payment_details.html', context)
+
 
 @login_required
 def update_rate(request):

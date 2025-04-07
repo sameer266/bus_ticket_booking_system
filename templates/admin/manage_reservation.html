@@ -26,21 +26,14 @@
                     </div>
                 </div>
             </div>
-            <!-- Mobile Action Buttons -->
-            <div class="d-flex d-md-none mb-3 gap-2">
-                <button id="mobileAddReservationBtn" class="btn btn-primary flex-grow-1">
-                    <i class="bi bi-plus-lg me-1"></i> Add Reservation
-                </button>
-            </div>
+           
 
-            <button id="mobileManageTypesBtn" class="btn btn-secondary">
-                <i class="bi bi-list-check"></i>
-            </button>
+            
         </div>
         
 
 
-        <div class="card shadow-sm">
+        <div class="card shadow-sm table-container" >
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="mb-0 fw-bold text-primary">
                     <i class="bi bi-car-front me-2"></i>Reservation List
@@ -51,70 +44,74 @@
                 </div>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-3">Name</th>
-                                <th class="d-none d-md-table-cell">Type</th>
-                                <th class="d-none d-md-table-cell">Vehicle #</th>
-                                <th class="d-none d-lg-table-cell">Driver</th>
-                                <th class="d-none d-lg-table-cell">Staff</th>
-                                <th class="text-end pe-3">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for reservation in reservations %}
-                            <tr data-reservation-id="{{ reservation.id }}" data-reservation-json='{{ reservation_json|safe }}'>
-                                <td class="ps-3">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="avatar bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="min-width: 40px; height: 40px;">
-                                            <i class="bi bi-car-front"></i>
-                                        </div>
-                                        <div class="overflow-hidden">
-                                            <h6 class="mb-0 text-truncate">{{ reservation.name }}</h6>
-                                            <small class="text-muted d-block d-md-none text-truncate">{{ reservation.vechicle_number }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="d-none d-md-table-cell">{{ reservation.type.name|default:"-" }}</td>
-                                <td class="d-none d-md-table-cell">{{ reservation.vechicle_number }}</td>
-                                <td class="d-none d-lg-table-cell">{{ reservation.driver.full_name|default:"-" }}</td>
-                                <td class="d-none d-lg-table-cell">{{ reservation.staff.full_name|default:"-" }}</td>
-                                <td class="text-end pe-3">
-                                    <div class="btn-group">
-                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-none d-md-inline-block" data-bs-toggle="dropdown">
-                                            <i class="bi bi-three-dots"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li><button class="dropdown-item edit-reservation-btn" data-reservation-id="{{ reservation.id }}"><i class="bi bi-pencil-square text-warning me-2"></i> Edit</button></li>
-                                            <li><button class="dropdown-item delete-reservation-btn" data-reservation-id="{{ reservation.id }}"><i class="bi bi-trash text-danger me-2"></i> Delete</button></li>
-                                        </ul>
-                                        <div class="d-md-none d-flex gap-1">
-                                            <button class="btn btn-outline-warning btn-sm edit-reservation-btn" data-reservation-id="{{ reservation.id }}">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger btn-sm delete-reservation-btn" data-reservation-id="{{ reservation.id }}">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center py-5">
-                                    <i class="bi bi-car-front display-5 text-muted mb-3"></i>
-                                    <h5 class="text-muted">No reservations found</h5>
-                                    <button id="emptyAddReservationBtn" class="btn btn-primary mt-2">
-                                        <i class="bi bi-plus-circle me-1"></i> Add Reservation
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <!-- Replace the entire table structure to be fully responsive -->
+<div class="table-responsive">
+    <table class="table table-hover mb-0">
+        <thead class="table-light">
+            <tr>
+                <th class="ps-3">Name</th>
+                <th class="d-none d-md-table-cell">Type</th>
+                <th class="d-none d-md-table-cell">Vehicle </th>
+                <th class="d-none d-lg-table-cell">Driver</th>
+                <th class="d-none d-lg-table-cell">Staff</th>
+                <th class="text-end pe-3">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reservation in reservations %}
+            <tr data-reservation-id="{{ reservation.id }}" data-reservation-json='{{ reservation_json|safe }}'>
+                <td class="ps-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="min-width: 40px; height: 40px;">
+                            <i class="bi bi-car-front"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <h6 class="mb-0 text-truncate">{{ reservation.name }}</h6>
+                            <small class="text-muted d-block d-md-none text-truncate">{{ reservation.vechicle_number }}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="d-none d-md-table-cell">{{ reservation.type.name|default:"-" }}</td>
+                <td class="d-none d-md-table-cell">{{ reservation.vechicle_number }}</td>
+                <td class="d-none d-lg-table-cell">{{ reservation.driver.full_name|default:"-" }}</td>
+                <td class="d-none d-lg-table-cell">{{ reservation.staff.full_name|default:"-" }}</td>
+                <td class="text-end pe-3">
+                    <div class="d-flex gap-1 justify-content-end">
+                        <!-- Small screens - Icon only -->
+                        <button class="btn btn-outline-primary btn-sm edit-reservation-btn d-md-none" data-reservation-id="{{ reservation.id }}" title="Edit">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm delete-reservation-btn d-md-none" data-reservation-id="{{ reservation.id }}" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                       
+                        
+                        <!-- Medium screens and up - Icon with text -->
+                        <button class="btn btn-outline-primary btn-sm edit-reservation-btn d-none d-md-inline-flex align-items-center" data-reservation-id="{{ reservation.id }}">
+                            <i class="bi bi-pencil-square me-md-1"></i><span class="d-none d-lg-inline">Edit</span>
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm delete-reservation-btn d-none d-md-inline-flex align-items-center" data-reservation-id="{{ reservation.id }}">
+                            <i class="bi bi-trash me-md-1"></i><span class="d-none d-lg-inline">Delete</span>
+                        </button>
+                        
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-5">
+                    <i class="bi bi-car-front display-5 text-muted mb-3"></i>
+                    <h5 class="text-muted">No reservations found</h5>
+                    <button id="emptyAddReservationBtn" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-circle me-1"></i> Add Reservation
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+                
             </div>
         </div>
     </main>
@@ -367,6 +364,11 @@
 
 {% block extra_css %}
 <style>
+
+    .table-container{
+
+        margin-left:240px ;
+    }
     .sidebar {
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
         background-color: #fff;
@@ -391,7 +393,13 @@
             position: static;
             height: auto;
         }
+
+        .table-container{
+
+            margin-left:20px ;
+        }
     }
+
 </style>
 {% endblock %}
 
@@ -425,7 +433,7 @@
         // Show Add Reservation Modal
         const addButtons = [
             document.getElementById('addReservationBtn'),
-            document.getElementById('mobileAddReservationBtn'),
+
             document.getElementById('emptyAddReservationBtn')
         ];
         addButtons.forEach(button => {
@@ -542,5 +550,5 @@ document.querySelectorAll('.delete-type-btn').forEach(button => {
 });
 
 </script>
-{% endblock %}}
+{% endblock %}
 {% endblock %}

@@ -142,6 +142,7 @@ def create_commission_on_reservation(sender, instance, created, **kwargs):
     Creates a commission entry when a BusReservation is created.
     """
     if created  and instance.status=='booked':
+      
         
         commission_obj = Commission.objects.create(
             bus_reserve=instance.bus_reserve,
