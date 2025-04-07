@@ -393,6 +393,7 @@ def bus_list(request):
 @login_required
 def create_bus(request):
     try:
+        print(request.POST)
         # Extract form data
         bus_number = request.POST.get('bus_number')
         bus_type = request.POST.get('bus_type')
@@ -471,7 +472,9 @@ def create_bus(request):
             'features': Bus.FEATURE_CHOICES
         }
         return render(request, 'admin/manage_bus.html', context)
-
+    
+    
+# ======= Edit bus ===========
 from django.core.exceptions import ValidationError
 @login_required
 def edit_bus(request, bus_id):
@@ -496,9 +499,16 @@ def edit_bus(request, bus_id):
             if route_id:
                 bus.route = Route.objects.get(id=route_id)
             
-            # Handle numeric and boolean fields
-            total_seats = request.POST.get('total_seats', bus.total_seats)
-            bus.total_seats = int(total_seats) if total_seats else bus.total_seats
+            # Get total_seats from layout data if available
+            if 'layout' in request.POST:
+                layout_data = json.loads(request.POST['layout'])
+                total_seats = layout_data.get('totalSeats', bus.total_seats)
+                bus.total_seats = int(total_seats)
+            else:
+                # Fallback to direct input if no layout data
+                total_seats = request.POST.get('total_seats', bus.total_seats)
+                bus.total_seats = int(total_seats) if total_seats else bus.total_seats
+            
             bus.is_active = request.POST.get('is_active') == 'on'
             bus.is_running = request.POST.get('is_running') == 'on'
             
@@ -541,28 +551,6 @@ def edit_bus(request, bus_id):
                 'success': False,
                 'error': 'An unexpected error occurred'
             }, status=500)
-    
-    # GET request handling
-    routes = Route.objects.all()
-    drivers = Driver.objects.filter(transportation_company=bus.transportation_company)
-    staff = Staff.objects.filter(transportation_company=bus.transportation_company)
-    
-    # Get bus layout if it exists
-    bus_layout = BusLayout.objects.filter(bus=bus).first()
-    
-    context = {
-        'bus': bus,
-        'all_routes': routes,
-        'all_drivers': drivers,
-        'all_staff': staff,
-        'bus_types': Bus.VEHICLE_CHOICES,
-        'features': Bus.FEATURE_CHOICES,
-        'selected_driver': bus.driver.id if bus.driver else None,
-        'selected_staff': bus.staff.id if bus.staff else None,
-        'selected_route': bus.route.id if bus.route else None,
-        'bus_layout': bus_layout,
-    }
-    return render(request, 'admin/manage_bus.html', context)
 
 
 # Add this view to fetch bus data
@@ -739,6 +727,75 @@ def vehicle_reservation(request, id=None):
     # GET request: Render the list
     return render(request, 'admin/manage_reservation.html', context)
 
+
+
+
+# ===========
+#   Vechicle Type
+# ===========
+
+@login_required
+def vechicle_type_list(request):
+    # Get the current user's transportation company
+    transportation_company = None
+    if hasattr(request.user, 'transportation_company'):
+        transportation_company = request.user.transportation_company
+    
+    # Get all vehicle types
+    vehicle_types = VechicleType.objects.all()
+    
+    # Process form submission for adding new vehicle type
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        image = request.FILES.get('image')
+        
+        if name:
+            VechicleType.objects.create(name=name, image=image)
+            messages.success(request, "Vehicle type added successfully!")
+            return redirect('vehicle_type_list')
+    
+    # Add vehicle count for each type from the user's transportation company
+    for vehicle_type in vehicle_types:
+        if transportation_company:
+            # Count vehicles of this type associated with the user's transportation company
+            vehicle_count = BusReservation.objects.filter(
+                type=vehicle_type,
+                transportation_company=transportation_company
+            ).count()
+            vehicle_type.vehicle_count = vehicle_count
+        else:
+            vehicle_type.vehicle_count = 0
+    
+    return render(request, 'admin/vechicle_type_list.html', {'vehicle_types': vehicle_types})
+
+
+
+@login_required
+def edit_vechicle_type(request, id):
+    vechicle_type = get_object_or_404(VechicleType, id=id)
+
+    if request.method == 'POST':
+        vechicle_type.name = request.POST.get('name', vechicle_type.name)
+        if 'image' in request.FILES:
+            vechicle_type.image = request.FILES['image']
+        vechicle_type.save()
+        messages.success(request, "Vehicle type updated successfully!")
+        return redirect('vechicle_type_list')
+
+    return render(request, 'admin/edit_vechicle_type.html', {'vechicle_type': vechicle_type})   
+
+
+@login_required
+def delete_vechicle_type(request, id):
+    vechicle_type = get_object_or_404(VechicleType, id=id)
+    if request.method == 'POST':
+        vechicle_type.delete()
+        messages.success(request, "Vehicle type deleted successfully!")
+        return redirect('vechicle_type_list')
+
+    return render(request, 'admin/delete_vechicle_type.html', {'vechicle_type': vechicle_type})
+
+
 # =============
 #   Route
 # ============
@@ -806,14 +863,14 @@ def route_bus_list(request, id):
 
 # ====== Json data for bus data of Route  =======
 class BusDetails(APIView):
-    
-    def get(self,request,*args,**kwargs):
-        bus_id=kwargs.get('id')
-        bus=Bus.objects.get(id=bus_id)
-        serializer=BusSerializer(bus)
-        return Response({'success':True,'data':serializer.data},status=200)
-        
-        
+    def get(self, request, *args, **kwargs):
+        bus_id = kwargs.get('id')
+        try:
+            bus = Bus.objects.get(id=bus_id)
+            serializer = BusSerializer(bus)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Bus.DoesNotExist:
+            return Response({"error": "Bus not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # ========= Schedule =========
 def schedule_list(request):
@@ -1053,10 +1110,20 @@ def system_settings_view(request):
  
 
 #========= Payment and Commission =============
+#========= Payment and Commission =============
 @login_required
 def payment_details(request):
-    # Get all completed payments ordered by date
-    payments = Payment.objects.filter(payment_status='completed').order_by('-created_at')
+    # Get the user's transportation company
+    user_company = getattr(request.user, 'transpotation_company', None)
+    
+    # Get payments based on user's company
+    payments = Payment.objects.filter(payment_status='completed')
+    if user_company:
+        # Filter payments to only include buses from user's company
+        payments = payments.filter(bus__transpotation_company=user_company)
+    
+    # Order payments by date
+    payments = payments.order_by('-created_at')
     
     # Get commission rate
     rate = Rate.objects.first()
@@ -1070,7 +1137,11 @@ def payment_details(request):
     total_received = (total_payments['total_amount'] or 0) - (total_payments['total_commission'] or 0)
     
     # Calculate per-bus statistics
-    bus_stats = Payment.objects.filter(payment_status='completed').values(
+    bus_stats = Payment.objects.filter(payment_status='completed')
+    if user_company:
+        bus_stats = bus_stats.filter(bus__transpotation_company=user_company)
+    
+    bus_stats = bus_stats.values(
         'bus__id', 
         'bus__bus_number',
         'bus__route__source',
@@ -1090,7 +1161,6 @@ def payment_details(request):
         'bus_stats': bus_stats,
     }
     return render(request, 'admin/payment_details.html', context)
-
 
 @login_required
 def update_rate(request):

@@ -18,6 +18,11 @@
                         <button id="addReservationBtn" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-plus-lg me-1"></i> New Reservation
                         </button>
+
+                        <button id="manageVehicleTypesBtn" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-list-check me-1"></i> Manage Types
+        </button>
+
                     </div>
                 </div>
             </div>
@@ -27,96 +32,110 @@
                     <i class="bi bi-plus-lg me-1"></i> Add Reservation
                 </button>
             </div>
-            <!-- Reservations List Card -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-                    <h5 class="mb-0 fw-bold text-primary">
-                        <i class="bi bi-car-front me-2"></i>Reservation List
-                    </h5>
-                    <div class="input-group input-group-sm w-auto">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0 ps-0" id="searchReservations" placeholder="Search reservations..." style="max-width: 200px;">
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-3">Name</th>
-                                    <th class="d-none d-md-table-cell">Type</th>
-                                    <th class="d-none d-md-table-cell">Vehicle Number</th>
-                                    <th class="d-none d-md-table-cell">Driver</th>
-                                    <th class="d-none d-md-table-cell">Staff</th>
-                                    <th class="text-end pe-3">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for reservation in reservations %}
-                                <tr data-reservation-id="{{ reservation.id }}" data-reservation-json='{{ reservation_json|safe }}'>
-                                    <td class="ps-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="rounded bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 40px;">
-                                                <i class="bi bi-car-front"></i>
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0">{{ reservation.name }}</h6>
-                                                <small class="text-muted d-md-none">{{ reservation.vechicle_number }}</small>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="d-none d-md-table-cell">{{ reservation.type.name|default:"-" }}</td>
-                                    <td class="d-none d-md-table-cell">{{ reservation.vechicle_number }}</td>
-                                    <td class="d-none d-md-table-cell">{{ reservation.driver.full_name|default:"-" }}</td>
-                                    <td class="d-none d-md-table-cell">{{ reservation.staff.full_name|default:"-" }}</td>
-                                    <td class="text-end pe-3">
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                                <i class="bi bi-three-dots"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li><button class="dropdown-item edit-reservation-btn" data-reservation-id="{{ reservation.id }}"><i class="bi bi-pencil-square text-warning me-2"></i> Edit</button></li>
-                                                <li><button class="dropdown-item delete-reservation-btn" data-reservation-id="{{ reservation.id }}"><i class="bi bi-trash text-danger me-2"></i> Delete</button></li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center py-5">
-                                        <div class="py-4">
-                                            <i class="bi bi-car-front display-5 text-muted d-block mb-3"></i>
-                                            <h5 class="text-muted">No reservations found</h5>
-                                            <p class="text-muted">Add your first reservation to get started</p>
-                                            <button id="emptyAddReservationBtn" class="btn btn-primary mt-2">
-                                                <i class="bi bi-plus-circle me-1"></i> Add Reservation
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+
+            <button id="mobileManageTypesBtn" class="btn btn-secondary">
+                <i class="bi bi-list-check"></i>
+            </button>
+        </div>
+        
+
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h5 class="mb-0 fw-bold text-primary">
+                    <i class="bi bi-car-front me-2"></i>Reservation List
+                </h5>
+                <div class="input-group input-group-sm" style="max-width: 250px;">
+                    <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="searchReservations" placeholder="Search reservations...">
                 </div>
             </div>
-        </main>
-    </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Name</th>
+                                <th class="d-none d-md-table-cell">Type</th>
+                                <th class="d-none d-md-table-cell">Vehicle #</th>
+                                <th class="d-none d-lg-table-cell">Driver</th>
+                                <th class="d-none d-lg-table-cell">Staff</th>
+                                <th class="text-end pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reservation in reservations %}
+                            <tr data-reservation-id="{{ reservation.id }}" data-reservation-json='{{ reservation_json|safe }}'>
+                                <td class="ps-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="min-width: 40px; height: 40px;">
+                                            <i class="bi bi-car-front"></i>
+                                        </div>
+                                        <div class="overflow-hidden">
+                                            <h6 class="mb-0 text-truncate">{{ reservation.name }}</h6>
+                                            <small class="text-muted d-block d-md-none text-truncate">{{ reservation.vechicle_number }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="d-none d-md-table-cell">{{ reservation.type.name|default:"-" }}</td>
+                                <td class="d-none d-md-table-cell">{{ reservation.vechicle_number }}</td>
+                                <td class="d-none d-lg-table-cell">{{ reservation.driver.full_name|default:"-" }}</td>
+                                <td class="d-none d-lg-table-cell">{{ reservation.staff.full_name|default:"-" }}</td>
+                                <td class="text-end pe-3">
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-none d-md-inline-block" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><button class="dropdown-item edit-reservation-btn" data-reservation-id="{{ reservation.id }}"><i class="bi bi-pencil-square text-warning me-2"></i> Edit</button></li>
+                                            <li><button class="dropdown-item delete-reservation-btn" data-reservation-id="{{ reservation.id }}"><i class="bi bi-trash text-danger me-2"></i> Delete</button></li>
+                                        </ul>
+                                        <div class="d-md-none d-flex gap-1">
+                                            <button class="btn btn-outline-warning btn-sm edit-reservation-btn" data-reservation-id="{{ reservation.id }}">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm delete-reservation-btn" data-reservation-id="{{ reservation.id }}">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <i class="bi bi-car-front display-5 text-muted mb-3"></i>
+                                    <h5 class="text-muted">No reservations found</h5>
+                                    <button id="emptyAddReservationBtn" class="btn btn-primary mt-2">
+                                        <i class="bi bi-plus-circle me-1"></i> Add Reservation
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
 </div>
 
+
+
 <!-- Add Reservation Modal -->
-<div class="modal fade" id="addReservationModal" tabindex="-1" aria-labelledby="addReservationModalLabel" aria-hidden="true">
+<div class="modal fade" id="addReservationModal" tabindex="-1" aria-labelledby="addReservationModalLabel">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addReservationModalLabel"><i class="bi bi-car-front me-2 text-primary"></i>Add New Reservation</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form method="POST" action="{% url 'vehicle-reservation' %}" id="addReservationForm" enctype="multipart/form-data">
                     {% csrf_token %}
                     <input type="hidden" name="add_reservation" value="1">
-                    <div class="row g-3">
+                    <div class="row row-cols-1 row-cols-md-2 g-3">
                         <div class="col-md-6">
                             <label class="form-label">Name*</label>
                             <input type="text" class="form-control" name="name" placeholder="Reservation Name" required>
@@ -300,6 +319,52 @@
     </div>
 </div>
 
+
+<!-- Vehicle Types Modal -->
+<div class="modal fade" id="vehicleTypesModal" tabindex="-1" aria-labelledby="vehicleTypesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="vehicleTypesModalLabel"><i class="bi bi-list-check me-2 text-primary"></i>Manage Vehicle Types</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Current Types List -->
+                <div class="mb-3">
+                    <h6 class="fw-bold mb-2">Current Vehicle Types</h6>
+                    <div class="list-group mb-3">
+                        {% for vechicle_type in vechicle_types %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ vechicle_type.name }}
+                            <button class="btn btn-sm btn-outline-danger delete-type-btn" data-type-id="{{ vechicle_type.id }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item text-center text-muted">No vehicle types defined</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Add New Type Form -->
+                <form method="POST" action="{% url 'create_vehicle_type' %}" id="addTypeForm">
+                    {% csrf_token %}
+                    <h6 class="fw-bold mb-2">Add New Type</h6>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" name="type_name" placeholder="Type name" required>
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-plus-lg"></i> Add
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% block extra_css %}
 <style>
     .sidebar {
@@ -418,6 +483,64 @@
             });
         });
     });
+
+    // Vehicle Types Modal
+
+    // Add this to your existing JavaScript in the DOMContentLoaded event
+const vehicleTypesModalElement = document.getElementById('vehicleTypesModal');
+const vehicleTypesModal = new bootstrap.Modal(vehicleTypesModalElement, { backdrop: true });
+
+// Reset modal when hidden like others
+vehicleTypesModalElement.addEventListener('hidden.bs.modal', function () {
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) {
+        backdrop.remove();
+    }
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+});
+
+// Redirect to vehicle types page instead of showing modal
+document.getElementById('manageVehicleTypesBtn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    window.location.href = "{% url 'vehicle_type_list' %}";
+});
+
+document.getElementById('mobileManageTypesBtn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    window.location.href = "{% url 'vehicle_type_list' %}";
+});
+
+// Handle delete type button with form submission instead of fetch
+document.querySelectorAll('.delete-type-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        const typeId = this.dataset.typeId;
+        if (confirm('Are you sure you want to delete this vehicle type?')) {
+            // Create and submit a form to delete the vehicle type
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `vehicle-type-delete/${typeId}/`;
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            const deleteInput = document.createElement('input');
+            deleteInput.type = 'hidden';
+            deleteInput.name = 'delete_type';
+            deleteInput.value = '1';
+            
+            form.appendChild(csrfInput);
+            form.appendChild(deleteInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+});
+
 </script>
 {% endblock %}}
 {% endblock %}

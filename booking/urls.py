@@ -31,9 +31,16 @@ urlpatterns = [
     path('edit-staff/<int:staff_id>/', views.edit_staff, name='edit_staff'),
     path('delete-staff/<int:staff_id>/', views.delete_staff, name='delete_staff'),
    
-
+  # =========== Vehicle Management ===========
     path('reservations/', views.vehicle_reservation, name='vehicle-reservation'),
     path('reservations/<int:id>/', views.vehicle_reservation, name='vehicle-reservation'),
+    
+    # ======= Vechicle TYpe ==========
+    path('vehicle-type-management/', views.vechicle_type_list, name='vehicle_type_list'),
+    path('vehicle-type-add/', views.vechicle_type_list, name='create_vehicle_type'),
+    path('vehicle-type-edit/<int:id>/', views.edit_vechicle_type, name='edit_vehicle_type'),
+    path('vehicle-type-delete/<int:id>/', views.delete_vechicle_type, name='delete_vehicle_type'),
+    
 
    # ======== route ========
     path('routes-management/', views.route_list_and_add, name='route_list_add'),
@@ -41,12 +48,12 @@ urlpatterns = [
     path('routes-delete/<int:id>/', views.delete_route, name='delete_route'),
     
     # =====  Route to all Bus List =============
-    path('route_buslist/<int:id>/',views.route_bus_list,name="route_bus_list"),
+    path('route-buslist/<int:id>/',views.route_bus_list,name="route_bus_list"),
     path('route_bus_details/<int:id>/',views.BusDetails.as_view(),name="route_bus_details"),
     
     
   # ======= Bus Management ==========
-    path('buses-management', views.bus_list, name='bus_list'),
+    path('buses-management/', views.bus_list, name='bus_list'),
     path('add-bus/', views.create_bus, name='create_bus'),
     path('edit-bus/<int:bus_id>/edit/', views.edit_bus, name='edit_bus'),
     path('delete-bus/<int:bus_id>/delete/', views.delete_bus, name='delete_bus'),

@@ -153,6 +153,13 @@
               <span class="menu-text">Booking Management</span>
             </a>
           </li>
+
+          <li class="nav-item">
+            <a class="nav-link {% if request.path == '/payment-details/' %}active{% endif %}" href={% url 'payments_details' %}>
+              <i class="bi bi-credit-card menu-icon"></i>
+              <span class="menu-text">Payment & Commission</span>
+            </a>
+          </li>
           
         {% else %}
           <!-- Regular User Menu Items -->

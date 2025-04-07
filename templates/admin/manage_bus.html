@@ -145,14 +145,15 @@
                             <label class="form-label">Bus Number*</label>
                             <input type="text" class="form-control" name="bus_number" placeholder="BA 1-2345" required>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Bus Type*</label>
-                            <select class="form-select" name="bus_type" required>
-                                {% for value, display in VEHICLE_CHOICES %}
-                                <option value="{{ value }}" {% if value == "deluxe_bus" %}selected{% endif %}>{{ display }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                       <!-- In the add bus modal -->
+<div class="col-md-6">
+    <label class="form-label">Bus Type*</label>
+    <select class="form-select" name="bus_type" required>
+        {% for value, display in bus_types %}  <!-- Change from VEHICLE_CHOICES to bus_types -->
+        <option value="{{ value }}" {% if value == "deluxe_bus" %}selected{% endif %}>{{ display }}</option>
+        {% endfor %}
+    </select>
+</div>
                         <div class="col-md-6">
                             <label class="form-label">Route*</label>
                             <select class="form-select" name="route" id="routeSelect" required>
@@ -686,24 +687,32 @@ function updateGridLayout(containerId, columns, aisleAfter) {
                         totalSeats++;
                     }
                     
-                    seatElement.addEventListener('click', function() {
-                        const key = `${this.dataset.row}-${this.dataset.col}`;
-                        if (this.classList.contains('selected')) {
-                            this.classList.remove('selected');
-                            delete seatsObj[key];
-                            totalSeats--;
-                        } else {
-                            this.classList.add('selected');
-                            seatsObj[key] = seatNumber;
-                            totalSeats++;
-                        }
-                        
-                        const countElement = containerId === 'seatLayoutContainer' ? 'selectedSeatsCount' : 'edit_selectedSeatsCount';
-                        const totalSeatsInput = containerId === 'seatLayoutContainer' ? 'totalSeatsInput' : 'edit_total_seats';
-                        document.getElementById(countElement).textContent = totalSeats;
-                        document.getElementById(totalSeatsInput).value = totalSeats;
-                        updateLayoutData(containerId === 'seatLayoutContainer');
-                    });
+                   // Inside generateSeatLayout function, update the seat click handler:
+seatElement.addEventListener('click', function() {
+    if (!this.classList.contains('aisle')) {
+        const key = `${this.dataset.row}-${this.dataset.col}`;
+        if (this.classList.contains('selected')) {
+            this.classList.remove('selected');
+            delete seatsObj[key];
+        } else {
+            this.classList.add('selected');
+            seatsObj[key] = seatNumber;
+        }
+        
+        // Update the count and total seats
+        const count = Object.keys(seatsObj).length;
+        const countElement = containerId === 'seatLayoutContainer' ? 
+            'selectedSeatsCount' : 'edit_selectedSeatsCount';
+        const totalSeatsInput = containerId === 'seatLayoutContainer' ? 
+            'totalSeatsInput' : 'edit_total_seats';
+            
+        document.getElementById(countElement).textContent = count;
+        document.getElementById(totalSeatsInput).value = count;
+        
+        // Update the layout data
+        updateLayoutData(containerId === 'seatLayoutContainer');
+    }
+});
                     
                     backRowContainer.appendChild(seatElement);
                 }
@@ -728,6 +737,11 @@ function updateGridLayout(containerId, columns, aisleAfter) {
             const backRowSeats = parseInt(document.getElementById(`${prefix}backRowSeatsInput`).value) || 5;
             
             const seatsObj = isAddModal ? selectedSeats : editSelectedSeats;
+            const totalSeats = Object.keys(seatsObj).length;
+            
+            // Update the total seats input field
+            document.getElementById(`${prefix}total_seats`).value = totalSeats;
+            
             const layout = generateSeatLayout(
                 isAddModal ? 'seatLayoutContainer' : 'edit_seatLayoutContainer',
                 rows, columns, aisleAfter, includeBackRow, backRowSeats, seatsObj
@@ -740,10 +754,12 @@ function updateGridLayout(containerId, columns, aisleAfter) {
                 includeBackRow: includeBackRow,
                 backRowSeats: backRowSeats,
                 layout: layout,
-                selectedSeats: seatsObj
+                selectedSeats: seatsObj,
+                totalSeats: totalSeats  // Include total seats in layout data
             };
             
             document.getElementById(`${prefix}layoutData`).value = JSON.stringify(layoutData);
+            return totalSeats;
         }
         
         function initializeSeatLayout() {
@@ -899,9 +915,13 @@ document.querySelectorAll('.edit-bus-btn').forEach(button => {
 });
 
 // Add form submission handling
+// Add form submission handling
 document.getElementById('editBusForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    updateLayoutData(false); // Update layout data before submission
+    const totalSeats = updateLayoutData(false); // Update layout data before submission
+    
+    // Ensure total_seats is set in the form
+    document.getElementById('edit_total_seats').value = totalSeats;
     
     const formData = new FormData(this);
     
@@ -923,6 +943,7 @@ document.getElementById('editBusForm').addEventListener('submit', function(e) {
     })
     .catch(error => console.error('Error:', error));
 });
+
         
         
         // Delete Bus Button Handling

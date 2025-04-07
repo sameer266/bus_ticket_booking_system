@@ -98,7 +98,7 @@
                                             <th>Route</th>
                                             <th>Start Date</th>
                                             <th>Duration</th>
-                                            <th>Actions</th>
+                                            
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -120,21 +120,7 @@
                                                 </td>
                                                 <td>{{ bus_booking.start_date }}</td>
                                                 <td>{{ bus_booking.date }} days</td>
-                                                <td>
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                                                                data-bs-toggle="dropdown" aria-expanded="false">
-                                                            <i class="bi bi-gear"></i>
-                                                        </button>
-                                                        <ul class="dropdown-menu">
-                                                            <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2"></i>View</a></li>
-                                                            {% if bus_booking.status == 'Pending' %}
-                                                            <li><a class="dropdown-item" href="#"><i class="bi bi-check-circle me-2"></i>Confirm</a></li>
-                                                            <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-x-circle me-2"></i>Cancel</a></li>
-                                                            {% endif %}
-                                                        </ul>
-                                                    </div>
-                                                </td>
+                                               
                                             </tr>
                                         {% empty %}
                                             <tr>
