@@ -9,24 +9,24 @@ from django.utils.timezone import now
 from django.db.models import Count, Sum,F
 from datetime import datetime
 from django.db.models import Q
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 import json
-from rest_framework.viewsets import ModelViewSet
+
 
 from custom_user.models import CustomUser,System,TransportationCompany
 from route.models import Route, Schedule, Trip
-from bus.models import Bus, TicketCounter,Driver,Staff,BusReservation,BusLayout,VechicleType
+from bus.models import Bus,Driver,Staff,BusReservation,BusLayout,VechicleType
 from booking.models import Commission, Booking,Payment,Rate,BusReservationBooking
 
-from custom_user.serializers import CustomUserSerializer,SystemSerializer
+
 from route.serializers import (
     BusSerializer,VechicleTypeSerializer,
    
 )
 
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -170,42 +170,49 @@ def transportation_company_list(request):
     return render(request, "admin/transportation_company.html", {
         "companies": TransportationCompany.objects.all(),
     })
-
+    
 @login_required
 def edit_transportation_company(request, id):
-        transportation_company = get_object_or_404(TransportationCompany, id=id)
+    transportation_company = get_object_or_404(TransportationCompany, id=id)
+    user = transportation_company.user
 
-        if request.method == "POST":
-           
-            # Update related user fields
-            transportation_company.user.full_name = request.POST.get('full_name')
-            transportation_company.user.email = request.POST.get('email')
-            transportation_company.user.phone = request.POST.get('phone')
-            transportation_company.user.gender = request.POST.get('gender')
+    if request.method == "POST":
+        full_name = request.POST.get('full_name')
+        email = request.POST.get('email')
+        new_phone = request.POST.get('phone')
+        gender = request.POST.get('gender')
 
-            # Update TransportationCompany fields
-            if transportation_company:
-                transportation_company.company_name = request.POST.get('company_name')
-                transportation_company.vat_number = request.POST.get('vat_number')
-                transportation_company.country = request.POST.get('country')
-                transportation_company.location_name = request.POST.get('location_name')
-                transportation_company.bank_name = request.POST.get('bank_name')
-                transportation_company.account_name = request.POST.get('account_name')
-                transportation_company.account_number = request.POST.get('account_number')
-                if 'qr_image' in request.FILES:
-                    transportation_company.qr_image = request.FILES['qr_image']
-                transportation_company.save()
+       
+        if CustomUser.objects.filter(phone=new_phone).exists():
+            pass
+        
+        else:
+            user.email=email
 
-           
-            transportation_company.user.save()
+        user.full_name = full_name
+        user.gender = gender
+        user.save()
 
-            messages.success(request, "Ticket Counter updated successfully!")
-            return redirect("transportation_company_list")
+        # Update TransportationCompany fields
+        transportation_company.company_name = request.POST.get('company_name')
+        transportation_company.vat_number = request.POST.get('vat_number')
+        transportation_company.country = request.POST.get('country')
+        transportation_company.location_name = request.POST.get('location_name')
+        transportation_company.bank_name = request.POST.get('bank_name')
+        transportation_company.account_name = request.POST.get('account_name')
+        transportation_company.account_number = request.POST.get('account_number')
 
-        return render(request, "admin/edit_transportation_company.html", {
-            
-            "transportation_company": transportation_company,
-        })
+        if 'qr_image' in request.FILES:
+            transportation_company.qr_image = request.FILES['qr_image']
+
+        transportation_company.save()
+
+        messages.success(request, "Transportation Company updated successfully!")
+        return redirect("transportation_company_list")
+
+    return render(request, "admin/edit_transportation_company.html", {
+        "transportation_company": transportation_company,
+    })
 
 
 @login_required
@@ -311,14 +318,23 @@ def manage_driver_and_staff(request):
 
             if Driver.objects.filter(phone_number=phone_number).exists():
                messages.error(request,"Driver alraedy exists")
-
-            Driver.objects.create(
-                full_name=full_name,
-                phone_number=phone_number,
-                driver_profile=driver_profile,
-                license_image=license_image,
-                transportation_company=request.user.transportation_company
-            )
+            if transportation_company:
+                Driver.objects.create(
+                    full_name=full_name,
+                    phone_number=phone_number,
+                    driver_profile=driver_profile,
+                    license_image=license_image,
+                    transportation_company=transportation_company
+                )
+            else:
+                 Driver.objects.create(
+                    full_name=full_name,
+                    phone_number=phone_number,
+                    driver_profile=driver_profile,
+                    license_image=license_image,
+                )
+                 
+                
             return redirect('manage_driver_and_staff')  # Reload page after adding driver
 
         # Handle Staff Add
@@ -326,18 +342,26 @@ def manage_driver_and_staff(request):
             full_name = request.POST.get('full_name')
             phone_number = request.POST.get('phone_number')
             staff_profile = request.FILES.get('staff_profile')
-            transportation_company = request.user.transportation_company
+            
 
             if Staff.objects.filter(phone_number=phone_number).exists():
                 messages.error(request, "Staff already exists!")
                 return redirect('manage_driver_and_staff')
-
-            Staff.objects.create(
-                full_name=full_name,
-                staff_profile=staff_profile,
-                phone_number=phone_number,
-                transportation_company=transportation_company
-            )
+            if transportation_company:
+                Staff.objects.create(
+                    full_name=full_name,
+                    staff_profile=staff_profile,
+                    phone_number=phone_number,
+                    transportation_company=transportation_company
+                )
+            else:
+                Staff.objects.create(
+                    full_name=full_name,
+                    staff_profile=staff_profile,
+                    phone_number=phone_number,
+                    transportation_company=transportation_company
+                )
+                
             return redirect('manage_driver_and_staff')  # Reload page after adding staff
 
     return render(request, 'admin/managedriver_staff.html', {'drivers': drivers, 'staff': staff})
@@ -402,117 +426,133 @@ def delete_staff(request, staff_id):
 @login_required
 def bus_list(request):
     user = request.user
-    transportation_company = getattr(user, "transportation_company", None)
+    company = getattr(user, "transportation_company", None)
 
-    buses = Bus.objects.filter(transportation_company=transportation_company) if transportation_company else Bus.objects.all()
-    routes = Route.objects.all()
+    # Get buses, drivers, and staff based on company
+    buses = Bus.objects.filter(transportation_company=company) if company else Bus.objects.all()
+    drivers = Driver.objects.filter(transportation_company=company) if company else Driver.objects.all()
+    staff = Staff.objects.filter(transportation_company=company) if company else Staff.objects.all()
 
-    assigned_driver_ids = Bus.objects.filter(driver__isnull=False).values_list("driver__id", flat=True)
-    unassigned_drivers = Driver.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_driver_ids)
+    # === Drivers filtering ===
+    assigned_driver_ids = Bus.objects.exclude(driver=None).values_list("driver__id", flat=True)
+    scheduled_driver_ids = Schedule.objects.filter(
+        departure_time__gte=timezone.now(),
+        bus__driver__isnull=False
+    ).values_list("bus__driver__id", flat=True)
 
-    assigned_staff_ids = Bus.objects.filter(staff__isnull=False).values_list("staff__id", flat=True)
-    unassigned_staff = Staff.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_staff_ids)
+    unassigned_drivers = drivers.exclude(id__in=set(assigned_driver_ids) | set(scheduled_driver_ids))
 
+    # === Staff filtering ===
+    assigned_staff_ids = Bus.objects.exclude(staff=None).values_list("staff__id", flat=True)
+    scheduled_staff_ids = Schedule.objects.filter(
+        departure_time__gte=timezone.now(),
+        bus__staff__isnull=False
+    ).values_list("bus__staff__id", flat=True)
+
+    unassigned_staff = staff.exclude(id__in=set(assigned_staff_ids) | set(scheduled_staff_ids))
+
+    # === Final context ===
     context = {
         'buses': buses,
-        'all_routes': routes,
+        'all_routes': Route.objects.all(),
         'all_drivers': unassigned_drivers,
         'all_staff': unassigned_staff,
         'bus_types': Bus.VEHICLE_CHOICES,
-        'FEATURE_CHOICES': Bus.FEATURE_CHOICES  # Make sure this is passed
+        'feature_choices': Bus.FEATURE_CHOICES,
     }
 
     return render(request, 'admin/manage_bus.html', context)
 
 
+# =========== Add Bus =============
 @login_required
 def create_bus(request):
-    try:
-        print(request.POST)
-        # Extract form data
-        bus_number = request.POST.get('bus_number')
-        bus_type = request.POST.get('bus_type')
-        driver_id = request.POST.get('driver')
-        staff_id = request.POST.get('staff')
-        route_id = request.POST.get('route')
-        total_seats = int(request.POST.get('total_seats', 0))
-        is_active = request.POST.get('is_active') == 'on'
-        is_running = request.POST.get('is_running') == 'on'
-        features = request.POST.get('features', '[]')
-        bus_image = request.FILES.get('bus_image')
+    transportation_company = getattr(request.user, "transportation_company", None)
 
-        # Get related objects
-        driver = Driver.objects.get(id=driver_id) if driver_id else None
-        staff = Staff.objects.get(id=staff_id) if staff_id else None
-        route = Route.objects.get(id=route_id)
-
-        # Create bus
-        bus = Bus.objects.create(
-            bus_number=bus_number,
-            bus_type=bus_type,
-            driver=driver,
-            staff=staff,
-            route=route,
-            total_seats=total_seats,
-            available_seats=total_seats,
-            is_active=is_active,
-            is_running=is_running,
-            features=json.loads(features) if isinstance(features, str) else features,
-            bus_image=bus_image,
-            transportation_company=getattr(request.user, "transportation_company", None)
-        )
-
-        # Create Bus layout if layout data is provided
-        layout = request.POST.get('layout', '{}')
+    if request.method == "POST":
         try:
-            layout_data = json.loads(layout) if isinstance(layout, str) else layout
-            rows = layout_data.get('rows')
-            columns = layout_data.get('columns')
-            seat_layout = layout_data.get('seatLayout')
-            aisle_column = layout_data.get('aisleAfterColumn')
+            print(request.POST)
+            # Extract form data
+            bus_number = request.POST.get('bus_number')
+            bus_type = request.POST.get('bus_type')
+            driver_id = request.POST.get('driver')
+            staff_id = request.POST.get('staff')
+            route_id = request.POST.get('route')
+            total_seats = int(request.POST.get('total_seats', 0))
+            is_active = request.POST.get('is_active') == 'on'
 
-            if rows and columns and seat_layout:
+            features = request.POST.getlist('features')  # Use getlist for multiple checkbox values
+            bus_image = request.FILES.get('bus_image')
+            layout = request.POST.get('layout')
+
+            driver = Driver.objects.get(id=driver_id) if driver_id else None
+            staff = Staff.objects.get(id=staff_id) if staff_id else None
+            route = Route.objects.get(id=route_id)
+
+            # Create bus
+            bus = Bus.objects.create(
+                bus_number=bus_number,
+                bus_type=bus_type,
+                driver=driver,
+                staff=staff,
+                route=route,
+                total_seats=total_seats,
+                available_seats=total_seats,
+                is_active=is_active,
+           
+                features=features,
+                bus_image=bus_image,
+                transportation_company=transportation_company
+            )
+
+            # Handle layout if provided
+            if layout:
+                layout_data = json.loads(layout)
                 BusLayout.objects.create(
                     bus=bus,
-                    rows=rows,
-                    column=columns,
-                    layout_data=seat_layout,
-                    aisle_column=aisle_column
+                    rows=layout_data['rows'],
+                    column=layout_data['columns'],
+                    layout_data=layout_data['layout'],
+                    aisle_column=layout_data.get('aisleAfterColumn')
                 )
-        except json.JSONDecodeError:
-            pass  # Handle invalid layout format silently
 
-        return redirect('bus_list')
-    except Exception as e:
-        # Handle errors and redisplay form
-        routes = Route.objects.all()
-        drivers = Driver.objects.filter(transportation_company=getattr(request.user, "transportation_company", None))
-        staff = Staff.objects.filter(transportation_company=getattr(request.user, "transportation_company", None))
+            messages.success(request, "Bus created successfully.")
+            return redirect('bus_list')
 
-        context = {
-            'error': str(e),
-            'bus_number': request.POST.get('bus_number'),
-            'bus_type': request.POST.get('bus_type'),
-            'selected_driver': request.POST.get('driver'),
-            'selected_staff': request.POST.get('staff'),
-            'selected_route': request.POST.get('route'),
-            'total_seats': request.POST.get('total_seats'),
-            'is_active': request.POST.get('is_active') == 'on',
-            'is_running': request.POST.get('is_running') == 'on',
-            'features': request.POST.get('features'),
-            'all_routes': routes,
-            'all_drivers': drivers,
-            'all_staff': staff,
-            'bus_types': Bus.VEHICLE_CHOICES,
-            'features': Bus.FEATURE_CHOICES
-        }
-        return render(request, 'admin/manage_bus.html', context)
+        except Exception as e:
+            messages.error(request, f"Error creating bus: {str(e)}")
+            # Fall through to re-render the form with errors
+
+    # GET request or error case
+    routes = Route.objects.all()
+    used_driver_ids = Bus.objects.filter(driver__isnull=False).values_list("driver__id", flat=True)
+    used_staff_ids = Bus.objects.filter(staff__isnull=False).values_list("staff__id", flat=True)
+
+    drivers = Driver.objects.exclude(id__in=used_driver_ids)
+    staff = Staff.objects.exclude(id__in=used_staff_ids)
+
+    if transportation_company:
+        drivers = drivers.filter(transportation_company=transportation_company)
+        staff = staff.filter(transportation_company=transportation_company)
+
+    context = {
+        'all_routes': routes,
+        'all_drivers': drivers,
+        'all_staff': staff,
+        'bus_types': Bus.VEHICLE_CHOICES,
+        'feature_choices': Bus.FEATURE_CHOICES,
+        'form_data': request.POST if request.method == "POST" else None,  # Preserve form data on error
+        'errors': messages.get_messages(request),  # Pass error messages
+    }
+    return render(request, 'admin/manage_bus.html', context)
     
-    
+
+
 # ======= Edit bus ===========
-from django.core.exceptions import ValidationError
+
 @login_required
 def edit_bus(request, bus_id):
+    print(request.POST)
     bus = get_object_or_404(Bus, id=bus_id)
     
     if request.method == 'POST':
@@ -623,10 +663,10 @@ def get_bus(request, bus_id):
 @login_required
 def delete_bus(request, bus_id):
     bus = get_object_or_404(Bus, id=bus_id)
-    if request.method == 'POST':
-        bus.delete()
-        return redirect('bus_list')
-    return render(request, 'admin/bus_confirm_delete.html', {'bus': bus})
+    messages.success(request, f"Bus {bus.bus_number} deleted successfully")
+    bus.delete()
+    return redirect('bus_list')
+    
 
 
 
@@ -637,15 +677,14 @@ from django.core.serializers.json import DjangoJSONEncoder
 # Vehicle Reservation (Django Template View)
 # =======================
 @login_required
-def vehicle_reservation(request, id=None):
+def vehicle_reservation(request):
     """
-    Handles GET (list), POST (create/update/delete) requests for vehicle reservations.
+    Handles GET (list), POST (create/delete) requests for vehicle reservations.
     """
     user = request.user
     transportation_company = getattr(user, 'transportation_company', None)
 
     # Common context data
-    reservations = BusReservation.objects.none()
     if transportation_company:
         reservations = BusReservation.objects.filter(transportation_company=transportation_company)
     else:
@@ -659,7 +698,6 @@ def vehicle_reservation(request, id=None):
 
     vechicle_types = VechicleType.objects.all()
 
-    # Prepare JSON data for each reservation
     reservation_json = json.dumps([
         {
             'id': r.id,
@@ -672,7 +710,6 @@ def vehicle_reservation(request, id=None):
             'staff_id': r.staff_id,
             'total_seats': r.total_seats,
             'price': float(r.price) if r.price is not None else None,
-            # Note: image and document are file fields, so we'll skip their full paths here
         } for r in reservations
     ], cls=DjangoJSONEncoder)
 
@@ -685,44 +722,7 @@ def vehicle_reservation(request, id=None):
     }
 
     if request.method == 'POST':
-        if id:  # Update or Delete
-            reservation = get_object_or_404(BusReservation, id=id)
-            try:
-                if 'delete_reservation' in request.POST:
-                    reservation.delete()
-                    return redirect('vehicle-reservation')
-
-                # Update reservation
-                reservation.name = request.POST.get('name', reservation.name)
-                type_id = request.POST.get('type')
-                if type_id:
-                    reservation.type = VechicleType.objects.get(id=type_id)
-
-                reservation.vechicle_number = request.POST.get('vechicle_number', reservation.vechicle_number)
-                reservation.vechicle_model = request.POST.get('vechicle_model', reservation.vechicle_model)
-                if 'image' in request.FILES:
-                    reservation.image = request.FILES['image']
-                if 'document' in request.FILES:
-                    reservation.document = request.FILES['document']
-                reservation.color = request.POST.get('color', reservation.color)
-
-                driver_id = request.POST.get('driver_id')
-                reservation.driver = Driver.objects.get(id=driver_id) if driver_id else None
-
-                staff_id = request.POST.get('staff_id')
-                reservation.staff = Staff.objects.get(id=staff_id) if staff_id else None
-
-                reservation.total_seats = request.POST.get('total_seats', reservation.total_seats)
-                reservation.price = request.POST.get('price', reservation.price)
-
-                reservation.save()
-                return redirect('vehicle-reservation')
-            except Exception as e:
-                print(f"Error updating reservation: {str(e)}")
-                context['error'] = str(e)
-                context['reservation'] = reservation
-
-        elif 'add_reservation' in request.POST:  # Create
+        if 'add_reservation' in request.POST:
             try:
                 name = request.POST.get('name')
                 type_id = request.POST.get('type')
@@ -759,9 +759,76 @@ def vehicle_reservation(request, id=None):
                 print(f"Error creating reservation: {str(e)}")
                 context['error'] = str(e)
 
-    # GET request: Render the list
+        elif 'delete_reservation' in request.POST:
+            reservation_id = request.POST.get('reservation_id')
+            try:
+                reservation = BusReservation.objects.get(id=reservation_id)
+                reservation.delete()
+                return redirect('vehicle-reservation')
+            except BusReservation.DoesNotExist:
+                context['error'] = "Reservation not found."
+
     return render(request, 'admin/manage_reservation.html', context)
 
+
+
+@login_required
+def edit_vehicle_reservation(request, id):
+    """
+    Handles GET and POST for editing a single BusReservation.
+    """
+    reservation = get_object_or_404(BusReservation, id=id)
+    user = request.user
+    transportation_company = getattr(user, 'transportation_company', None)
+
+    # Filter available drivers and staff from same company
+    assigned_driver_ids = BusReservation.objects.exclude(id=id).filter(driver__isnull=False).values_list('driver__id', flat=True)
+    unassigned_drivers = Driver.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_driver_ids)
+
+    assigned_staff_ids = BusReservation.objects.exclude(id=id).filter(staff__isnull=False).values_list('staff__id', flat=True)
+    unassigned_staff = Staff.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_staff_ids)
+
+    vechicle_types = VechicleType.objects.all()
+   
+
+    if request.method == 'POST':
+        try:
+            reservation.name = request.POST.get('name', reservation.name)
+            type_name = request.POST.get('type')
+            if type_name:
+                reservation.type = VechicleType.objects.get(name=type_name)
+
+            reservation.vechicle_number = request.POST.get('vehicle_number', reservation.vechicle_number)
+            reservation.vechicle_model = request.POST.get('vehicle_model', reservation.vechicle_model)
+            reservation.color = request.POST.get('color', reservation.color)
+
+            driver_id = request.POST.get('driver_id')
+            reservation.driver = Driver.objects.get(id=driver_id) if driver_id else None
+
+            staff_id = request.POST.get('staff_id')
+            reservation.staff = Staff.objects.get(id=staff_id) if staff_id else None
+
+            reservation.total_seats = request.POST.get('total_seats', reservation.total_seats)
+            reservation.price = request.POST.get('price', reservation.price)
+
+            reservation.save()
+            return redirect('vehicle-reservation')
+        except Exception as e:
+            print(f"Error updating reservation: {str(e)}")
+            return render(request, 'admin/edit_reservation.html', {
+                'reservation': reservation,
+                'vechicle_types': vechicle_types,
+                'unassigned_drivers': unassigned_drivers,
+                'unassigned_staff': unassigned_staff,
+                'error': str(e)
+            })
+
+    return render(request, 'admin/edit_reservation.html', {
+        'reservation': reservation,
+        'vechicle_types': vechicle_types,
+        'unassigned_drivers': unassigned_drivers,
+        'unassigned_staff': unassigned_staff,
+    })
 
 
 
@@ -799,7 +866,12 @@ def vechicle_type_list(request):
             ).count()
             vehicle_type.vehicle_count = vehicle_count
         else:
-            vehicle_type.vehicle_count = 0
+            vehicle_count = BusReservation.objects.filter(
+                type=vehicle_type,
+                
+            ).count()
+            vehicle_type.vehicle_count = vehicle_count
+            
     
     return render(request, 'admin/vechicle_type_list.html', {'vehicle_types': vehicle_types})
 
@@ -815,7 +887,7 @@ def edit_vechicle_type(request, id):
             vechicle_type.image = request.FILES['image']
         vechicle_type.save()
         messages.success(request, "Vehicle type updated successfully!")
-        return redirect('vechicle_type_list')
+        return redirect('vehicle_type_list')
 
     return render(request, 'admin/edit_vechicle_type.html', {'vechicle_type': vechicle_type})   
 
@@ -823,12 +895,11 @@ def edit_vechicle_type(request, id):
 @login_required
 def delete_vechicle_type(request, id):
     vechicle_type = get_object_or_404(VechicleType, id=id)
-    if request.method == 'POST':
-        vechicle_type.delete()
-        messages.success(request, "Vehicle type deleted successfully!")
-        return redirect('vechicle_type_list')
+    vechicle_type.delete()
+    messages.success(request, "Vehicle type deleted successfully!")
+    return redirect('vehicle_type_list')
 
-    return render(request, 'admin/delete_vechicle_type.html', {'vechicle_type': vechicle_type})
+    
 
 
 # =============
@@ -865,18 +936,17 @@ def edit_route(request, id):
         route.distance = request.POST.get('distance')
         route.estimated_time = request.POST.get('estimated_time')
         route.save()
-        return redirect('route_list')
+        return redirect('route_list_add')
 
     return render(request, 'admin/edit_route.html', {'route': route})
 
 
 def delete_route(request, id):
     route = get_object_or_404(Route, id=id)
-    if request.method == 'POST':
-        route.delete()
-        return redirect('route_list')
+    route.delete()
+    return redirect('route_list_add')
 
-    return render(request, 'delete_route.html', {'route': route})
+   
 
 
 
@@ -907,62 +977,111 @@ class BusDetails(APIView):
         except Bus.DoesNotExist:
             return Response({"error": "Bus not found"}, status=status.HTTP_404_NOT_FOUND)
 
-# ========= Schedule =========
+
+
+# ========= Schedule list ===========
+
 def schedule_list(request):
-    
     if request.method == "POST":
-        route_id = request.POST.get("route")
-        bus_id = request.POST.get("bus")
-        departure_date = request.POST.get("departure_date")  # Get this from the form
-        departure_time = request.POST.get("departure_time")
-        arrival_date = request.POST.get("arrival_date")  # Get this from the form
-        arrival_time = request.POST.get("arrival_time")
-        price = request.POST.get("price")
+        try:
+            # Get form data
+            route_id = request.POST.get("route")
+            bus_id = request.POST.get("bus")
+            departure_input = request.POST.get("departure_time")
+            arrival_input = request.POST.get("arrival_time")
+            price = request.POST.get("price")
 
-        route = Route.objects.get(id=route_id)
-        bus = Bus.objects.get(id=bus_id)
-        
-        # Properly combine date and time
-        if departure_date:
-            departure_datetime = datetime.strptime(f"{departure_date} {departure_time}", "%Y-%m-%d %H:%M")
-        else:
-            # Fallback to current date if no date provided
-            current_date = datetime.now().date()
-            departure_datetime = datetime.strptime(f"{current_date} {departure_time}", "%Y-%m-%d %H:%M")
-            
-        if arrival_date:
-            arrival_datetime = datetime.strptime(f"{arrival_date} {arrival_time}", "%Y-%m-%d %H:%M")
-        else:
-            # Fallback to current date if no date provided
-            current_date = datetime.now().date()
-            arrival_datetime = datetime.strptime(f"{current_date} {arrival_time}", "%Y-%m-%d %H:%M")
-        
-        Schedule.objects.create(
-            route=route, 
-            bus=bus, 
-            departure_time=departure_datetime, 
-            arrival_time=arrival_datetime, 
-            price=price
-        )
-        return redirect("schedule_list")
+            # Validate route and bus
+            route = Route.objects.get(id=route_id)
+            bus = Bus.objects.get(id=bus_id)
 
-    schedules = Schedule.objects.all()
+            # Parse datetime fields
+            departure_time = datetime.strptime(departure_input, "%Y-%m-%dT%H:%M")
+            arrival_time = datetime.strptime(arrival_input, "%Y-%m-%dT%H:%M")
+
+            if arrival_time <= departure_time:
+                raise ValueError("Arrival time must be after departure time")
+
+            # Make timezone-aware
+            tz = timezone.get_current_timezone()
+            departure_time = timezone.make_aware(departure_time, tz)
+            arrival_time = timezone.make_aware(arrival_time, tz)
+
+            # Check for overlapping schedules for the same bus
+            overlap_exists = Schedule.objects.filter(
+                bus=bus,
+                departure_time__lte=arrival_time,
+                arrival_time__gte=departure_time
+            ).exists()
+
+            if overlap_exists:
+                messages.error(request, "A schedule already exists for this bus with overlapping times.")
+                return redirect("schedule_list")
+
+            # Create schedule
+            Schedule.objects.create(
+                route=route,
+                bus=bus,
+                departure_time=departure_time,
+                arrival_time=arrival_time,
+                price=price
+            )
+
+            messages.success(request, "Schedule created successfully!")
+            return redirect("schedule_list")
+
+        except Exception as e:
+            messages.error(request, f"Error creating schedule: {str(e)}")
+            return redirect("schedule_list")
+
+
+    selected_date_str = request.GET.get('date')
+    search_query = request.GET.get('search', '').strip()
+    time_range = request.GET.get('time_range', '').strip()
+    print(time_range)
+
+    try:
+        selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date() if selected_date_str else timezone.now().date()
+    except ValueError:
+        selected_date = timezone.now().date()
+        messages.warning(request, "Invalid date format, showing today's schedules")
+
+    schedules = Schedule.objects.filter(departure_time__date=selected_date)
+
+    if search_query:
+        filters = Q(route__source__icontains=search_query) | \
+                  Q(route__destination__icontains=search_query) | \
+                  Q(bus__bus_number__icontains=search_query) | \
+                  Q(price__icontains=search_query)
+        if time_range:
+            filters = Q(status=time_range)
+        schedules = schedules.filter(filters).distinct()
+
     all_routes = Route.objects.all()
-    all_buses = Bus.objects.none()
     transportation_company = getattr(request.user, "transportation_company", None)
+
     if transportation_company:
         all_buses = Bus.objects.filter(transportation_company=transportation_company)
     else:
         all_buses = Bus.objects.all()
 
-    return render(request, "admin/manage_schedule.html", {
-        "schedules": schedules,
-        "all_routes": all_routes,
-        "all_buses": all_buses
-    })
+    today = timezone.now().date()
+    all_buses = all_buses.exclude(schedule__departure_time__date__gte=today)
+
+    context = {
+        'schedules': schedules,
+        'all_routes': all_routes,
+        'all_buses': all_buses,
+        'selected_date': selected_date.isoformat(),
+        'search_query': search_query,
+    }
+
+    return render(request, "admin/manage_schedule.html", context)
+
+
+
 
 def schedule_edit(request, id):
-    
     user = request.user
     all_buses = Bus.objects.none()
     transportation_company = getattr(user, 'transportation_company', None)
@@ -970,19 +1089,34 @@ def schedule_edit(request, id):
         all_buses = Bus.objects.filter(transportation_company=transportation_company)
     else:
         all_buses = Bus.objects.all()
+        
     schedule = get_object_or_404(Schedule, id=id)
     
     if request.method == "POST":
-        schedule.route = Route.objects.get(id=request.POST.get("route"))
-        schedule.bus = Bus.objects.get(id=request.POST.get("bus"))
-        schedule.departure_time = request.POST.get("departure_time")
-        schedule.arrival_time = request.POST.get("arrival_time")
+        # Get the data from the POST request
+        route = Route.objects.get(id=request.POST.get("route"))
+        bus = Bus.objects.get(id=request.POST.get("bus"))
+        
+        # Convert the datetime strings into actual datetime objects
+        departure_time_str = request.POST.get("departure_time")
+        arrival_time_str = request.POST.get("arrival_time")
+        
+        # Convert string to datetime object
+        departure_time = datetime.strptime(departure_time_str, '%Y-%m-%dT%H:%M')
+        arrival_time = datetime.strptime(arrival_time_str, '%Y-%m-%dT%H:%M')
+        
+        # Update the schedule
+        schedule.route = route
+        schedule.bus = bus
+        schedule.departure_time = departure_time
+        schedule.arrival_time = arrival_time
         schedule.price = request.POST.get("price")
         schedule.save()
+        
+        messages.success(request,"Schedule Updated Successfully")
         return redirect("schedule_list")
-
-    all_routes = Route.objects.all()
     
+    all_routes = Route.objects.all()
     
     return render(request, "admin/edit_schedule.html", {
         "schedule": schedule,
@@ -990,10 +1124,11 @@ def schedule_edit(request, id):
         "all_buses": all_buses
     })
 
+
 def schedule_delete(request, id):
     schedule = get_object_or_404(Schedule, id=id)
     schedule.delete()
-    messages.succes("Schedule Deleted Successfully")
+    messages.success(request,"Schedule Deleted Successfully")
     return redirect("schedule_list")
 
 
@@ -1008,6 +1143,7 @@ def schedule_bus_details(request, id):
         print(schedule.bus)
         bus = schedule.bus
         layout = get_object_or_404(BusLayout, bus=bus)
+        total_booked=bus.total_seats-bus.available_seats
         
         
         seat_layout_with_bookings = []
@@ -1048,6 +1184,7 @@ def schedule_bus_details(request, id):
             'seat_layout': seat_layout_with_bookings,
             'total_amount': total_amount,
             'booked_seat': booked_seat,
+            'total_booked':total_booked,
         })
  
         
@@ -1060,6 +1197,7 @@ def booking_details(request, id):
     total_price = count * booking.schedule.price
     
     data = {
+        'id':booking.id,
         'user': booking.user.full_name,
         'user_phone': booking.user.phone,
         'bus_number': booking.bus.bus_number,
@@ -1080,17 +1218,14 @@ def booking_details(request, id):
 # ========== Booking Management  =================
 def booking_management(request):
     try:
-        # Fetch all bus reservations
         bus_reserve_data = BusReservationBooking.objects.all().order_by('-created_at')
-        # Paginate the bus reservation data
+       
         bus_reserve_paginator = Paginator(bus_reserve_data, 8)  # 8 items per page
         page_number_bus_reserve = request.GET.get('page')
         bus_reserve_page = bus_reserve_paginator.get_page(page_number_bus_reserve)
-
-        # Fetch all bookings
         booking_data = Booking.objects.all().order_by('-booked_at')
-        # Paginate the booking data
-        booking_paginator = Paginator(booking_data, 10)  # 10 items per page
+      
+        booking_paginator = Paginator(booking_data, 10) 
         page_number_booking = request.GET.get('page')
         booking_page = booking_paginator.get_page(page_number_booking)
 
@@ -1100,6 +1235,37 @@ def booking_management(request):
         })
     except Exception as e:
         return render(request, 'admin/manage_booking.html', {'error': str(e)})
+
+
+def reservationBooking_update_status(request, id):
+    if request.method == "POST":
+        try:
+            print("POST Data:", request.POST)
+
+            reservationBooking = BusReservationBooking.objects.get(id=id)
+            print("Reservation ID:", id)
+            print("Reservation Object:", reservationBooking)
+
+            # Safely get 'status' even if it's a list
+            status = request.POST.get('status')
+            if isinstance(status, list):
+                status = status[0]  # Use first item
+
+            print("Status value:", status)
+
+            # Update the status
+            reservationBooking.status = status
+            reservationBooking.save()
+
+            messages.success(request, "Vehicle Reservation status updated successfully")
+            return redirect('booking_list')
+
+        except Exception as e:
+            print("Error:", str(e))
+            messages.error(request, "Something went wrong.")
+            return redirect('booking_list')
+
+    return redirect('booking_list')
 
     
     
@@ -1111,7 +1277,11 @@ def report_analysis_view(request):
     prev_year = current_year if current_month > 1 else current_year - 1
 
     # Current Month Data
-    monthly_revenue = Payment.objects.filter(created_at__month=current_month, created_at__year=current_year).aggregate(total=Sum('price'))['total'] or 0
+    monthly_revenue = Payment.objects.filter(
+        created_at__month=current_month, 
+        created_at__year=current_year, 
+        payment_status="completed"
+    ).aggregate(total=Sum('booking__schedule__price'))['total'] or 0
     monthly_commission = Payment.objects.filter(created_at__month=current_month, created_at__year=current_year).aggregate(total=Sum('commission_deducted'))['total'] or 0
     total_bookings = Booking.objects.filter(booked_at__month=current_month, booked_at__year=current_year).count()
     canceled_bookings = Booking.objects.filter(booked_at__month=current_month, booked_at__year=current_year, booking_status='canceled').count()
@@ -1119,7 +1289,7 @@ def report_analysis_view(request):
     top_customers = Booking.objects.filter(booked_at__month=current_month, booked_at__year=current_year).values(customer=F('user__full_name')).annotate(total_bookings=Count('id')).order_by('-total_bookings')[:5]
 
     # Previous Month Data (for comparison)
-    prev_revenue = Payment.objects.filter(created_at__month=prev_month, created_at__year=prev_year).aggregate(total=Sum('price'))['total'] or 0
+    prev_revenue = Payment.objects.filter(created_at__month=prev_month, created_at__year=prev_year).aggregate(total=Sum('booking__schedule__price'))['total'] or 0
     prev_bookings = Booking.objects.filter(booked_at__month=prev_month, booked_at__year=prev_year).count()
 
     # Format numbers with commas using Python's locale-independent method
@@ -1179,135 +1349,284 @@ def system_settings_view(request):
     return render(request, "admin/manage_settings.html", {"system": system})
 
 
-    
- 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.template.defaulttags import register
+# Register a custom filter for template to calculate commission
+@register.filter
+def multiply(value, arg):
+    return float(value) * float(arg)
+
+@register.filter
+def divide(value, arg):
+    return float(value) / float(arg)
 
 #========= Payment and Commission =============
-
 @login_required
-def payment_details(request):
+def bus_payment_details(request):
     user = request.user
     user_company = getattr(user, 'transportation_company', None)
-    user_role = getattr(user, 'role', 'admin')
 
-    # Get buses for the current user
     buses = Bus.objects.all()
     if user_company:
         buses = buses.filter(transportation_company=user_company)
 
-    # Completed payments for user's buses
-    payments = Payment.objects.filter(payment_status='completed', bus__in=buses).order_by('-created_at')
+    # Get all completed payments
+    payments_query = Commission.objects.filter(bus__in=buses).order_by('-created_at')
+    
+    # Get date filter if provided
+    date_filter = request.GET.get('date_filter', 'all')
+    if date_filter != 'all':
+        today = timezone.now().date()
+        if date_filter == 'today':
+            payments_query = payments_query.filter(created_at__date=today)
+        elif date_filter == 'week':
+            start_of_week = today - timezone.timedelta(days=today.weekday())
+            payments_query = payments_query.filter(created_at__date__gte=start_of_week)
+        elif date_filter == 'month':
+            payments_query = payments_query.filter(created_at__month=today.month, created_at__year=today.year)
+        elif date_filter == 'year':
+            payments_query = payments_query.filter(created_at__year=today.year)
+    
+    # Paginate payments
+    payments_per_page = 10
+    payment_paginator = Paginator(payments_query, payments_per_page)
+    page = request.GET.get('payment_page')
+    
+    try:
+        payments = payment_paginator.page(page)
+    except PageNotAnInteger:
+        payments = payment_paginator.page(1)
+    except EmptyPage:
+        payments = payment_paginator.page(payment_paginator.num_pages)
 
     # Get commission rate
-    rate = Rate.objects.first()
+    rate = Rate.objects.filter(rate_type="seat_booking").first()
     commission_rate = rate.rate if rate else 0
 
-    # Get all commission records
-    commissions = Commission.objects.all()
-    if user_company:
-        commissions = commissions.filter(
-            Q(bus__transportation_company=user_company) |
-            Q(bus_reserve__transportation_company=user_company)
-        )
+    # Calculate earnings for each bus
+  
+    bus_earnings = []
+    for bus in buses:
+        bus_payments = payments_query.filter(bus=bus)
+        total_earning = bus_payments.aggregate(total=Sum('total_earnings'))['total'] or 0
+        total_commission = bus_payments.aggregate(total=Sum('total_commission'))['total'] or 0
+        net_earning = total_earning - total_commission
+        total_trips=Schedule.objects.filter(status="finished",bus=bus).count()
+        bus_earnings.append({
+            'bus': bus,
+            'bus_number': bus.bus_number,
+            'bus_type': bus.bus_type,
+            'total_earning': total_earning,
+            'total_commission': total_commission,
+            'net_earning': net_earning,
+            'total_trips': total_trips
+        })
 
-    # Aggregate commission-related values
-    commission_stats = commissions.aggregate(
-        total_amount=Sum('total_earnings'),
-        total_commission=Sum('total_commission'),
-        reservation_total=Sum('total_earnings', filter=Q(bus_reserve__isnull=False)),
-        booking_total=Sum('total_earnings', filter=Q(bus__isnull=False)),
-    )
+    # Sort and paginate earnings
+    bus_earnings.sort(key=lambda x: x['total_earning'], reverse=True)
+    earnings_per_page = 5
+    earnings_paginator = Paginator(bus_earnings, earnings_per_page)
+    earnings_page = request.GET.get('earnings_page')
+    
+    try:
+        paginated_earnings = earnings_paginator.page(earnings_page)
+    except PageNotAnInteger:
+        paginated_earnings = earnings_paginator.page(1)
+    except EmptyPage:
+        paginated_earnings = earnings_paginator.page(earnings_paginator.num_pages)
 
-    total_amount = commission_stats['total_amount'] or 0
-    total_commission = commission_stats['total_commission'] or 0
-    reservation_totals = commission_stats['reservation_total'] or 0
-    booking_totals = commission_stats['booking_total'] or 0
+    # Calculate overall totals
+    total_amount = sum(e['total_earning'] for e in bus_earnings)
+    total_commission = sum(e['total_commission'] for e in bus_earnings)
+    total_received = sum(e['net_earning'] for e in bus_earnings)
+    total_trips = sum(e['total_trips'] for e in bus_earnings) 
 
-    total_received = total_amount - total_commission
-
-    # Per-bus statistics
-    bus_stats = payments.values(
-        'bus__id',
-        'bus__bus_number',
-        'bus__route__source',
-        'bus__route__destination'
-    ).annotate(
-        total_earnings=Sum('price'),
-        total_commission=Sum('commission_deducted'),
-        payment_count=Count('id')
-    ).order_by('-total_earnings')
-
-    # Bus reservations
-    bus_reservations = BusReservation.objects.all().order_by('-created_at')
-    if user_role != 'admin' and user_company:
-        bus_reservations = bus_reservations.filter(transportation_company=user_company)
-
-    reservation_bookings = BusReservationBooking.objects.filter(
-        bus_reserve__in=bus_reservations
-    ).order_by('-created_at')[:6]  # last 6 bookings
-
-    # Calculate earnings and commission from reservations
-    reservation_total = reservation_bookings.aggregate(
-        total_earning=Sum('bus_reserve__price'),
-        total_commission=Sum(F('bus_reserve__price') * commission_rate / 100)
-    )
-
-    reservation_earning = (reservation_total['total_earning'] or 0) - (reservation_total['total_commission'] or 0)
-    reservation_commission = reservation_total['total_commission'] or 0
-
-    # Combined net earnings
-    combined_earning = total_received + reservation_earning - reservation_commission
-
-    # Build context
+    # Today's Recent payments
+    today = timezone.now().date()
+    today_payments = Payment.objects.filter(
+        payment_status="completed", 
+        created_at__date=today
+    ).order_by('-created_at')
+    
+    # Paginate today's payments
+    today_paginator = Paginator(today_payments, 10)
+    today_page = request.GET.get('today_page')
+    
+    try:
+        paginated_today_payments = today_paginator.page(today_page)
+    except PageNotAnInteger:
+        paginated_today_payments = today_paginator.page(1)
+    except EmptyPage:
+        paginated_today_payments = today_paginator.page(today_paginator.num_pages)
+    
     context = {
-        'payments': payments,
+        'payments': paginated_today_payments,
+        'bus_earnings': paginated_earnings,
         'rate': rate,
+        'total_amount': total_amount,
+        'total_commission': total_commission,
         'total_received': total_received,
-        'bus_stats': bus_stats,
-        'reservation_earning': reservation_earning,
-        'combined_earning': combined_earning,
-        'is_admin': user_role == 'admin',
-        'reservation_bookings': reservation_bookings,
+        'total_trips': total_trips,
+        'commission_rate': commission_rate,
+        'date_filter': date_filter,
     }
 
-    # Admin: show gross and commission
-    if user_role == 'admin':
-        context['total_amount'] = total_amount
-        context['total_commission'] = total_commission
-        context['booking_totals'] = booking_totals
-        context['reservation_totals'] = reservation_totals
+    return render(request, 'admin/bus_payment_details.html', context)
 
-    # Sub-admin: hide commission, show only earning parts
-    elif user_role == 'sub_admin':
-        context['earnings_from_bookings'] = booking_totals
-        context['earnings_from_reservations'] = reservation_earning
 
-    return render(request, 'admin/payment_details.html', context)
+
+
+    # ==== Bus Seat Earning details ========
+@login_required
+def bus_earning_details(request, bus_id):
+        bus = get_object_or_404(Bus, id=bus_id)
+
+        # Get start and end date from request, default to None if not provided
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        payments = Payment.objects.filter(booking__bus=bus, payment_status='completed').order_by('-created_at')
+
+        # If start_date and end_date are provided, convert them to timezone-aware datetimes and filter payments by date range
+        if start_date and end_date:
+            start_date = timezone.make_aware(datetime.strptime(start_date, '%Y-%m-%d'))
+            end_date = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%d'))
+
+            payments = payments.filter(created_at__gte=start_date, created_at__lte=end_date)
+
+       
+
+        earnings_list = []
+        for payment in payments:
+            commission_rate=payment.rate.rate
+            commission = (payment.booking.schedule.price * commission_rate) / 100
+            net_earning = payment.booking.schedule.price - commission
+
+            passenger_name = payment.user.full_name
+            transaction_id = payment.transaction_id
+            
+
+            earnings_list.append({
+                'passenger': passenger_name,
+                'amount_paid': payment.booking.schedule.price,
+                'commission': commission,
+                'commission_rate': commission_rate,
+                'net_earning': net_earning,
+                'payment_date': payment.created_at,
+                'transaction_id': transaction_id,
+            })
+
+        context = {
+            'bus': bus,
+            'earnings_list': earnings_list,
+            
+            'start_date': start_date.date() if start_date else None,
+            'end_date': end_date.date() if end_date else None,
+        }
+
+        return render(request, 'admin/bus_earning_details.html', context)
+
 
 
 @login_required
-def update_rate(request):
-    rate = Rate.objects.first()
-    
-    if request.method == "POST":
-        new_rate = request.POST.get('rate')
-        if new_rate:
-            rate.rate = new_rate
-            rate.save()
-            return redirect('payments_details')  # Redirect back to payment page
+def reservation_payment_details(request):
+    user = request.user
+    user_company = getattr(user, 'transportation_company', None)
+ 
 
-    return render(request, 'admin/payment_details.html', {'rate': rate})
+    reservations = BusReservation.objects.all()
+    if user_company:
+        reservations = reservations.filter(transportation_company=user_company)
 
+    bookings = BusReservationBooking.objects.filter(bus_reserve__in=reservations,status="booked").order_by('-created_at')
+    commission = Commission.objects.filter(bus_reserve__in=reservations)
+
+    total_earning = commission.aggregate(
+        total=Sum('total_earnings')
+    )['total'] or 0
+
+    total_commission = commission.aggregate(total=Sum('total_commission'))['total'] or 0
+    net_received = total_earning - total_commission
+    reservation_rate=Rate.objects.get(rate_type="reservation")
+    # Pagination
+    paginator = Paginator(bookings, 10)  
+    page_number = request.GET.get('page')  
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
         
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    reservation_rate=Rate.objects.filter(rate_type="reservation").first()
+    context = {
+        'reservation_bookings': page_obj, 
+        'rate': reservation_rate,
+        'total_earning': total_earning,
+        'total_commission': total_commission,
+        'net_received': net_received,
+        'page_obj': page_obj,  
+        'commission_rate':reservation_rate.rate
+    }
+
+    return render(request, 'admin/reservation_payment_details.html', context)
 
 
+# ========= Vehicle Details of payments =============
+@login_required
+def vehicle_details_payment(request,id):
+    vehicle_booking = BusReservationBooking.objects.get(id=id)
+    context = {
+        'vehicle_booking': vehicle_booking
+    }
+    return render(request, 'admin/vehicle_details.html', context)
+    
+    
 
-# ================
-# Vehicle Type
-# ===================
-class VehicleTypeViewSet(ModelViewSet):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    queryset = VechicleType.objects.all()
-    serializer_class = VechicleTypeSerializer
-       
+
+# ======  update  Saet booking rate =========
+@login_required
+def update_seat_commission_rate(request):
+    if request.method == 'POST' and request.user.role=="admin":
+        try:
+            new_rate = float(request.POST.get('commission_rate', 0))
+            if 0 <= new_rate <= 100:
+                rate = Rate.objects.filter(rate_type="seat_booking").first()
+                if rate:
+                    rate.rate = new_rate
+                    rate.save()
+                    messages.success(request, f"Commission rate updated to {new_rate}%")
+                else:
+                    Rate.objects.create(rate_type="seat_booking", rate=new_rate)
+                    messages.success(request, f"New commission rate created: {new_rate}%")
+            else:
+                messages.error(request, "Commission rate must be between 0% and 100%")
+        except ValueError:
+            messages.error(request, "Invalid commission rate value")
+    
+    return redirect('bus_payments_details')
+
+
+# ========== Update Vehicle Reservation commsiion rate ============
+@login_required
+def update_reservation_commission_rate(request):
+    if request.method == 'POST' and request.user.role=="admin":
+        try:
+            new_rate = float(request.POST.get('commission_rate', 0))
+            if 0 <= new_rate <= 100:
+                rate = Rate.objects.filter(rate_type="reservation").first()
+                if rate:
+                    rate.rate = new_rate
+                    rate.save()
+                    messages.success(request, f"Commission rate updated to {new_rate}%")
+                else:
+                    Rate.objects.create(rate_type="reservation", rate=new_rate)
+                    messages.success(request, f"New commission rate created: {new_rate}%")
+            else:
+                messages.error(request, "Commission rate must be between 0% and 100%")
+        except ValueError:
+            messages.error(request, "Invalid commission rate value")
+    
+    return redirect('reservation_payment_details')
+

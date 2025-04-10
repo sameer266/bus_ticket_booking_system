@@ -223,9 +223,9 @@ class UserPayment(APIView):
             except Booking.DoesNotExist:
                 return Response({'success': False, 'error': 'Booking not found'}, status=400)
             transaction_id = request.data.get('transaction_id')
-            payment_obj = Payment.objects.create(user=user, price=total_amount, payment_status="completed", transaction_id=transaction_id, bus=booking_obj.bus)
+            payment_obj = Payment.objects.create(user=user, price=total_amount, payment_status="completed", transaction_id=transaction_id, booking=booking_obj)
             
-            booking_obj.payment = payment_obj
+           
             booking_obj.booking_status = "booked"
             booking_obj.save()
             return Response({'success':True,'message':"Successfully payment"},status=200)

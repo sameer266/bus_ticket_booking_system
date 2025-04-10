@@ -128,13 +128,13 @@ class Bus(models.Model):
    
 
         
-    def save(self, *args, **kwargs):
-        """
-        Ensures available seats do not exceed total seats.
-        """
-        if self.available_seats > self.total_seats:
-            raise ValidationError("Available seats cannot exceed total seats.")
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     """
+    #     Ensures available seats do not exceed total seats.
+    #     """
+    #     if self.available_seats > self.total_seats:
+    #         raise ValidationError("Available seats cannot exceed total seats.")
+    #     super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """
@@ -236,7 +236,7 @@ class BusAdmin(models.Model):
         blank=True,
         help_text="Bus assigned to this admin"
     )
-    driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)
+    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, null=True, blank=True)
     booked_seats = models.PositiveIntegerField(default=0, help_text="Number of seats booked")
     remaining_seats = models.PositiveIntegerField(default=0, help_text="Calculated remaining seats")
     estimated_arrival = models.DateTimeField(null=True, blank=True, help_text="Estimated Arrival time")
@@ -298,8 +298,8 @@ class VechicleType(models.Model):
         """
         Deletes associated image file before deleting the model.
         """
-        if self.images and self.images.storage.exists(self.images.name):
-            self.images.delete(save=False)
+        if self.image and self.image.storage.exists(self.image.name):
+            self.image.delete(save=False)
         
         super().delete(*args, **kwargs)
 
@@ -312,12 +312,7 @@ class BusReservation(models.Model):
     """
     Represents a reservation for a bus or vehicle.
     """
-    
-    CHOICES=(
-        ('booked','Booked'),
-        ('cancelled','Cancelled'),
-        ('pending','Pending')
-    )
+   
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
     ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
     
@@ -332,7 +327,7 @@ class BusReservation(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, null=True, blank=True)
     total_seats = models.PositiveIntegerField(default=35)
     price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-    status=models.CharField(max_length=20,choices=CHOICES,default="pending")
+
     created_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
     
    
@@ -344,6 +339,10 @@ class BusReservation(models.Model):
         if self.image and self.image.storage.exists(self.image.name):
             self.image.delete(save=False)
         super().delete(*args, **kwargs)
+        
+    
+        
+       
 
     def __str__(self):
         return f"Reservation {self.vechicle_number}"

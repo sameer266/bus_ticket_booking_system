@@ -10,7 +10,7 @@
     <div id="page-content-wrapper" class="bg-light">
         <div class="container-fluid py-4 " style="padding-right:20px; padding-left:20px">
             <div class="row justify-content-center">
-                <div class="col-12" style="margin-right:40px !important">
+                <div class="col-12" style="margin-right:60px !important; margin-left:-80px !important; width:90%">
                     <!-- Page Header -->
                     <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between mb-4 px-3 px-sm-0">
                         <h1 class="h3 mb-2 mb-sm-0 text-primary fw-bold">
@@ -128,6 +128,7 @@
                                             <th class="text-primary">Location</th>
                                             <th class="text-primary">Sub-Admin</th>
                                             <th class="text-primary">Bank Details</th>
+                                            <th class="text-primary">QR Image </th>
                                             <th class="text-primary text-end pe-3">Actions</th>
                                         </tr>
                                     </thead>
@@ -152,6 +153,8 @@
                                                     <span class="badge bg-light text-secondary">Not assigned</span>
                                                 {% endif %}
                                             </td>
+
+
                                             <td>
                                                 {% if company.bank_name and company.account_number %}
                                                     <i class="bi bi-bank text-secondary me-1"></i> {{ company.bank_name }}
@@ -160,6 +163,15 @@
                                                     <span class="badge bg-light text-secondary">Not provided</span>
                                                 {% endif %}
                                             </td>
+
+                                            <td>
+                                                {% if company.qr_image %}
+                                                    <img src="{{ company.qr_image.url }}" alt="QR Code" class="img-thumbnail" style="max-width: 80px; max-height: 80px;">
+                                                {% else %}
+                                                    <span class="badge bg-light text-secondary">Not provided</span>
+                                                {% endif %}
+                                            </td>
+
                                             <td class="text-end pe-3">
                                                 <div class="btn-group">
                                                     <a href="{% url 'edit_transportation_company' company.id %}" class="btn btn-sm btn-outline-primary" title="Edit">

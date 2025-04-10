@@ -1,20 +1,19 @@
 <!-- Sidebar Component -->
 <div class="wrapper">
   <!-- Sidebar -->
-  <nav id="sidebar" class="sidebar" data-collapsed="false">
+  <nav id="sidebar" class="sidebar" data-compact="false">
     <div class="sidebar-header">
       <div class="d-flex align-items-center justify-content-between">
         <a href="" class="sidebar-brand text-decoration-none">
-
           {% if system.name %}
           <span class="sidebar-brand">{{ system.name }}</span>
           {% endif %}
           {% if system.image%}
           <img src={{ system.image.url }} alt="Go Sewa" height="32">
+          {% endif %}
         </a>
-        {% endif %}
-        <button type="button" id="sidebarCollapseBtn" class="btn btn-icon">
-          <i class="bi bi-arrow-left"></i>
+        <button type="button" id="sidebarToggleBtn" class="btn btn-icon">
+          <i class="bi bi-arrow-left-right"></i>
         </button>
       </div>
     </div>
@@ -62,7 +61,7 @@
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/reservations/' %}active{% endif %}" href={% url 'vehicle-reservation' %}>
               <i class="bi bi-calendar2-check menu-icon"></i>
-              <span class="menu-text">Reservation Management</span>
+              <span class="menu-text">Vehicle Management</span>
             </a>
           </li>
           <li class="nav-item">
@@ -83,13 +82,26 @@
               <span class="menu-text">Booking Management</span>
             </a>
           </li>
+
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/payment-details/' %}active{% endif %}" href={% url 'payments_details' %}>
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#accountEarningsMenu" role="button" aria-expanded="false" aria-controls="accountEarningsMenu">
               <i class="bi bi-credit-card menu-icon"></i>
-              <span class="menu-text">Payment & Commission</span>
+              <span class="menu-text">Account & Earning</span>
             </a>
+            <div class="collapse {% if request.path == '/payment-details/' or request.path == '/payment-details/reserve/' %}show{% endif %}" id="accountEarningsMenu">
+              <ul class="nav flex-column ms-3">
+                <li class="nav-item">
+                  <a class="nav-link {% if request.path == '/bus-payment/' %}active{% endif %}" href={% url 'bus_payments_details'%}>Bus</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link {% if request.path == '/reservation-payment/' %}active{% endif %}" href={% url 'reservation_payment_details'%}>Vehicle Reserve</a>
+                </li>
+              </ul>
+            </div>
           </li>
           
+
+
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/reports/' %}active{% endif %}" href={% url 'report_analysis' %}>
               <i class="bi bi-graph-up menu-icon"></i>
@@ -122,7 +134,6 @@
               <span class="menu-text">Driver & Staff</span>
             </a>
           </li>
-
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/buses-management' %}active{% endif %}" href={%url 'bus_list'%}>
               <i class="bi bi-bus-front menu-icon"></i>
@@ -132,7 +143,7 @@
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/reservations/' %}active{% endif %}" href={% url 'vehicle-reservation' %}>
               <i class="bi bi-calendar2-check menu-icon"></i>
-              <span class="menu-text">Reservation Management</span>
+              <span class="menu-text">Vehicle Management</span>
             </a>
           </li>
           <li class="nav-item">
@@ -154,13 +165,27 @@
             </a>
           </li>
 
+
           <li class="nav-item">
-            <a class="nav-link {% if request.path == '/payment-details/' %}active{% endif %}" href={% url 'payments_details' %}>
+            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#accountEarningsMenu" role="button" aria-expanded="false" aria-controls="accountEarningsMenu">
               <i class="bi bi-credit-card menu-icon"></i>
-              <span class="menu-text">Payment & Commission</span>
+              <span class="menu-text">Account & Earning</span>
             </a>
+            <div class="collapse {% if request.path == '/payment-details/' or request.path == '/payment-details/reserve/' %}show{% endif %}" id="accountEarningsMenu">
+              <ul class="nav flex-column ms-3">
+                <li class="nav-item">
+                  <a class="nav-link {% if request.path == '/bus-payment/' %}active{% endif %}" href={% url 'bus_payments_details'%}>Bus</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link {% if request.path == '/reservation-payment/' %}active{% endif %}" href={% url 'reservation_payment_details'%}>Vehicle Reserve</a>
+                </li>
+              </ul>
+            </div>
           </li>
           
+
+
+
         {% else %}
           <!-- Regular User Menu Items -->
           <li class="nav-item">
@@ -211,7 +236,7 @@
 
     {% if user.is_superuser %}
     <div class="sidebar-footer">
-      <a href={% url 'system_settings' %} class="settings-link nav-link {% if request.path == '/settings/' %}active{% endif %} ">
+      <a href={% url 'system_settings' %} class="settings-link nav-link {% if request.path == '/settings/' %}active{% endif %}">
         <i class="bi bi-gear"></i>
         <span class="settings-text">Settings</span>
       </a>
@@ -233,13 +258,14 @@
 <style>
   :root {
     --sidebar-width: 260px;
-    --sidebar-collapsed-width: 70px;
+    --sidebar-compact-width: 70px;
     --sidebar-transition: 0.3s;
   }
 
   .wrapper {
     display: flex;
     min-height: 100vh;
+    position: relative;
   }
 
   .sidebar {
@@ -256,8 +282,9 @@
     flex-direction: column;
   }
 
-  .sidebar[data-collapsed="true"] {
-    width: var(--sidebar-collapsed-width);
+  /* Compact sidebar state */
+  .sidebar[data-compact="true"] {
+    width: var(--sidebar-compact-width);
   }
 
   .sidebar-header {
@@ -271,6 +298,12 @@
     font-size: 1.25rem;
     white-space: nowrap;
     overflow: hidden;
+    transition: opacity var(--sidebar-transition);
+  }
+
+  .sidebar[data-compact="true"] .sidebar-brand {
+    opacity: 0;
+    width: 0;
   }
 
   .btn-icon {
@@ -289,10 +322,6 @@
   .btn-icon:hover {
     background: var(--primary-color);
     color: white;
-  }
-
-  .sidebar[data-collapsed="true"] .btn-icon i {
-    transform: rotate(180deg);
   }
 
   .sidebar-content {
@@ -335,14 +364,17 @@
   }
 
   .menu-text {
-    transition: opacity var(--sidebar-transition);
+    transition: opacity var(--sidebar-transition), width var(--sidebar-transition);
+    opacity: 1;
+    width: auto;
   }
 
-  .sidebar[data-collapsed="true"] .menu-text {
+  .sidebar[data-compact="true"] .menu-text {
     opacity: 0;
+    width: 0;
   }
 
-  .sidebar[data-collapsed="true"] .menu-icon {
+  .sidebar[data-compact="true"] .menu-icon {
     margin-right: 0;
   }
 
@@ -373,53 +405,71 @@
   }
 
   .settings-text {
-    transition: opacity var(--sidebar-transition);
+    transition: opacity var(--sidebar-transition), width var(--sidebar-transition);
+    opacity: 1;
+    width: auto;
   }
 
-  .sidebar[data-collapsed="true"] .settings-text {
+  .sidebar[data-compact="true"] .settings-text {
     opacity: 0;
+    width: 0;
   }
 
-  .sidebar[data-collapsed="true"] .settings-link i {
+  .sidebar[data-compact="true"] .settings-link i {
     margin-right: 0;
   }
 
   #content {
     flex: 1;
-    
+   
     transition: margin var(--sidebar-transition);
     min-height: 100vh;
     background: var(--bg-light);
     padding: 2rem;
   }
 
+  /* Content shift when sidebar is compact */
+  .sidebar[data-compact="true"] + #content {
+    margin-left: var(--sidebar-compact-width);
+  }
 
   /* Mobile Styles */
   @media (max-width: 991.98px) {
     .sidebar {
+      width: var(--sidebar-width);
       transform: translateX(-100%);
     }
-
+    
     .sidebar.show {
       transform: translateX(0);
     }
-
+    
+    /* Compact sidebar always visible on mobile */
+    .sidebar[data-compact="true"] {
+      width: var(--sidebar-width);
+      transform: translateX(0);
+    }
+    
     #content {
-      margin-left: 0 !important;
+      margin-left: 0;
       padding: 1rem;
     }
-
-    .sidebar[data-collapsed="true"] {
-      width: var(--sidebar-width);
+    
+    /* Even when compact, content shouldn't shift on mobile */
+    .sidebar[data-compact="true"] + #content {
+      margin-left: 0;
     }
-
-    .sidebar[data-collapsed="true"] .menu-text,
-    .sidebar[data-collapsed="true"] .settings-text {
+    
+    /* On mobile, restore text visibility even in compact mode */
+    .sidebar[data-compact="true"] .menu-text,
+    .sidebar[data-compact="true"] .settings-text,
+    .sidebar[data-compact="true"] .sidebar-brand {
       opacity: 1;
+      width: auto;
     }
-
-    .sidebar[data-collapsed="true"] .menu-icon,
-    .sidebar[data-collapsed="true"] .settings-link i {
+    
+    .sidebar[data-compact="true"] .menu-icon,
+    .sidebar[data-compact="true"] .settings-link i {
       margin-right: 1rem;
     }
   }
@@ -443,41 +493,56 @@
   }
 </style>
 {% endblock %}
+
 {% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
-    const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
-    const wrapper = document.querySelector('.wrapper');
-
-    // Toggle sidebar collapse
-    sidebarCollapseBtn.addEventListener('click', function() {
-      const isCollapsed = sidebar.getAttribute('data-collapsed') === 'true';
-      sidebar.setAttribute('data-collapsed', !isCollapsed);
-      wrapper.setAttribute('data-sidebar-collapsed', !isCollapsed);
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    
+    // Toggle sidebar between full and compact mode
+    sidebarToggleBtn.addEventListener('click', function() {
+      const isCompact = sidebar.getAttribute('data-compact') === 'true';
+      sidebar.setAttribute('data-compact', !isCompact);
     });
 
-    // Handle mobile menu
-    function handleResize() {
+    // Mobile toggle for showing/hiding sidebar
+    function handleMobileToggle() {
       if (window.innerWidth <= 991.98) {
-        sidebar.classList.remove('show');
-        sidebar.setAttribute('data-collapsed', 'false');
-        wrapper.setAttribute('data-sidebar-collapsed', 'false');
+        if (!sidebar.classList.contains('show')) {
+          sidebar.classList.add('show');
+        } else {
+          sidebar.classList.remove('show');
+        }
       }
     }
 
+    // Handle mobile menu button
+    const mobileToggleBtn = document.createElement('button');
+    mobileToggleBtn.className = 'mobile-menu-btn btn btn-primary';
+    mobileToggleBtn.innerHTML = '<i class="bi bi-list"></i>';
+    mobileToggleBtn.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1020; display: none; width: 40px; height: 40px; border-radius: 50%; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);';
+    
+    document.body.appendChild(mobileToggleBtn);
+    mobileToggleBtn.addEventListener('click', handleMobileToggle);
+
+    // Handle screen size changes
+    function handleResize() {
+      if (window.innerWidth <= 991.98) {
+        // On mobile, start with compact view and add mobile toggle button
+
+        sidebar.classList.remove('show');
+        mobileToggleBtn.style.display = 'flex';
+      } else {
+        // On desktop, show full sidebar
+        sidebar.classList.add('show');
+        mobileToggleBtn.style.display = 'none';
+      }
+    }
+
+    // Run on page load and window resize
     window.addEventListener('resize', handleResize);
     handleResize();
-
-    // Close sidebar on mobile when clicking a link
-    const navLinks = document.querySelectorAll('.nav-link');
-    navLinks.forEach(link => {
-      link.addEventListener('click', () => {
-        if (window.innerWidth <= 991.98) {
-          sidebar.classList.remove('show');
-        }
-      });
-    });
   });
 </script>
 {% endblock %}

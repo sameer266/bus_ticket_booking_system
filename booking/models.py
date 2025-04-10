@@ -53,7 +53,7 @@ class Booking(models.Model):
         on_delete=models.CASCADE,
         limit_choices_to={'role': 'customer'}
     )
-    payment=models.ForeignKey('booking.Payment',on_delete=models.CASCADE,null=True,blank=True)
+    
     seat = models.JSONField(default=list)
     bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='booking',null=True,blank=True)
     schedule = models.ForeignKey(
@@ -122,18 +122,20 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
 class BusReservationBooking(models.Model):
     STATUS_CHOICES = (
         ('booked', 'Booked'),
-        ('available', 'Available')
+        ('pending', 'Pending')
     )
     
     user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE)
     bus_reserve=models.ForeignKey('bus.BusReservation',on_delete=models.CASCADE)
-    status=models.CharField(max_length=20,choices=STATUS_CHOICES,default="booked")
+    status=models.CharField(max_length=20,choices=STATUS_CHOICES,default="pending")
     source=models.CharField(max_length=100)
     destination=models.CharField(max_length=100)
     start_date=models.DateField()
     date=models.PositiveIntegerField(default=0)
     created_at=models.DateTimeField(auto_now_add=True)
     
+  
+
 
 # Signal to create a commission entry when a BusReservationBooking is created
 @receiver(post_save, sender=BusReservationBooking)
@@ -141,7 +143,7 @@ def create_commission_on_reservation(sender, instance, created, **kwargs):
     """
     Creates a commission entry when a BusReservation is created.
     """
-    if created  and instance.status=='booked':
+    if created  or instance.status=='booked':
       
         
         commission_obj = Commission.objects.create(
@@ -159,6 +161,18 @@ class Rate(models.Model):
     """
     Represents the commission rate for the system.
     """
+    RATE_TYPE_CHOICES = (
+        ('reservation', 'Reservation'),
+        ('seat_booking', 'Seat Booking'),
+    )
+
+    rate_type = models.CharField(
+        max_length=20,
+        choices=RATE_TYPE_CHOICES,
+        unique=True,
+        null=True,blank=True,
+        help_text="Type of rate (Reservation or Seat Booking)"
+    )
     rate = models.DecimalField(
         max_digits=5,
         decimal_places=2,
@@ -167,18 +181,13 @@ class Rate(models.Model):
         help_text="Rate for commission"
     )
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['rate'], name='unique_rate')
-        ]
-
     def save(self, *args, **kwargs):
-        if Rate.objects.exists() and not self.pk:
-            raise ValidationError("There can only be one rate entry.")
+        if Rate.objects.filter(rate_type=self.rate_type).exists() and not self.pk:
+            raise ValidationError(f"A rate entry for {self.rate_type} already exists.")
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Commission Rate: {self.rate}%"
+        return f"{self.get_rate_type_display()} Commission Rate: {self.rate}%"
 
 
 # ===== Payment Model =====
@@ -196,11 +205,12 @@ class Payment(models.Model):
         ('failed', 'Failed')
     )
     user=models.ForeignKey('custom_user.CustomUser',on_delete=models.CASCADE,limit_choices_to={'role':'customer'},null=True,blank=True)
-    bus=models.ForeignKey('bus.Bus',on_delete=models.CASCADE,null=True,blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of paid")
+    booking=models.ForeignKey(Booking,on_delete=models.CASCADE,null=True,blank=True)
+    rate=models.ForeignKey(Rate,on_delete=models.CASCADE,null=True,blank=True)
     payment_method=models.CharField(max_length=20,choices=METHODS_CHOICES,default="khalti")
     payment_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     transaction_id = models.CharField(max_length=100, null=True, blank=True)
+    rate=models.ForeignKey(Rate,on_delete=models.CASCADE,null=True,blank=True)
     commission_deducted = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -209,8 +219,17 @@ class Payment(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     
+    
+    def save(self,*args,**kwargs):
+        if self.payment_status=="completed":
+            rate = Rate.objects.get(rate_type="seat_booking")
+            self.commission_deducted = (rate.rate / Decimal('100.00')) * self.booking.schedule.price
+            self.rate=rate
+        super().save(*args,**kwargs)
+            
+            
     def __str__(self):
-        return f"Payment #{self.id} - {self.price} - {self.payment_status}"
+        return f"Payment #{self.id} - {self.booking.schedule.price} - {self.payment_status}"
 
 
 # ===== Helper: Prevent Recursion in Signals =====
@@ -238,7 +257,7 @@ def update_status_booking_and_calculate_commission_on_payment(sender, instance, 
                 user=instance.user,
                 bus=instance.bus,
                 booking_status='pending',
-                payment__isnull=True  # Only bookings without a payment
+               
             )
             
             if bookings.exists():
@@ -249,24 +268,23 @@ def update_status_booking_and_calculate_commission_on_payment(sender, instance, 
                 
                 # Calculate commission
                 try:
-                    rate = Rate.objects.first()
+                    rate = Rate.objects.get(rate_type="seat_booking")
                     
                     rate_value = rate.rate
                     
-                    commission_amount = (instance.price * rate_value) / Decimal('100.00')
+                    commission_amount = (instance.booking.schedule.price * rate_value) / Decimal('100.00')
                     
                     # Create or update commission record
                     commission, created = Commission.objects.get_or_create(
                         bus=instance.bus,
-                        defaults={
-                            'commission_type': 'bus',
-                            'total_earnings': instance.price,
-                            'total_commission': commission_amount
-                        }
+                      
+                            total_earnings= instance.booking.schedule.price,
+                            total_commission=commission_amount
+                        
                     )
                     
                     if not created:
-                        commission.total_earnings += instance.price
+                        commission.total_earnings += instance.booking.schedule.price
                         commission.total_commission += commission_amount
                         commission.save()
                     
@@ -325,12 +343,16 @@ class Commission(models.Model):
         default=0.00,
         help_text="Total commission deducted"
     )
+    created_at=models.DateTimeField(auto_now_add=True,null=True)
 
     def calculate_commission(self, earning):
         """
         Calculate commission based on the earning.
         """
-        rate = Rate.objects.first()
+        if self.bus_reserve:
+            rate = Rate.objects.get(rate_type="reservation")
+        else:
+            rate=Rate.objects.get(rate_type="seat_booking")
         if rate:
             return (rate.rate / 100) * earning
         return Decimal(0)

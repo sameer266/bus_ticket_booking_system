@@ -208,28 +208,63 @@ class ForgetPassword(APIView):
     
     def post(self, request):
         try:
+            print(request.data)
             phone = request.data.get("phone")
-            user = CustomUser.objects.get(phone=phone, role="customer")
-            if user:
-                return Response({"success": True, "message": " User found "}, status=200)
-            else:
-                return Response({"success": False, "error": "User not found"}, status=400)
+            if not phone:
+                return Response({"success": False, "error": "Phone number is required"}, status=400)
+                
+            try:
+                user = CustomUser.objects.get(phone=phone, role="customer")
+            except CustomUser.DoesNotExist:
+                return Response({"success": False, "error": "User not found"}, status=404)
+            
+            otp_number = UserOtp.generate_otp()
+            print(user)
+            print(user.phone)
+
+            user_otp, created = UserOtp.objects.get_or_create(user=user, phone=phone,temp_name=user.full_name)
+
+           
+            user_otp.otp = otp_number
+            user_otp.save()
+            
+            return Response({
+                "success": True, 
+                "message": "OTP sent successfully",
+                "otp": otp_number ,
+                "phone":user.phone
+            }, status=200)
                 
         except Exception as e:
-            return Response({"success": False, "error": str(e)})
+            return Response({"success": False, "error": str(e)}, status=500)
+
 
 
 # ========= Reset password ======
 class ResetPassword(APIView):
-    def post(self,request):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
         try:
-            password=request.data.get('password')
-            user=request.user
+            print(request.data)
+            password = request.data.get('password')
+            if not password:
+                return Response({"success": False, "error": "Password is required."}, status=400)
+            
+            user = request.user
             user.set_password(password)
             user.save()
-            
+
+            # Delete OTP if exists
+            otp_user = UserOtp.objects.filter(user=user).first()
+            if otp_user:
+                otp_user.delete()
+
+            return Response({"success": True, "message": "Password reset successfully."}, status=200)
+
         except Exception as e:
-            return Response({"success":True,'error':str(e)})
+            return Response({"success": False, "error": str(e)}, status=400)
 
 # ========= Register user ==========
 # ==== Otp Send ========
@@ -461,9 +496,10 @@ class VehicleOneDetails(APIView):
             id = kwargs.get('id')
             bus_reservation = get_object_or_404(BusReservation, id=id)
             data = {
+                'id':bus_reservation.id,
                 'name': bus_reservation.name,
                 'type': bus_reservation.type.name,
-                'image': request.build_absolute_uri(bus_reservation.image.url) if bus_reservation.image else None,
+                'image': bus_reservation.image.url,
                 'vehicle_number': bus_reservation.vechicle_number,
                 'vehicle_model': bus_reservation.vechicle_model,
                 'color': bus_reservation.color,
@@ -478,52 +514,41 @@ class VehicleOneDetails(APIView):
         except Exception as e:
             return Response({'success': False, 'error': str(e)}, status=400)
         
-    
-# ========= Bus Reservation =============
+   # ========= Bus Reservation =============
 class VechicleReservationList(APIView):
     def get(self, request, *args, **kwargs):
         try:
             id = kwargs.get('id')
 
-            # Fetch all reservations if 'id' is null or empty
             if id in ["null", " ", None]:
                 bus_reservations = BusReservation.objects.all()
                 serializer = BusReservationSerializer(bus_reservations, many=True)
                 return Response({"success": True, "data": serializer.data}, status=200)
 
-            # Fetch reservations filtered by 'type__id'
             bus_reservations = BusReservation.objects.filter(type__id=id)
 
             if not bus_reservations.exists():
                 return Response({"success": False, "error": "No bus reservations found"}, status=404)
 
-            # If multiple reservations exist, return a serialized list
-            if bus_reservations.count() > 1:
-                serializer = BusReservationSerializer(bus_reservations, many=True)
-                return Response({"success": True, "data": serializer.data}, status=200)
+            # Always return a list, even if there's only one reservation
+            data_list = []
+            for bus_reservation in bus_reservations:
+                data = {
+                    "id":bus_reservation.id,
+                    "name": bus_reservation.name,
+                    "type": bus_reservation.type.name,
+                    "vechicle_number": bus_reservation.vechicle_number,
+                    "vechicle_model": bus_reservation.vechicle_model,
+                    "image": bus_reservation.image.url if bus_reservation.image else None,
+                    "color": bus_reservation.color,
+                    "driver": bus_reservation.driver.full_name if bus_reservation.driver else None,
+                    "staff": bus_reservation.staff.full_name if bus_reservation.staff else None,
+                    "total_seats": bus_reservation.total_seats,
+                    "price": bus_reservation.price
+                }
+                data_list.append(data)
 
-            # If only one reservation exists, manually construct the response
-            bus_reservation = bus_reservations.first()
-
-            # Debugging output
-            print(bus_reservation)
-            print("Bus Reservation:", bus_reservation.name)
-
-            # Constructing response data
-            data = {
-                "name": bus_reservation.name,
-                "type": bus_reservation.type.name,
-                "vechicle_number": bus_reservation.vechicle_number,
-                "vechicle_model": bus_reservation.vechicle_model,
-                "image": bus_reservation.image.url if bus_reservation.image else None,  # Ensure valid image URL
-                "color": bus_reservation.color,
-                "driver": bus_reservation.driver.full_name if bus_reservation.driver else None,  # Handle None case
-                "staff": bus_reservation.staff.full_name if bus_reservation.staff else None,  # Handle None case
-                "total_seats": bus_reservation.total_seats,
-                "price": bus_reservation.price
-            }
-
-            return Response({"success": True, "data": data}, status=200)
+            return Response({"success": True, "data": data_list}, status=200)
 
         except Exception as e:
             return Response({'success': False, "error": str(e)}, status=400)
@@ -548,6 +573,9 @@ class  VechicleReeservationBookingApiView(APIView):
             start_date_str=request.data.get('date')
             start_date = datetime.strptime(start_date_str, "%Y/%m/%d").date()
             
+            if  BusReservation.objects.filter(start_date=start_date).exists():
+                return Response({"success":False,'message':'Vehicle is not available'},status=400)
+        
             BusReservationBooking.objects.create(user=user,bus_reserve=busReserve_obj,source=source,destination=destination,date=date,start_date=start_date)
             
             return Response({'success':True,'message':'Bus reserved successfully'},status=200)
@@ -584,18 +612,15 @@ class UserSeatBookingListApiView(APIView):
         
 
 # ========== Booking Management  =================
-class BookingAPiView(APIView):
+class SeatBookingAPiView(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
     
     def get(self,request):
         try:
-            bus_reserve=BusReservationBooking.objects.all().order_by('-created_at')
-            serializer_bus=VechicleReservationBookingSerializer(bus_reserve,many=True)
-            
             booking=Booking.objects.all().order_by('-booked_at')
             serializer=BookingSerializer(booking,many=True)
-            return Response({'success':True,'data':serializer.data,"bus_reserve":serializer_bus.data},status=200)
+            return Response({'success':True,'data':serializer.data},status=200)
             
         except Exception as e:
             return Response({'success':False,"error":str(e)},status=400)

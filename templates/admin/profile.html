@@ -4,25 +4,20 @@
 
 {% block content %}
 <div class="profile-container">
-    <!-- Sidebar (hidden on mobile by default) -->
     <div class="sidebar" id="sidebar">
         {% include 'components/sidebar.html' %}
     </div>
 
-    <!-- Main Content -->
     <main class="main-content">
-        <!-- Mobile Menu Toggle -->
         <button class="menu-toggle btn btn-primary">
             <i class="bi bi-list"></i>
         </button>
 
-        <!-- Profile Card -->
         <div class="profile-card">
             <div class="profile-header">
                 <h2><i class="bi bi-person-circle"></i> User Profile</h2>
             </div>
 
-            <!-- Messages -->
             {% if messages %}
             <div class="messages">
                 {% for message in messages %}
@@ -34,7 +29,6 @@
             </div>
             {% endif %}
 
-            <!-- View Mode -->
             <div id="profileView" class="profile-view">
                 <div class="user-info">
                     <div class="avatar">
@@ -70,12 +64,14 @@
                     </div>
                 </div>
 
-                <button class="btn btn-primary edit-btn" onclick="toggleEdit()">
-                    <i class="bi bi-pencil-square "></i> Edit Profile
-                </button>
-                <a href="{% url 'reset_password' %}" class="btn btn-danger edit-btn">
-                    <i class="bi bi-pencil-square"></i> Reset Password
-                </a>
+                <div class="button-group">
+                    <button class="btn btn-primary edit-btn" onclick="toggleEdit()">
+                        <i class="bi bi-pencil-square"></i> Edit Profile
+                    </button>
+                    <a href="{% url 'reset_password' %}" class="btn btn-danger edit-btn">
+                        <i class="bi bi-pencil-square"></i> Reset Password
+                    </a>
+                </div>
             </div>
 
             <!-- Edit Mode -->
@@ -125,25 +121,16 @@
     }
 
     .profile-container {
-        margin-top:80px;
+        margin-top: 60px;
         display: flex;
         min-height: 100vh;
         background-color: var(--light);
     }
 
-    /* Sidebar */
-    .sidebar {
-        width: 250px;
-        background: white;
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
-        transition: transform 0.3s;
-        z-index: 100;
-    }
-
     /* Main Content */
     .main-content {
         flex: 1;
-        padding: 2rem;
+        padding: 1.5rem;
         transition: margin-left 0.3s;
     }
 
@@ -151,12 +138,12 @@
     .menu-toggle {
         display: none;
         position: fixed;
-        top: 1rem;
-        left: 1rem;
+        top: 0.75rem;
+        left: 0.75rem;
         z-index: 99;
         border-radius: 50%;
-        width: 40px;
-        height: 40px;
+        width: 35px;
+        height: 35px;
         padding: 0;
         justify-content: center;
         align-items: center;
@@ -165,85 +152,89 @@
     /* Profile Card */
     .profile-card {
         background: white;
-        border-radius: 10px;
+        border-radius: 8px;
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        padding: 2rem;
-        max-width: 800px;
+        padding: 1.5rem;
+        max-width: 600px;
         margin: 0 auto;
     }
 
     .profile-header {
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         color: var(--primary);
     }
 
     .profile-header h2 {
         font-weight: 600;
+        font-size: 1.5rem;
     }
 
     /* User Info */
     .user-info {
         display: flex;
         align-items: center;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
 
     .avatar {
-        width: 80px;
-        height: 80px;
+        width: 60px;
+        height: 60px;
         background-color: var(--primary);
         color: white;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: bold;
     }
 
     .user-details h3 {
         margin: 0;
         color: var(--dark);
+        font-size: 1.25rem;
     }
 
     .user-details p {
         margin: 0.25rem 0 0;
         color: var(--secondary);
+        font-size: 0.875rem;
     }
 
     /* Info Grid */
     .info-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
     }
 
     .info-item {
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
         align-items: center;
-        padding: 1rem;
+        padding: 0.75rem;
         background: var(--primary-light);
-        border-radius: 8px;
+        border-radius: 6px;
     }
 
     .info-item i {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         color: var(--primary);
     }
 
     .info-item span {
         display: block;
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         color: var(--secondary);
     }
 
     .info-item p {
         margin: 0.25rem 0 0;
         font-weight: 500;
+        font-size: 0.875rem;
     }
 
     /* Forms */
@@ -252,14 +243,15 @@
     }
 
     .form-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
 
     .form-group label {
         display: block;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
         font-weight: 500;
         color: var(--primary);
+        font-size: 0.875rem;
     }
 
     .form-group label i {
@@ -269,17 +261,18 @@
     .form-group input,
     .form-group select {
         width: 100%;
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 0.75rem;
         border: 1px solid var(--border);
-        border-radius: 50px;
+        border-radius: 4px;
         transition: border-color 0.3s;
+        font-size: 0.875rem;
     }
 
     .form-group input:focus,
     .form-group select:focus {
         border-color: var(--primary);
         outline: none;
-        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+        box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
     }
 
     .form-actions {
@@ -338,20 +331,19 @@
     @media (max-width: 992px) {
         .sidebar {
             position: fixed;
-            transform: translateX(-100%);
+            left: -250px;
+            top: 0;
+            height: 100%;
+            z-index: 1000;
+            transition: left 0.3s ease;
         }
 
         .sidebar.active {
-            transform: translateX(0);
+            left: 0;
         }
 
         .menu-toggle {
             display: flex;
-        }
-
-        .main-content {
-            padding: 1rem;
-            margin-left: 0 !important;
         }
 
         .profile-card {
@@ -370,6 +362,22 @@
         .btn {
             width: 100%;
         }
+    }
+
+    /* Update the sidebar styles to match manage_bus.html */
+    .sidebar {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        background-color: #fff;
+        transition: all 0.3s;
+    }
+
+    #sidebar-wrapper {
+        min-height: 100vh;
+        width: 250px;
+        transition: margin 0.25s ease-out;
+        background-color: white;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        z-index: 1;
     }
 </style>
 

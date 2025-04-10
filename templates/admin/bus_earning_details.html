@@ -1,0 +1,118 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block title %}Bus Earning Details | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" style="margin:80px !important">
+    <main class="dashboard-content px-3 px-md-4 py-4">
+        <div class="container-fluid">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                <h1 class="h4 fw-bold text-primary">
+                    <i class="bi bi-graph-up-arrow me-2"></i> Earning Details - {{ bus.bus_number }} ({{ bus.bus_name }})
+                </h1>
+                <a href="{% url 'bus_payments_details' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Back to Summary
+                </a>
+            </div>
+
+            <!-- Date Filter Form -->
+            <div class="mb-4">
+                <form id="filter-form" method="get" class="d-flex justify-content-start">
+                    <div class="d-flex">
+                        <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date|default:'' }}">
+                        <input type="date" name="end_date" id="end_date" class="form-control ms-2" value="{{ end_date|default:'' }}">
+                        <button type="submit" class="btn btn-primary ms-2">Search</button>
+                        {% if start_date or end_date %}
+                        <a href="{% url 'bus_earnings' bus.id %}" class="btn btn-outline-secondary ms-2">
+                            <i class="bi bi-x-circle"></i> Clear Filters
+                        </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            <!-- Earnings Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Earnings Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Passenger</th>
+                                    <th>Transaction Id</th>
+                                    <th>Amount Paid</th>
+                                    <th>Rate</th>
+                                    <th>Commission</th>
+                                    <th>Net Earning</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for earning in earnings_list %}
+                                <tr>
+                                    <td>{{ earning.payment_date|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ earning.passenger }}</td>
+                                    <td>
+                                        {% if earning.transaction_id %}
+                                            {{ earning.transaction_id }}
+                                        {% else %}
+                                            <em class="text-muted">N/A</em>
+                                        {% endif %}
+                                    </td>
+                                    <td>NRP {{ earning.amount_paid|floatformat:2 }}</td>
+                                    <td>{{ earning.commission_rate|floatformat:2 }} %</td>
+                                    <td>NRP {{ earning.commission|floatformat:2 }}</td>
+                                    <td class="fw-bold text-success">NRP {{ earning.net_earning|floatformat:2 }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">No earnings found for this bus.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+{% block javascript %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation - ensure both dates are provided
+        document.getElementById('filter-form').addEventListener('submit', function(event) {
+            var startDate = document.getElementById('start_date').value;
+            var endDate = document.getElementById('end_date').value;
+            
+            if (!startDate || !endDate) {
+                event.preventDefault();
+                alert("Please select both start date and end date.");
+            }
+        });
+        
+        // Set max date for date inputs to today
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').setAttribute('max', today);
+        document.getElementById('end_date').setAttribute('max', today);
+        
+        // Ensure end date is not earlier than start date
+        document.getElementById('start_date').addEventListener('change', function() {
+            document.getElementById('end_date').setAttribute('min', this.value);
+        });
+        
+        document.getElementById('end_date').addEventListener('change', function() {
+            document.getElementById('start_date').setAttribute('max', this.value);
+        });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

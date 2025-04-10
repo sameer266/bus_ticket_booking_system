@@ -139,7 +139,7 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
     if created:
         BusAdmin = apps.get_model('bus', 'BusAdmin')
         CustomUser = apps.get_model('custom_user', 'CustomUser')
-        Trip = apps.get_model('route', 'Trip')
+       
 
         # Create BusAdmin if not exists
         bus_admin = BusAdmin.objects.filter(bus=instance.bus).first()
@@ -152,6 +152,7 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
                     "role": "bus_admin",
                 },
             )
+            print("Sinal-------sd")
             BusAdmin.objects.create(
                 user=new_user,
                 bus=instance.bus,

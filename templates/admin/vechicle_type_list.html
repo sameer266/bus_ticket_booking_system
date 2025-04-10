@@ -74,37 +74,41 @@
                                         <!-- Display the count of associated vehicles -->
                                         <span class="badge bg-primary rounded-pill">{{ vehicle_type.vehicle_count }}</span>
                                     </td>
+
                                     <td class="text-end pe-3">
                                         <!-- Desktop actions -->
-                                        <div class="btn-group d-none d-md-inline-flex">
-                                            <a href="{% url 'edit_vehicle_type' vehicle_type.id %}" class="btn btn-sm btn-outline-warning">
-                                                <i class="bi bi-pencil-square"></i>
+                                        <div class="btn-group btn-group-sm d-none d-md-inline-flex">
+                                            <a href="{% url 'edit_vehicle_type' vehicle_type.id %}" class="btn btn-light btn-sm" title="Edit">
+                                                <i class="bi bi-pencil-square fs-6"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-danger delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            <a href="{% url 'delete_vehicle_type' vehicle_type.id %}" class="btn btn-light btn-sm delete-type-btn"  data-bs-target="#deleteTypeModal" title="Delete">
+                                                <i class="bi bi-trash fs-6"></i>
+                                            </a>
                                         </div>
                                         
-                                        <!-- Mobile actions dropdown -->
+                                        <!-- Mobile actions -->
                                         <div class="d-md-none">
-                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                                                <i class="bi bi-three-dots-vertical"></i>
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end">
-                                                <li>
-                                                    <a class="dropdown-item" href="{% url 'edit_vehicle_type' vehicle_type.id %}">
-                                                        <i class="bi bi-pencil-square text-warning me-2"></i> Edit
-                                                    </a>
-                                                </li>
-                                                <li>
-                                                    <button class="dropdown-item delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}">
-                                                        <i class="bi bi-trash text-danger me-2"></i> Delete
-                                                    </button>
-                                                </li>
-                                            </ul>
+                                            <div class="dropdown">
+                                                <button class="btn btn-light btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-three-dots-vertical fs-6"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                    <li>
+                                                        <a class="dropdown-item py-2" href="{% url 'edit_vehicle_type' vehicle_type.id %}">
+                                                            <i class="bi bi-pencil-square fs-6 me-2"></i>Edit
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <button class="dropdown-item py-2 delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}">
+                                                            <i class="bi bi-trash fs-6 me-2"></i>Delete
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
+                                
                                 {% empty %}
                                 <tr>
                                     <td colspan="4" class="text-center py-5">

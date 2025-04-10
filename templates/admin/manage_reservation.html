@@ -16,7 +16,7 @@
                 <div class="btn-toolbar d-none d-md-flex">
                     <div class="btn-group me-2">
                         <button id="addReservationBtn" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-plus-lg me-1"></i> New Reservation
+                            <i class="bi bi-plus-lg me-1"></i> Add Vehicle
                         </button>
 
                         <button id="manageVehicleTypesBtn" class="btn btn-sm btn-outline-secondary">
@@ -36,7 +36,7 @@
         <div class="card shadow-sm table-container" >
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h5 class="mb-0 fw-bold text-primary">
-                    <i class="bi bi-car-front me-2"></i>Reservation List
+                    <i class="bi bi-car-front me-2"></i>Vehicle Reservation List
                 </h5>
                 <div class="input-group input-group-sm" style="max-width: 250px;">
                     <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
@@ -52,6 +52,7 @@
                 <th class="ps-3">Name</th>
                 <th class="d-none d-md-table-cell">Type</th>
                 <th class="d-none d-md-table-cell">Vehicle </th>
+                <th class="d-none d-md-table-cell">Seat </th>
                 <th class="d-none d-lg-table-cell">Driver</th>
                 <th class="d-none d-lg-table-cell">Staff</th>
                 <th class="text-end pe-3">Actions</th>
@@ -72,27 +73,30 @@
                     </div>
                 </td>
                 <td class="d-none d-md-table-cell">{{ reservation.type.name|default:"-" }}</td>
+                <td class="d-none d-md-table-cell">{{ reservation.total_seats }}</td>
                 <td class="d-none d-md-table-cell">{{ reservation.vechicle_number }}</td>
+
                 <td class="d-none d-lg-table-cell">{{ reservation.driver.full_name|default:"-" }}</td>
                 <td class="d-none d-lg-table-cell">{{ reservation.staff.full_name|default:"-" }}</td>
                 <td class="text-end pe-3">
                     <div class="d-flex gap-1 justify-content-end">
-                        <!-- Small screens - Icon only -->
-                        <button class="btn btn-outline-primary btn-sm edit-reservation-btn d-md-none" data-reservation-id="{{ reservation.id }}" title="Edit">
+
+
+                        <a class="btn btn-outline-primary btn-sm edit-reservation-btn d-md-none" href="{% url 'vehicle_reservation_edit' reservation.id %}" title="Edit">
                             <i class="bi bi-pencil-square"></i>
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm delete-reservation-btn d-md-none" data-reservation-id="{{ reservation.id }}" title="Delete">
+                        </a>
+                        <a class="btn btn-outline-danger btn-sm delete-reservation-btn d-md-none" href="#" title="Delete">
                             <i class="bi bi-trash"></i>
-                        </button>
+                        </a>
                        
-                        
                         <!-- Medium screens and up - Icon with text -->
-                        <button class="btn btn-outline-primary btn-sm edit-reservation-btn d-none d-md-inline-flex align-items-center" data-reservation-id="{{ reservation.id }}">
+                        <a class="btn btn-outline-primary btn-sm edit-reservation-btn d-none d-md-inline-flex align-items-center" href="{% url 'vehicle_reservation_edit' reservation.id %}">
                             <i class="bi bi-pencil-square me-md-1"></i><span class="d-none d-lg-inline">Edit</span>
-                        </button>
-                        <button class="btn btn-outline-danger btn-sm delete-reservation-btn d-none d-md-inline-flex align-items-center" data-reservation-id="{{ reservation.id }}">
+                        </a>
+                        <a class="btn btn-outline-danger btn-sm delete-reservation-btn d-none d-md-inline-flex align-items-center" href="#">
                             <i class="bi bi-trash me-md-1"></i><span class="d-none d-lg-inline">Delete</span>
-                        </button>
+                        </a>
+
                         
                     </div>
                 </td>
@@ -125,7 +129,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addReservationModalLabel"><i class="bi bi-car-front me-2 text-primary"></i>Add New Reservation</h5>
+                <h5 class="modal-title" id="addReservationModalLabel"><i class="bi bi-car-front me-2 text-primary"></i>Add New Vehicle</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -146,6 +150,7 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        
                         <div class="col-md-6">
                             <label class="form-label">Vehicle Number*</label>
                             <input type="text" class="form-control" name="vechicle_number" placeholder="BA 1-2345" required>
@@ -445,41 +450,7 @@
             }
         });
 
-        // Edit Reservation Button Handling
-        document.querySelectorAll('.edit-reservation-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault(); // Prevent default to ensure modal opens cleanly
-                const reservationId = this.dataset.reservationId;
-                const row = this.closest('tr');
-                const reservationData = JSON.parse(row.dataset.reservationJson);
 
-                document.getElementById('edit_reservation_id').value = reservationId;
-                document.getElementById('edit_name').value = reservationData.name || '';
-                document.getElementById('edit_type').value = reservationData.type_id || '';
-                document.getElementById('edit_vehicle_number').value = reservationData.vechicle_number || '';
-                document.getElementById('edit_vehicle_model').value = reservationData.vechicle_model || '';
-                document.getElementById('edit_color').value = reservationData.color || '';
-                document.getElementById('edit_driver_id').value = reservationData.driver_id || '';
-                document.getElementById('edit_staff_id').value = reservationData.staff_id || '';
-                document.getElementById('edit_total_seats').value = reservationData.total_seats || 35;
-                document.getElementById('edit_price').value = reservationData.price || '';
-
-                document.getElementById('editReservationForm').action = `{% url 'vehicle-reservation' %}${reservationId}/`;
-                editReservationModal.show();
-            });
-        });
-
-        // Delete Reservation Button Handling
-        document.querySelectorAll('.delete-reservation-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault(); // Prevent default to ensure modal opens cleanly
-                const reservationId = this.dataset.reservationId;
-                const reservationName = this.closest('tr').querySelector('h6').textContent;
-                document.getElementById('deleteReservationName').textContent = reservationName;
-                document.getElementById('deleteReservationForm').action = `{% url 'vehicle-reservation' %}${reservationId}/`;
-                deleteConfirmModal.show();
-            });
-        });
 
         // Search functionality
         document.getElementById('searchReservations').addEventListener('input', function() {

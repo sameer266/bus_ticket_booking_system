@@ -8,8 +8,21 @@
             {% include 'components/sidebar.html' %}
         </div>
         <!-- Main Content -->
-        <main class="mt-5 col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+        <main class="mt-5 col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content ">
+
+
+            <!-- Mesage --> 
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 mt-4">
                 <h1 class="h2 fw-bold">
                     <i class="bi bi-bus-front me-2 text-primary"></i>Manage Buses
                 </h1>
@@ -69,7 +82,7 @@
                                             {% endif %}
                                             <div>
                                                 <h6 class="mb-0">{{ bus.bus_number }}</h6>
-                                                <small class="text-muted d-md-none">{{ bus.route.name }}</small>
+                                                <small class="text-muted d-md-none">{{ bus.route.source }}->{{bus.route.destination}}</small>
                                             </div>
                                         </div>
                                     </td>
@@ -104,9 +117,9 @@
                                             <button class="btn btn-sm btn-outline-warning edit-bus-btn" data-bus-id="{{ bus.id }}" title="Edit Bus">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
-                                            <button class="btn btn-sm btn-outline-danger delete-bus-btn" data-bus-id="{{ bus.id }}" title="Delete Bus">
+                                            <a  href={% url 'delete_bus'  bus.id %} class="btn btn-sm btn-outline-danger delete-bus-btn" title="Delete Bus">
                                                 <i class="bi bi-trash"></i>
-                                            </button>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -133,6 +146,8 @@
     </div>
 </div>
 
+
+
 <!-- Add Bus Modal -->
 <div class="modal fade" id="addBusModal" tabindex="-1" aria-labelledby="addBusModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -142,22 +157,22 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="POST" enctype="multipart/form-data" id="addBusForm" action="{% url 'create_bus' %}">
+                <form method="POST" enctype="multipart/form-data" action="{% url 'create_bus' %}" >
                     {% csrf_token %}
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Bus Number*</label>
                             <input type="text" class="form-control" name="bus_number" placeholder="BA 1-2345" required>
                         </div>
-                       <!-- In the add bus modal -->
-<div class="col-md-6">
-    <label class="form-label">Bus Type*</label>
-    <select class="form-select" name="bus_type" required>
-        {% for value, display in bus_types %}  <!-- Change from VEHICLE_CHOICES to bus_types -->
-        <option value="{{ value }}" {% if value == "deluxe_bus" %}selected{% endif %}>{{ display }}</option>
-        {% endfor %}
-    </select>
-</div>
+                        <!-- In the add bus modal -->
+                        <div class="col-md-6">
+                            <label class="form-label">Bus Type*</label>
+                            <select class="form-select" name="bus_type" required>
+                                {% for value, display in bus_types %}
+                                <option value="{{ value }}" {% if value == "deluxe_bus" %}selected{% endif %}>{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label">Route*</label>
                             <select class="form-select" name="route" id="routeSelect" required>
@@ -176,7 +191,7 @@
                             <select class="form-select" name="driver" id="driverSelect">
                                 <option value="">-- Select Driver --</option>
                                 {% for driver in all_drivers %}
-                                <option value="{{ driver.id }}">{{ driver.name }}</option>
+                                <option value="{{ driver.id }}">{{ driver.full_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -185,19 +200,19 @@
                             <select class="form-select" name="staff" id="staffSelect">
                                 <option value="">-- Select Staff --</option>
                                 {% for staff in all_staff %}
-                                <option value="{{ staff.id }}">{{ staff.name }}</option>
+                                <option value="{{ staff.id }}">{{ staff.full_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label">Features</label>
                             <div class="border rounded p-3">
-                                <div class="row g-2">
-                                    {% for value, display in FEATURE_CHOICES %}
+                                <div class="row g-2" id="edit_features_container">
+                                    {% for value, display in feature_choices %}
                                     <div class="col-md-3 col-6">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="features" value="{{ value }}" id="feature_{{ value }}">
-                                            <label class="form-check-label" for="feature_{{ value }}">{{ display }}</label>
+                                            <input class="form-check-input" type="checkbox" name="features" value="{{ value }}" id="edit_feature_{{ value }}">
+                                            <label class="form-check-label" for="edit_feature_{{ value }}">{{ display }}</label>
                                         </div>
                                     </div>
                                     {% endfor %}
@@ -217,10 +232,7 @@
                                     <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
                                     <label class="form-check-label" for="isActive">Active</label>
                                 </div>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" name="is_running" id="isRunning">
-                                    <label class="form-check-label" for="isRunning">Currently Running</label>
-                                </div>
+                               
                             </div>
                         </div>
                         
@@ -281,14 +293,17 @@
                     </div>
                     <input type="hidden" name="layout" id="layoutData">
                     <input type="hidden" name="add_bus" value="1">
+
+
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit"  class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Add Bus
+                        </button>
+                
+
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="addBusForm" class="btn btn-primary">
-                    <i class="bi bi-plus-circle me-1"></i> Add Bus
-                </button>
-            </div>
+            
         </div>
     </div>
 </div>
@@ -322,7 +337,7 @@
                             <select class="form-select" name="route" id="edit_route" required>
                                 <option value="">-- Select Route --</option>
                                 {% for route in all_routes %}
-                                <option value="{{ route.id }}">{{ route.name }}</option>
+                                <option value="{{ route.id }}">{{ route.source }}->{{route.destination}}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -335,7 +350,7 @@
                             <select class="form-select" name="driver" id="edit_driver">
                                 <option value="">-- Select Driver --</option>
                                 {% for driver in all_drivers %}
-                                <option value="{{ driver.id }}">{{ driver.name }}</option>
+                                <option value="{{ driver.id }}">{{ driver.full_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -344,7 +359,7 @@
                             <select class="form-select" name="staff" id="edit_staff">
                                 <option value="">-- Select Staff --</option>
                                 {% for staff in all_staff %}
-                                <option value="{{ staff.id }}">{{ staff.name }}</option>
+                                <option value="{{ staff.id }}">{{ staff.full_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -547,461 +562,402 @@
 </style>
 {% endblock %}
 {% block extra_js %}
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Bootstrap components
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-        
-        // Initialize modals with proper disposal handling
-        const addBusModalElement = document.getElementById('addBusModal');
-        const editBusModalElement = document.getElementById('editBusModal');
-        const deleteConfirmModalElement = document.getElementById('deleteConfirmModal');
-        
-        const addBusModal = new bootstrap.Modal(addBusModalElement, { backdrop: true });
-        const editBusModal = new bootstrap.Modal(editBusModalElement, { backdrop: true });
-        const deleteConfirmModal = new bootstrap.Modal(deleteConfirmModalElement, { backdrop: true });
-        
-        // Ensure backdrop is removed when modal is hidden
-        [addBusModalElement, editBusModalElement, deleteConfirmModalElement].forEach(modal => {
-            modal.addEventListener('hidden.bs.modal', function () {
-                // Force remove backdrop if it remains
-                const backdrop = document.querySelector('.modal-backdrop');
-                if (backdrop) {
-                    backdrop.remove();
-                }
-                // Reset body classes to ensure interactivity
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
-            });
-        });
-
-        // Fix the grid template columns to properly account for aisles
-function updateGridLayout(containerId, columns, aisleAfter) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+document.addEventListener('DOMContentLoaded', function() {
+    // Bootstrap initialization (unchanged)
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
     
-    // Create a grid template that accounts for aisles
-    let gridTemplateColumns = '';
-    for (let i = 0; i < columns; i++) {
-        if (i === aisleAfter) {
-            gridTemplateColumns += '0.5fr '; // Aisle is smaller
-        }
-        gridTemplateColumns += '1fr ';
-    }
-    container.style.gridTemplateColumns = gridTemplateColumns.trim();
-}
-        
-        // Show Add Bus Modal
-        const addButtons = [
-            document.getElementById('addBusBtn'),
-            document.getElementById('mobileAddBusBtn'),
-            document.getElementById('emptyAddBusBtn')
-        ];
-        addButtons.forEach(button => {
-            if (button) {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault(); // Prevent any default behavior
-                    addBusModal.show();
-                });
-            }
+    const addBusModalElement = document.getElementById('addBusModal');
+    const editBusModalElement = document.getElementById('editBusModal');
+    const deleteConfirmModalElement = document.getElementById('deleteConfirmModal');
+    
+    const addBusModal = new bootstrap.Modal(addBusModalElement, { backdrop: true });
+    const editBusModal = new bootstrap.Modal(editBusModalElement, { backdrop: true });
+    const deleteConfirmModal = new bootstrap.Modal(deleteConfirmModalElement, { backdrop: true });
+    
+    [addBusModalElement, editBusModalElement, deleteConfirmModalElement].forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', function () {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
         });
+    });
+
+    // Grid layout function
+    function updateGridLayout(containerId, columns, aisleAfter) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        let gridTemplateColumns = '';
+        for (let i = 0; i < columns; i++) {
+            gridTemplateColumns += (i === aisleAfter ? '0.5fr ' : '1fr ');
+        }
+        container.style.gridTemplateColumns = gridTemplateColumns.trim();
+    }
+
+    // Show Add Bus Modal
+    ['addBusBtn', 'mobileAddBusBtn', 'emptyAddBusBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                addBusModal.show();
+                initializeSeatLayout();
+            });
+        }
+    });
+
+    // Core layout generation function
+    function generateSeatLayout(containerId, rows, columns, aisleAfter, includeBackRow, backRowSeats, existingLayout = null) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = '';
+        updateGridLayout(containerId, columns, aisleAfter);
         
-        // Seat Layout Variables
-        let selectedSeats = {};
-        let editSelectedSeats = {};
-        
-        // Generate 2D array and seat layout for a given container
-      
-        function generateSeatLayout(containerId, rows, columns, aisleAfter, includeBackRow, backRowSeats, seatsObj) {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            container.innerHTML = '';
-            
-            // Update grid layout
-            updateGridLayout(containerId, columns, aisleAfter);
-            
-            let totalSeats = 0;
-            const layout = [];
-            
-            // Main seat rows
-            for (let r = 0; r < rows; r++) {
-                const row = [];
-                for (let c = 0; c < columns; c++) {
-                    // Create aisle space if needed
-                    if (c === aisleAfter) {
-                        const aisleElement = document.createElement('div');
-                        aisleElement.className = 'seat-item aisle';
-                        aisleElement.textContent = ' ';
-                        container.appendChild(aisleElement);
-                        row.push(0); // Mark as aisle in data structure
+        let layout = [];
+        let totalSeats = 0;
+
+        // Main rows
+        for (let r = 0; r < rows; r++) {
+            const row = [];
+            for (let c = 0; c < columns; c++) {
+                if (c === aisleAfter) {
+                    const aisle = document.createElement('div');
+                    aisle.className = 'seat-item aisle';
+                    aisle.textContent = ' ';
+                    container.appendChild(aisle);
+                    row.push({ seat: 'AISLE', status: 'aisle' });
+                    continue;
+                }
+
+                const effectiveCol = c > aisleAfter ? c - 1 : c;
+                const seatNumber = `${String.fromCharCode(65 + effectiveCol)}${r + 1}`;
+                const seat = document.createElement('div');
+                seat.className = 'seat-item';
+                seat.textContent = seatNumber;
+                seat.dataset.seat = seatNumber;
+                seat.dataset.row = r;
+                seat.dataset.col = effectiveCol;
+
+                // Default to unselected (unavailable) for new layout, selected (available) for edit
+                let isSelected = existingLayout ? false : true;
+                if (existingLayout && existingLayout.layout) {
+                    const rowData = existingLayout.layout[r];
+                    if (rowData && rowData[c] && rowData[c].status === 'available') {
+                        isSelected = true;
+                    } else if (rowData && rowData[c] && rowData[c].status === 'booked') {
+                        seat.classList.add('booked');
+                        isSelected = false; // Booked seats can't be changed here
                     }
-                    
-                    // Calculate seat letter (skipping aisle position in the labeling)
-                    let seatLetter = '';
-                    if (c < aisleAfter) {
-                        seatLetter = String.fromCharCode(65 + c);
-                    } else {
-                        seatLetter = String.fromCharCode(65 + c - 1);
-                    }
-                    
-                    const seatNumber = `${seatLetter}${r + 1}`;
-                    const seatElement = document.createElement('div');
-                    seatElement.className = 'seat-item';
-                    seatElement.textContent = seatNumber;
-                    seatElement.dataset.row = r;
-                    seatElement.dataset.col = c;
-                    
-                    const seatKey = `${r}-${c}`;
-                    if (seatsObj[seatKey]) {
-                        seatElement.classList.add('selected');
-                        totalSeats++;
-                    }
-                    
-                    seatElement.addEventListener('click', function() {
-                        if (!this.classList.contains('aisle')) {
-                            const key = `${this.dataset.row}-${this.dataset.col}`;
-                            if (this.classList.contains('selected')) {
-                                this.classList.remove('selected');
-                                delete seatsObj[key];
-                                totalSeats--;
-                            } else {
-                                this.classList.add('selected');
-                                seatsObj[key] = seatNumber;
-                                totalSeats++;
-                            }
-                            
-                            const countElement = containerId === 'seatLayoutContainer' ? 'selectedSeatsCount' : 'edit_selectedSeatsCount';
-                            const totalSeatsInput = containerId === 'seatLayoutContainer' ? 'totalSeatsInput' : 'edit_total_seats';
-                            document.getElementById(countElement).textContent = totalSeats;
-                            document.getElementById(totalSeatsInput).value = totalSeats;
-                            updateLayoutData(containerId === 'seatLayoutContainer');
-                        }
+                }
+
+                if (isSelected) {
+                    seat.classList.add('selected');
+                }
+
+                // Make seats selectable unless booked
+                if (!seat.classList.contains('booked')) {
+                    seat.addEventListener('click', () => {
+                        seat.classList.toggle('selected');
+                        updateLayoutData(containerId === 'seatLayoutContainer');
                     });
-                    
-                    container.appendChild(seatElement);
-                    row.push({ seat: seatNumber, status: 'available' });
                 }
-                layout.push(row);
+
+                container.appendChild(seat);
+                row.push({ seat: seatNumber, status: isSelected ? 'available' : 'unavailable' });
+                if (isSelected) totalSeats++;
             }
-            
-            // Handle back row
-            if (includeBackRow) {
-                const backRow = [];
-                const backRowStart = document.createElement('div');
-                backRowStart.className = 'w-100 text-center mt-3 mb-2';
-                backRowStart.textContent = 'Back Row';
-                backRowStart.style.gridColumn = '1 / -1';
-                container.appendChild(backRowStart);
-                
-                // Create a separate container for back row to ensure proper alignment
-                const backRowContainer = document.createElement('div');
-                backRowContainer.className = 'd-flex justify-content-center w-100';
-                backRowContainer.style.gridColumn = '1 / -1';
-                container.appendChild(backRowContainer);
-                
-                for (let c = 0; c < backRowSeats; c++) {
-                    const seatLetter = String.fromCharCode(65 + c);
-                    const seatNumber = `${seatLetter}${rows + 1}`;
-                    backRow.push({ seat: seatNumber, status: 'available' });
-                    
-                    const seatElement = document.createElement('div');
-                    seatElement.className = 'seat-item mx-1';
-                    seatElement.textContent = seatNumber;
-                    seatElement.dataset.row = rows;
-                    seatElement.dataset.col = c;
-                    
-                    const seatKey = `${rows}-${c}`;
-                    if (seatsObj[seatKey]) {
-                        seatElement.classList.add('selected');
-                        totalSeats++;
+            layout.push(row);
+        }
+
+        // Back row
+        if (includeBackRow) {
+            const backRowLabel = document.createElement('div');
+            backRowLabel.className = 'w-100 text-center mt-3 mb-2';
+            backRowLabel.textContent = 'Back Row';
+            backRowLabel.style.gridColumn = '1 / -1';
+            container.appendChild(backRowLabel);
+
+            const backRowContainer = document.createElement('div');
+            backRowContainer.className = 'd-flex justify-content-center w-100';
+            backRowContainer.style.gridColumn = '1 / -1';
+            container.appendChild(backRowContainer);
+
+            const backRow = [];
+            for (let c = 0; c < backRowSeats; c++) {
+                const seatNumber = `${String.fromCharCode(65 + c)}${rows + 1}`;
+                const seat = document.createElement('div');
+                seat.className = 'seat-item mx-1';
+                seat.textContent = seatNumber;
+                seat.dataset.seat = seatNumber;
+                seat.dataset.row = rows;
+                seat.dataset.col = c;
+
+                let isSelected = existingLayout ? false : true;
+                if (existingLayout && existingLayout.layout) {
+                    const backRowData = existingLayout.layout[rows];
+                    if (backRowData && backRowData[c] && backRowData[c].status === 'available') {
+                        isSelected = true;
+                    } else if (backRowData && backRowData[c] && backRowData[c].status === 'booked') {
+                        seat.classList.add('booked');
+                        isSelected = false;
                     }
-                    
-                   // Inside generateSeatLayout function, update the seat click handler:
-seatElement.addEventListener('click', function() {
-    if (!this.classList.contains('aisle')) {
-        const key = `${this.dataset.row}-${this.dataset.col}`;
-        if (this.classList.contains('selected')) {
-            this.classList.remove('selected');
-            delete seatsObj[key];
-        } else {
-            this.classList.add('selected');
-            seatsObj[key] = seatNumber;
-        }
-        
-        // Update the count and total seats
-        const count = Object.keys(seatsObj).length;
-        const countElement = containerId === 'seatLayoutContainer' ? 
-            'selectedSeatsCount' : 'edit_selectedSeatsCount';
-        const totalSeatsInput = containerId === 'seatLayoutContainer' ? 
-            'totalSeatsInput' : 'edit_total_seats';
-            
-        document.getElementById(countElement).textContent = count;
-        document.getElementById(totalSeatsInput).value = count;
-        
-        // Update the layout data
-        updateLayoutData(containerId === 'seatLayoutContainer');
-    }
-});
-                    
-                    backRowContainer.appendChild(seatElement);
                 }
-                layout.push(backRow);
+
+                if (isSelected) {
+                    seat.classList.add('selected');
+                }
+
+                if (!seat.classList.contains('booked')) {
+                    seat.addEventListener('click', () => {
+                        seat.classList.toggle('selected');
+                        updateLayoutData(containerId === 'seatLayoutContainer');
+                    });
+                }
+
+                backRowContainer.appendChild(seat);
+                backRow.push({ seat: seatNumber, status: isSelected ? 'available' : 'unavailable' });
+                if (isSelected) totalSeats++;
             }
-            
-            const countElement = containerId === 'seatLayoutContainer' ? 'selectedSeatsCount' : 'edit_selectedSeatsCount';
-            const totalSeatsInput = containerId === 'seatLayoutContainer' ? 'totalSeatsInput' : 'edit_total_seats';
-            document.getElementById(countElement).textContent = totalSeats;
-            document.getElementById(totalSeatsInput).value = totalSeats;
-            
-            return layout;
+            layout.push(backRow);
         }
 
-        
-        function updateLayoutData(isAddModal = true) {
-            const prefix = isAddModal ? '' : 'edit_';
-            const rows = parseInt(document.getElementById(`${prefix}rowsInput`).value) || 6;
-            const columns = parseInt(document.getElementById(`${prefix}columnsInput`).value) || 5;
-            const aisleAfter = parseInt(document.getElementById(`${prefix}aisleAfterInput`).value) || 2;
-            const includeBackRow = document.getElementById(`${prefix}includeBackRow`).checked;
-            const backRowSeats = parseInt(document.getElementById(`${prefix}backRowSeatsInput`).value) || 5;
+        updateSeatCount(containerId, totalSeats);
+        return layout;
+    }
+
+    // Update layout data
+    function updateLayoutData(isAddModal = true) {
+        const prefix = isAddModal ? '' : 'edit_';
+        const rows = parseInt(document.getElementById(`${prefix}rowsInput`).value) || 6;
+        const columns = parseInt(document.getElementById(`${prefix}columnsInput`).value) || 5;
+        const aisleAfter = parseInt(document.getElementById(`${prefix}aisleAfterInput`).value) || 2;
+        const includeBackRow = document.getElementById(`${prefix}includeBackRow`).checked;
+        const backRowSeats = parseInt(document.getElementById(`${prefix}backRowSeatsInput`).value) || 5;
+        const containerId = isAddModal ? 'seatLayoutContainer' : 'edit_seatLayoutContainer';
+
+        const seats = document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle)');
+        let layout = [];
+        let totalSeats = 0;
+
+        for (let r = 0; r < (includeBackRow ? rows + 1 : rows); r++) {
+            const row = [];
+            const rowSeats = Array.from(seats).filter(seat => parseInt(seat.dataset.row) === r);
             
-            const seatsObj = isAddModal ? selectedSeats : editSelectedSeats;
-            const totalSeats = Object.keys(seatsObj).length;
-            
-            // Update the total seats input field
-            document.getElementById(`${prefix}total_seats`).value = totalSeats;
-            
-            const layout = generateSeatLayout(
-                isAddModal ? 'seatLayoutContainer' : 'edit_seatLayoutContainer',
-                rows, columns, aisleAfter, includeBackRow, backRowSeats, seatsObj
-            );
-            
-            const layoutData = {
-                rows: rows,
-                columns: columns,
-                aisleAfterColumn: aisleAfter,
-                includeBackRow: includeBackRow,
-                backRowSeats: backRowSeats,
-                layout: layout,
-                selectedSeats: seatsObj,
-                totalSeats: totalSeats  // Include total seats in layout data
-            };
-            
-            document.getElementById(`${prefix}layoutData`).value = JSON.stringify(layoutData);
-            return totalSeats;
+            if (r < rows) {
+                for (let c = 0; c < columns; c++) {
+                    if (c === aisleAfter) {
+                        row.push({ seat: 'AISLE', status: 'aisle' });
+                        continue;
+                    }
+                    const effectiveCol = c > aisleAfter ? c - 1 : c;
+                    const seatNumber = `${String.fromCharCode(65 + effectiveCol)}${r + 1}`;
+                    const seat = rowSeats.find(s => s.dataset.seat === seatNumber);
+                    const isSelected = seat?.classList.contains('selected') || false;
+                    const isBooked = seat?.classList.contains('booked') || false;
+                    const status = isBooked ? 'booked' : (isSelected ? 'available' : 'unavailable');
+                    row.push({ seat: seatNumber, status: status });
+                    if (status === 'available') totalSeats++;
+                }
+            } else if (includeBackRow) {
+                for (let c = 0; c < backRowSeats; c++) {
+                    const seatNumber = `${String.fromCharCode(65 + c)}${r + 1}`;
+                    const seat = rowSeats.find(s => s.dataset.seat === seatNumber);
+                    const isSelected = seat?.classList.contains('selected') || false;
+                    const isBooked = seat?.classList.contains('booked') || false;
+                    const status = isBooked ? 'booked' : (isSelected ? 'available' : 'unavailable');
+                    row.push({ seat: seatNumber, status: status });
+                    if (status === 'available') totalSeats++;
+                }
+            }
+            layout.push(row);
         }
-        
-        function initializeSeatLayout() {
-            const rows = parseInt(document.getElementById('rowsInput').value) || 6;
-            const columns = parseInt(document.getElementById('columnsInput').value) || 5;
-            const aisleAfter = parseInt(document.getElementById('aisleAfterInput').value) || 2;
-            const includeBackRow = document.getElementById('includeBackRow').checked;
-            const backRowSeats = parseInt(document.getElementById('backRowSeatsInput').value) || 5;
-            
-            generateSeatLayout('seatLayoutContainer', rows, columns, aisleAfter, includeBackRow, backRowSeats, selectedSeats);
-        }
-        
-        function initializeEditSeatLayout() {
-            const rows = parseInt(document.getElementById('edit_rowsInput').value) || 6;
-            const columns = parseInt(document.getElementById('edit_columnsInput').value) || 5;
-            const aisleAfter = parseInt(document.getElementById('edit_aisleAfterInput').value) || 2;
-            const includeBackRow = document.getElementById('edit_includeBackRow').checked;
-            const backRowSeats = parseInt(document.getElementById('edit_backRowSeatsInput').value) || 5;
-            
-            generateSeatLayout('edit_seatLayoutContainer', rows, columns, aisleAfter, includeBackRow, backRowSeats, editSelectedSeats);
-        }
-        
-        // Event listeners for Add Modal
-        document.getElementById('generateLayoutBtn').addEventListener('click', initializeSeatLayout);
-        document.getElementById('selectAllSeatsBtn').addEventListener('click', function() {
-            const container = document.getElementById('seatLayoutContainer');
-            const seats = container.querySelectorAll('.seat-item:not(.aisle)');
-            selectedSeats = {};
-            let totalSeats = 0;
-            
-            seats.forEach(seat => {
-                seat.classList.add('selected');
-                const key = `${seat.dataset.row}-${seat.dataset.col}`;
-                selectedSeats[key] = seat.textContent;
-                totalSeats++;
-            });
-            
-            document.getElementById('selectedSeatsCount').textContent = totalSeats;
-            document.getElementById('totalSeatsInput').value = totalSeats;
-            updateLayoutData(true);
-        });
-        
-        document.getElementById('deselectAllSeatsBtn').addEventListener('click', function() {
-            const container = document.getElementById('seatLayoutContainer');
-            const seats = container.querySelectorAll('.seat-item:not(.aisle)');
-            selectedSeats = {};
-            
-            seats.forEach(seat => {
-                seat.classList.remove('selected');
-            });
-            
-            document.getElementById('selectedSeatsCount').textContent = '0';
-            document.getElementById('totalSeatsInput').value = '0';
-            updateLayoutData(true);
-        });
-        
-        // Event listeners for Edit Modal
-        document.getElementById('edit_generateLayoutBtn').addEventListener('click', initializeEditSeatLayout);
-        document.getElementById('edit_selectAllSeatsBtn').addEventListener('click', function() {
-            const container = document.getElementById('edit_seatLayoutContainer');
-            const seats = container.querySelectorAll('.seat-item:not(.aisle)');
-            editSelectedSeats = {};
-            let totalSeats = 0;
-            
-            seats.forEach(seat => {
-                seat.classList.add('selected');
-                const key = `${seat.dataset.row}-${seat.dataset.col}`;
-                editSelectedSeats[key] = seat.textContent;
-                totalSeats++;
-            });
-            
-            document.getElementById('edit_selectedSeatsCount').textContent = totalSeats;
-            document.getElementById('edit_total_seats').value = totalSeats;
-            updateLayoutData(false);
-        });
-        
-        document.getElementById('edit_deselectAllSeatsBtn').addEventListener('click', function() {
-            const container = document.getElementById('edit_seatLayoutContainer');
-            const seats = container.querySelectorAll('.seat-item:not(.aisle)');
-            editSelectedSeats = {};
-            
-            seats.forEach(seat => {
-                seat.classList.remove('selected');
-            });
-            
-            document.getElementById('edit_selectedSeatsCount').textContent = '0';
-            document.getElementById('edit_total_seats').value = '0';
-            updateLayoutData(false);
-        });
-        
-        // Toggle back row seats input visibility
-        document.getElementById('includeBackRow').addEventListener('change', function() {
-            document.getElementById('backRowSeatsContainer').style.display = this.checked ? 'block' : 'none';
-            initializeSeatLayout();
-        });
-        
-        document.getElementById('edit_includeBackRow').addEventListener('change', function() {
-            document.getElementById('edit_backRowSeatsContainer').style.display = this.checked ? 'block' : 'none';
-            initializeEditSeatLayout();
-        });
-        
-        ['rowsInput', 'columnsInput', 'aisleAfterInput', 'backRowSeatsInput'].forEach(id => {
-            document.getElementById(id).addEventListener('change', initializeSeatLayout);
-        });
-        
-        ['edit_rowsInput', 'edit_columnsInput', 'edit_aisleAfterInput', 'edit_backRowSeatsInput'].forEach(id => {
-            document.getElementById(id).addEventListener('change', initializeEditSeatLayout);
-        });
-        
-        // Edit Bus Button Handling
-        // Edit Bus Button Handling
-document.querySelectorAll('.edit-bus-btn').forEach(button => {
-    button.addEventListener('click', function() {
-        const busId = this.dataset.busId;
-        document.getElementById('editBusForm').action = `/edit-bus/${busId}/edit/`;
-        document.getElementById('edit_bus_id').value = busId;
-        
-        fetch(`/get_bus/${busId}/`)
-            .then(response => response.json())
-            .then(data => {
-                // Populate form fields
-                document.getElementById('edit_bus_number').value = data.bus_number;
-                document.getElementById('edit_bus_type').value = data.bus_type;
-                document.getElementById('edit_route').value = data.route;
-                document.getElementById('edit_total_seats').value = data.total_seats;
-                document.getElementById('edit_driver').value = data.driver;
-                document.getElementById('edit_staff').value = data.staff;
-                document.getElementById('edit_isActive').checked = data.is_active;
-                document.getElementById('edit_isRunning').checked = data.is_running;
-                
-                // Features
-                document.querySelectorAll('#edit_features_container .form-check-input').forEach(checkbox => {
-                    checkbox.checked = data.features.includes(checkbox.value);
+
+        const layoutData = {
+            rows, columns, aisleAfterColumn: aisleAfter,
+            includeBackRow, backRowSeats, layout, totalSeats: totalSeats
+        };
+
+        document.getElementById(`${prefix}layoutData`).value = JSON.stringify(layoutData);
+        document.getElementById(`${prefix}total_seats`).value = totalSeats;
+        document.getElementById(`${prefix}selectedSeatsCount`).textContent = totalSeats;
+    }
+    
+
+    // Helper function to update seat count
+    function updateSeatCount(containerId, count) {
+        const prefix = containerId === 'seatLayoutContainer' ? '' : 'edit_';
+        document.getElementById(`${prefix}selectedSeatsCount`).textContent = count;
+        document.getElementById(`${prefix}total_seats`).value = count;
+    }
+
+    // Initialization functions
+    function initializeSeatLayout() {
+        const rows = parseInt(document.getElementById('rowsInput').value) || 6;
+        const columns = parseInt(document.getElementById('columnsInput').value) || 5;
+        const aisleAfter = parseInt(document.getElementById('aisleAfterInput').value) || 2;
+        const includeBackRow = document.getElementById('includeBackRow').checked;
+        const backRowSeats = parseInt(document.getElementById('backRowSeatsInput').value) || 5;
+        generateSeatLayout('seatLayoutContainer', rows, columns, aisleAfter, includeBackRow, backRowSeats);
+        updateLayoutData(true);
+    }
+
+    function initializeEditSeatLayout(layoutData = null) {
+        const rows = parseInt(document.getElementById('edit_rowsInput').value) || 6;
+        const columns = parseInt(document.getElementById('edit_columnsInput').value) || 5;
+        const aisleAfter = parseInt(document.getElementById('edit_aisleAfterInput').value) || 2;
+        const includeBackRow = document.getElementById('edit_includeBackRow').checked;
+        const backRowSeats = parseInt(document.getElementById('edit_backRowSeatsInput').value) || 5;
+        generateSeatLayout('edit_seatLayoutContainer', rows, columns, aisleAfter, includeBackRow, backRowSeats, layoutData);
+        updateLayoutData(false);
+    }
+
+    // Event listeners for real-time updates
+    function setupRealtimeListeners(prefix = '') {
+        const inputs = ['rowsInput', 'columnsInput', 'aisleAfterInput', 'backRowSeatsInput', 'includeBackRow'];
+        inputs.forEach(id => {
+            const element = document.getElementById(`${prefix}${id}`);
+            if (element) {
+                element.addEventListener('change', () => {
+                    if (prefix === 'edit_') {
+                        initializeEditSeatLayout();
+                    } else {
+                        initializeSeatLayout();
+                    }
                 });
-                
-                // Layout
-                const layout = JSON.parse(data.layout);
-                document.getElementById('edit_rowsInput').value = layout.rows || 6;
-                document.getElementById('edit_columnsInput').value = layout.columns || 5;
-                document.getElementById('edit_aisleAfterInput').value = layout.aisleAfterColumn || 2;
-                document.getElementById('edit_includeBackRow').checked = layout.includeBackRow !== false;
-                document.getElementById('edit_backRowSeatsInput').value = layout.backRowSeats || 5;
-                editSelectedSeats = layout.selectedSeats || {};
-                
-                document.getElementById('edit_backRowSeatsContainer').style.display = 
-                    layout.includeBackRow !== false ? 'block' : 'none';
-                
-                initializeEditSeatLayout();
-                editBusModal.show();
-            })
-            .catch(error => console.error('Error:', error));
-    });
-});
-
-// Add form submission handling
-// Add form submission handling
-document.getElementById('editBusForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const totalSeats = updateLayoutData(false); // Update layout data before submission
-    
-    // Ensure total_seats is set in the form
-    document.getElementById('edit_total_seats').value = totalSeats;
-    
-    const formData = new FormData(this);
-    
-    fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            editBusModal.hide();
-            window.location.href = data.redirect;
-        } else {
-            alert(data.error);
-        }
-    })
-    .catch(error => console.error('Error:', error));
-});
-
-        
-        
-        // Delete Bus Button Handling
-        document.querySelectorAll('.delete-bus-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const busId = this.dataset.busId;
-                const busNumber = this.closest('tr').querySelector('h6').textContent;
-                document.getElementById('deleteBusNumber').textContent = busNumber;
-                document.getElementById('deleteBusForm').action = `/delete_bus/${busId}/`;
-                deleteConfirmModal.show();
-            });
+            }
         });
-        
-        // Search functionality
-        document.getElementById('searchBuses').addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            document.querySelectorAll('tbody tr').forEach(row => {
-                const busNumber = row.querySelector('h6')?.textContent.toLowerCase() || '';
-                row.style.display = busNumber.includes(searchTerm) ? '' : 'none';
+
+        const generateBtn = document.getElementById(`${prefix}generateLayoutBtn`);
+        const selectAllBtn = document.getElementById(`${prefix}selectAllSeatsBtn`);
+        const deselectAllBtn = document.getElementById(`${prefix}deselectAllSeatsBtn`);
+        const containerId = prefix === '' ? 'seatLayoutContainer' : 'edit_seatLayoutContainer';
+
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => {
+                prefix === 'edit_' ? initializeEditSeatLayout() : initializeSeatLayout();
             });
+        }
+
+        if (selectAllBtn) {
+            selectAllBtn.style.display = 'inline-block';
+            selectAllBtn.addEventListener('click', () => {
+                document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle):not(.booked)')
+                    .forEach(seat => seat.classList.add('selected'));
+                updateLayoutData(prefix === '');
+            });
+        }
+
+        if (deselectAllBtn) {
+            deselectAllBtn.style.display = 'inline-block';
+            deselectAllBtn.addEventListener('click', () => {
+                document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle):not(.booked)')
+                    .forEach(seat => seat.classList.remove('selected'));
+                updateLayoutData(prefix === '');
+            });
+        }
+    }
+
+    setupRealtimeListeners('');
+    setupRealtimeListeners('edit_');
+
+    // Edit Bus Handling
+    document.querySelectorAll('.edit-bus-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const busId = this.dataset.busId;
+            document.getElementById('editBusForm').action = `/edit-bus/${busId}/edit/`;
+            document.getElementById('edit_bus_id').value = busId;
+            
+            fetch(`/get_bus/${busId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('edit_bus_number').value = data.bus_number;
+                    document.getElementById('edit_bus_type').value = data.bus_type;
+                    document.getElementById('edit_route').value = data.route;
+                    document.getElementById('edit_driver').value = data.driver || '';
+                    document.getElementById('edit_staff').value = data.staff || '';
+                    document.getElementById('edit_isActive').checked = data.is_active;
+                    document.getElementById('edit_isRunning').checked = data.is_running;
+                    
+                    document.querySelectorAll('#edit_features_container .form-check-input')
+                        .forEach(checkbox => checkbox.checked = data.features.includes(checkbox.value));
+                    
+                    const layout = JSON.parse(data.layout || '{}');
+                    document.getElementById('edit_rowsInput').value = layout.rows || 6;
+                    document.getElementById('edit_columnsInput').value = layout.columns || 5;
+                    document.getElementById('edit_aisleAfterInput').value = layout.aisleAfterColumn || 2;
+                    document.getElementById('edit_includeBackRow').checked = layout.includeBackRow !== false;
+                    document.getElementById('edit_backRowSeatsInput').value = layout.backRowSeats || 5;
+                    document.getElementById('edit_backRowSeatsContainer').style.display = 
+                        layout.includeBackRow !== false ? 'block' : 'none';
+                    
+                    initializeEditSeatLayout(layout);
+                    editBusModal.show();
+                })
+                .catch(error => console.error('Error:', error));
         });
-        
-        // Initial layout generation
-        initializeSeatLayout();
     });
+
+    // Form submission
+    document.getElementById('editBusForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateLayoutData(false);
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                editBusModal.hide();
+                window.location.href = data.redirect;
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    document.getElementById('addBusForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateLayoutData(true);
+        const formData = new FormData(this);
+        
+       
+    });
+
+    // Delete handling
+    document.querySelectorAll('.delete-bus-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const busId = this.dataset.busId;
+            const busNumber = this.closest('tr').querySelector('h6').textContent;
+            document.getElementById('deleteBusNumber').textContent = busNumber;
+            document.getElementById('deleteBusForm').action = `/delete_bus/${busId}/`;
+            deleteConfirmModal.show();
+        });
+    });
+
+    // Search
+    document.getElementById('searchBuses').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const busNumber = row.querySelector('h6')?.textContent.toLowerCase() || '';
+            row.style.display = busNumber.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Initial layout
+    initializeSeatLayout();
+});
 </script>
 {% endblock %}
 {% endblock %}

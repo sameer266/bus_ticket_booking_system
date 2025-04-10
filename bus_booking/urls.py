@@ -44,6 +44,7 @@ urlpatterns = [
     path('api/logout/', views.LogoutView.as_view()),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/forget_password/', views.ForgetPassword.as_view()),
+    path('api/reset_password/',views.ResetPassword.as_view()),
 
 
 
@@ -75,9 +76,10 @@ urlpatterns = [
     path('api/vechicle_reservation_create/', views.VechicleReeservationBookingApiView.as_view()),
 
     # ================== Booking APIs ==================
-    path('admin_bookinglist/', views.BookingAPiView.as_view()),
+    path('api/seat_bookinglist/', views.SeatBookingAPiView.as_view()),
     path('api/vechicle_reservation_booking_list/', views.UserVechicleReservationBookingListApiView.as_view()),
     path('api/bus_seat_booking_list/', views.UserSeatBookingListApiView.as_view()),
+    
 
     # ================== Bus Layout ==================
     path('api/admin_buslayout/<int:id>/', views.BusLayoutApiView.as_view()),

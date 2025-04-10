@@ -71,19 +71,23 @@
                                     <td>{{ route.destination }}</td>
                                     <td>{{ route.distance }} km</td>
                                     <td>{{ route.estimated_time }} hour</td>
+
                                     <td class="text-end pe-3">
                                         <div class="d-flex justify-content-end align-items-center">
+                                            <a href="{% url 'route_bus_list' route.id %}" class="btn btn-sm btn-icon btn-outline-primary me-2" title="View Buses">
+                                                <i class="bi bi-bus-front"></i>
+                                            </a>
                                             <a href="{% url 'edit_route' route.id %}" class="btn btn-sm btn-icon btn-outline-warning me-2" title="Edit Route">
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
-                                            <button type="button" class="btn btn-sm btn-icon btn-outline-danger delete-route-btn" 
-                                                    data-route-id="{{ route.id }}" 
-                                                    data-route-name="{{ route.source }} - {{ route.destination }}"
-                                                    title="Delete Route">
+                                            
+                                            <a href="{% url 'delete_route' route.id %}" class="btn btn-sm btn-icon btn-outline-danger me-2">
                                                 <i class="bi bi-trash"></i>
-                                            </button>
+                                            </a>
                                         </div>
                                     </td>
+
+                                    
                                 </tr>
                                 {% empty %}
                                 <tr>
@@ -368,21 +372,7 @@
             });
         }
         
-        // Delete Route Handling
-        document.querySelectorAll('.delete-route-btn').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                const routeId = this.getAttribute('data-route-id');
-                const routeName = this.getAttribute('data-route-name');
-                
-                document.getElementById('deleteRouteName').textContent = routeName;
-                const deleteForm = document.getElementById('deleteRouteForm');
-                deleteForm.action = `/delete_route/${routeId}/`;  // Adjust URL as per your URLconf
-                
-                deleteRouteModal.show();
-            });
-        });
+     
         
         // Make table horizontally scrollable with touch feedback
         const tableResponsive = document.querySelector('.table-responsive');

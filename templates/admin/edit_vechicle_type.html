@@ -1,0 +1,117 @@
+{% extends 'components/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Back Button and Title -->
+    <div class="d-flex justify-content-between align-items-center mb-4 " style="margin-top:60px">
+        <a href="{% url 'vehicle_type_list' %}" class="btn btn-outline-secondary btn-back">
+            <i class="bi bi-arrow-left me-2"></i>Back to List
+        </a>
+        <h2 class="mb-0">Edit Vehicle Type</h2>
+    </div>
+
+    <!-- Card with Form -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                {% csrf_token %}
+                
+                <!-- Name Field -->
+                <div class="mb-3">
+                    <label for="name" class="form-label fw-bold">Vehicle Type Name</label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="name" 
+                           name="name" 
+                           value="{{ vechicle_type.name }}" 
+                           required>
+                    <div class="invalid-feedback">
+                        Please enter a vehicle type name.
+                    </div>
+                </div>
+
+                <!-- Current Image Display -->
+                {% if vechicle_type.image %}
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Current Image</label>
+                    <div>
+                        <img src="{{ vechicle_type.image.url }}" 
+                             alt="{{ vechicle_type.name }}" 
+                             class="current-image img-thumbnail">
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Image Upload -->
+                <div class="mb-4">
+                    <label for="image" class="form-label fw-bold">Update Image</label>
+                    <input type="file" 
+                           class="form-control" 
+                           id="image" 
+                           name="image" 
+                           accept="image/*">
+                    <small class="form-text text-muted">
+                        Leave blank to keep current image
+                    </small>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'vehicle_type_list' %}" 
+                       class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+    .current-image {
+        max-width: 200px;
+        height: auto;
+    }
+    .btn-back i {
+        vertical-align: middle;
+    }
+    .card {
+        border: none;
+    }
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    @media (max-width: 576px) {
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .btn-back {
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- Bootstrap Form Validation Script -->
+<script>
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
+</script>
+{% endblock %}

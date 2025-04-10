@@ -1,0 +1,363 @@
+{% extends 'components/base.html' %}
+
+{% block title %}
+    Reservation Payments
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebarMenu">
+        {% include 'components/sidebar.html' %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="dashboard-content" style="margin-top: 80px;">
+
+          <!-- Mesage --> 
+          {% if messages %}
+          {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+          {% endfor %}
+      {% endif %}
+
+        
+
+      {% if user.is_superuser %}
+            <!-- Commission Rate Card -->
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="fw-bold mb-1">Current Commission Rate</h5>
+                            <p class="text-muted mb-md-0">Vehicle Reservation</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="currentRateDisplay" class="d-flex align-items-center">
+                                <h3 class="mb-0 fw-bold text-indigo">{{ commission_rate }}%</h3>
+                                <button id="editRateBtn" class="btn btn-sm btn-link ms-2">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                            </div>
+                            <div id="rateEditForm" class="d-none">
+                                <form method="post" action="{% url 'update_reservation_commission_rate' %}" class="d-flex align-items-center">
+                                    {% csrf_token %}
+                                    <div class="input-group">
+                                        <input type="number" name="commission_rate" min="0" max="100" step="0.01" 
+                                               value="{{ commission_rate }}" class="form-control" required>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary ms-2">Save</button>
+                                    <button type="button" id="cancelEditBtn" class="btn btn-sm btn-outline-secondary ms-2">Cancel</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <div class="icon-circle bg-indigo-soft rounded-circle p-3 d-inline-block">
+                                <i class="bi bi-percent fs-4 text-indigo"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+
+        <!-- Summary Cards -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Total Earnings</h6>
+                                <h3 class="mb-0 text-success">NRP {{ total_earning|floatformat:2 }}</h3>
+                            </div>
+                            <div class="icon-circle bg-success-soft">
+                                <i class="bi bi-currency-exchange text-success"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Net Received</h6>
+                                <h3 class="mb-0 text-blue">NRP {{ net_received|floatformat:2 }}</h3>
+                            </div>
+                            <div class="icon-circle bg-blue-soft">
+                                <i class="bi bi-wallet2 text-blue"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card summary-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-2">Total Commission</h6>
+                                <h3 class="mb-0 text-indigo">NRP {{ total_commission|floatformat:2 }}</h3>
+                            </div>
+                            <div class="icon-circle bg-indigo-soft">
+                                <i class="bi bi-percent text-indigo"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Reservation Bookings -->
+        <div class="card mt-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bus-front text-primary me-2"></i> Vehicle Reservations
+                </h5>
+                <div class="table-actions d-flex gap-3 flex-wrap">
+                    <input type="date" class="form-control" id="dateFilter" placeholder="Filter by Date">
+                    <select class="form-select" id="vehicleFilter">
+                        <option value="">All Vehicle Types</option>
+                        {% for booking in reservation_bookings %}
+                            <option value="{{ booking.bus_reserve.type }}">{{ booking.bus_reserve.type }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="input-group search-group">
+                        <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control search-input border-start-0" placeholder="Search..." id="reservationSearch">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="reservationsTable">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Vehicle Type</th>
+                                <th>Route</th>
+                                <th>Start Date</th>
+                                <th>Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in reservation_bookings %}
+                            <tr data-date="{{ booking.start_date|date:'Y-m-d' }}" data-vehicle="{{ booking.bus_reserve.type }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-2 bg-gradient-blue">
+                                            {{ booking.user.full_name|slice:":1"|upper }}
+                                        </div>
+                                        {{ booking.user.full_name|default:"N/A" }}
+                                    </div>
+                                </td>
+                                <td>{{ booking.bus_reserve.type }}</td>
+                                <td>{{ booking.source }} - {{ booking.destination }}</td>
+                                <td>{{ booking.start_date }}</td>
+                                <td class="fw-bold text-primary">NRP {{ booking.bus_reserve.price|floatformat:2 }}</td>
+                                <td>
+                                    <a href={% url 'vehicle_details_payment' booking.id %} class="btn btn-icon btn-outline-primary" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                   
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <div class="empty-icon bg-light-blue">
+                                            <i class="bi bi-bus-front text-blue"></i>
+                                        </div>
+                                        <h5 class="mt-3">No reservations found</h5>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">«</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">«</span></li>
+                        {% endif %}
+                        {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                        {% endfor %}
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">»</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">»</span></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        display: flex;
+        min-height: 100vh;
+    }
+    .sidebar {
+        width: 250px;
+        flex-shrink: 0;
+        transition: transform 0.3s ease-in-out;
+    }
+    .dashboard-content {
+        flex-grow: 1;
+        padding: 20px;
+    }
+    .summary-card {
+        transition: transform 0.2s;
+    }
+    .summary-card:hover {
+        transform: translateY(-5px);
+    }
+    .icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .bg-success-soft { background-color: #e6ffe6; }
+    .bg-blue-soft { background-color: #e6f0ff; }
+    .bg-indigo-soft { background-color: #f0e6ff; }
+    .text-success { color: #28a745; }
+    .text-blue { color: #007bff; }
+    .text-indigo { color: #6610f2; }
+    .avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+    .bg-gradient-blue {
+        background: linear-gradient(45deg, #007bff, #00b7ff);
+    }
+    .empty-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+    .bg-light-blue { background-color: #e6f0ff; }
+    .btn-outline-primary, .btn-outline-warning {
+        transition: all 0.2s;
+    }
+    .btn-outline-primary:hover, .btn-outline-warning:hover {
+        transform: translateY(-1px);
+    }
+    .table-actions select, .table-actions input {
+        max-width: 200px;
+    }
+    @media (min-width: 768px) {
+        .dashboard-content {
+            margin-left: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reservationSearch = document.getElementById('reservationSearch');
+    const dateFilter = document.getElementById('dateFilter');
+    const vehicleFilter = document.getElementById('vehicleFilter');
+    const tableRows = document.querySelectorAll('#reservationsTable tbody tr:not(.empty-state)');
+    const editRateBtn = document.getElementById('editRateBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+    const currentRateDisplay = document.getElementById('currentRateDisplay');
+    const rateEditForm = document.getElementById('rateEditForm');
+
+    if (editRateBtn && rateEditForm) {
+        editRateBtn.addEventListener('click', function() {
+            currentRateDisplay.classList.add('d-none');
+            rateEditForm.classList.remove('d-none');
+        });
+
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', function() {
+                currentRateDisplay.classList.remove('d-none');
+                rateEditForm.classList.add('d-none');
+            });
+        }
+    }
+
+
+    function filterTable() {
+        const searchTerm = reservationSearch.value.toLowerCase();
+        const selectedDate = dateFilter.value;
+        const selectedVehicle = vehicleFilter.value;
+
+        tableRows.forEach(row => {
+            const rowText = row.textContent.toLowerCase();
+            const rowDate = row.getAttribute('data-date');
+            const rowVehicle = row.getAttribute('data-vehicle');
+
+            const matchesSearch = rowText.includes(searchTerm);
+            const matchesDate = !selectedDate || rowDate === selectedDate;
+            const matchesVehicle = !selectedVehicle || rowVehicle === selectedVehicle;
+
+            row.style.display = (matchesSearch && matchesDate && matchesVehicle) ? '' : 'none';
+        });
+    }
+
+    // Event listeners for filters
+    reservationSearch.addEventListener('input', filterTable);
+    dateFilter.addEventListener('change', filterTable);
+    vehicleFilter.addEventListener('change', filterTable);
+
+    // Remove duplicate vehicle options
+    const vehicleOptions = new Set();
+    vehicleFilter.querySelectorAll('option').forEach(option => {
+        if (option.value && !vehicleOptions.has(option.value)) {
+            vehicleOptions.add(option.value);
+        } else if (option.value && option.value !== '') {
+            option.remove();
+        }
+    });
+
+    // Initial filter application
+    filterTable();
+});
+</script>
+{% endblock %}
+{% endblock %}

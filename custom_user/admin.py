@@ -103,7 +103,7 @@ admin.site.register(BusReservationBooking,BusReservationBookingAdmin)
 
 # ========================= Booking =========================
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ('user', 'seat', 'bus', 'schedule', 'booking_status', 'payment', 'booked_at')
+    list_display = ('user', 'seat', 'bus', 'schedule', 'booking_status', 'booked_at')
 
 
 
@@ -137,7 +137,7 @@ admin.site.register(Trip, TripAdmin)
 
 # ========================= Payment =========================
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ( 'user','price', 'payment_status','payment_method','commission_deducted', 'created_at')
+    list_display = ( 'user', 'payment_status','payment_method','rate','commission_deducted', 'created_at')
     search_fields = ('user__email', 'schedule__bus__bus_number', 'schedule__route__source', 'schedule__route__destination')
     list_filter = ('created_at',)
 
