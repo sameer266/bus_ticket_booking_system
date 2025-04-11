@@ -630,16 +630,15 @@ class SeatBookingAPiView(APIView):
 class BusLayoutApiView(APIView):
     def get(self, request, *args, **kwargs):
         try:
-            bus_id = kwargs.get('id')
-            if not bus_id:
+            schedule_id = kwargs.get('id')
+            if not schedule_id:
                 return Response({"success": False, "error": "Bus ID not provided"}, status=400)
-            
-            bus_layout = BusLayout.objects.get(bus_id=bus_id)
+            schedule=Schedule.objects.get(id=schedule_id)
+            serializer=ScheduleSerializer(schedule)
+            bus_layout = BusLayout.objects.get(bus=schedule.bus)
             layout_searilaizer=BusLayoutSerializer(bus_layout)
             
-            schedule=Schedule.objects.get(bus__id=bus_id)
-            serializer=ScheduleSerializer(schedule)
-            return Response({"success": True, "bus_schedule": serializer.data,'layout':layout_searilaizer.data}, status=200)
+            return Response({"success": True,"bus_schedule": serializer.data, 'layout':layout_searilaizer.data}, status=200)
         
         except BusLayout.DoesNotExist:
             return Response({"success": False, "error": "Bus layout not found"}, status=404)

@@ -37,7 +37,8 @@ class Trip(models.Model):
     bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE)
     route = models.ForeignKey('Route', on_delete=models.CASCADE)
     driver = models.ForeignKey('bus.Driver', on_delete=models.CASCADE, help_text="Driver of the bus")
-    
+    staff=models.ForeignKey('bus.Staff',on_delete=models.CASCADE,null=True,blank=True)
+    schedule=models.ForeignKey('route.Schedule',on_delete=models.CASCADE,null=True,blank=True)
     # Scheduled trip details
     scheduled_departure = models.DateTimeField(help_text="Scheduled departure time of the bus")
     scheduled_arrival = models.DateTimeField(help_text="Scheduled arrival time of the bus")
@@ -53,6 +54,7 @@ class Trip(models.Model):
         default='on_time',
         help_text="Current status of the trip"
     )
+    created_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
 
     def __str__(self):
         return f"Trip from {self.route.source} to {self.route.destination} on Bus {self.bus.bus_number}"
@@ -102,6 +104,9 @@ class Schedule(models.Model):
         """
         Custom save method to update the bus route and set the schedule date if not provided.
         """
+   
+            
+            
         if not self.date:
             self.date = timezone.now()
         
@@ -136,9 +141,18 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
     """
     Signal to create a BusAdmin and Trip when a new Schedule is created.
     """
+    if instance.bus:
+            BusLayout=apps.get_model('bus','BusLayout')
+            # Update or add Scjhedule in bus layout
+            layout=BusLayout.objects.get(bus=instance.bus)
+            layout.schedule=instance
+            layout.save()
+            
     if created:
         BusAdmin = apps.get_model('bus', 'BusAdmin')
         CustomUser = apps.get_model('custom_user', 'CustomUser')
+        
+        
        
 
         # Create BusAdmin if not exists
@@ -162,15 +176,17 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
             )
 
         # Create Trip if not exists
-        # trip = Trip.objects.filter(bus=instance.bus, route=instance.route, scheduled_departure=instance.departure_time).first()
-        # if not trip:
-        #     Trip.objects.create(
-        #         bus=instance.bus,
-        #         route=instance.route,
-        #         driver=instance.bus.driver,
-        #         scheduled_departure=instance.departure_time,
-        #         scheduled_arrival=instance.arrival_time,
-        #     )
+        trip = Trip.objects.filter(bus=instance.bus, route=instance.route, scheduled_departure=instance.departure_time).first()
+        if not trip:
+            Trip.objects.create(
+                bus=instance.bus,
+                route=instance.route,
+                driver=instance.bus.driver,
+                staff=instance.bus.staff,
+                schedule=instance,
+                scheduled_departure=instance.departure_time,
+                scheduled_arrival=instance.arrival_time,
+            )
 
 
 # ======== Customer Review ============

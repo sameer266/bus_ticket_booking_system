@@ -754,7 +754,7 @@ def vehicle_reservation(request):
                     price=price,
                     transportation_company=transportation_company
                 )
-                return redirect('vehicle-reservation')
+                return redirect('vehicle_reservation')
             except Exception as e:
                 print(f"Error creating reservation: {str(e)}")
                 context['error'] = str(e)
@@ -764,7 +764,7 @@ def vehicle_reservation(request):
             try:
                 reservation = BusReservation.objects.get(id=reservation_id)
                 reservation.delete()
-                return redirect('vehicle-reservation')
+                return redirect('vehicle_reservation')
             except BusReservation.DoesNotExist:
                 context['error'] = "Reservation not found."
 
@@ -812,7 +812,7 @@ def edit_vehicle_reservation(request, id):
             reservation.price = request.POST.get('price', reservation.price)
 
             reservation.save()
-            return redirect('vehicle-reservation')
+            return redirect('vehicle_reservation')
         except Exception as e:
             print(f"Error updating reservation: {str(e)}")
             return render(request, 'admin/edit_reservation.html', {
@@ -829,6 +829,23 @@ def edit_vehicle_reservation(request, id):
         'unassigned_drivers': unassigned_drivers,
         'unassigned_staff': unassigned_staff,
     })
+    
+# ====== Delete Vehicle reservation ========
+
+@login_required
+def delete_vehicle_reservation(request, id):
+    try:
+        reservation = get_object_or_404(BusReservation, id=id)
+        
+        
+            
+        reservation.delete()
+        messages.success(request, "Vehicle reservation deleted successfully")
+        
+    except Exception as e:
+        messages.error(request, f"Error deleting reservation: {str(e)}")
+        
+    return redirect('vehicle_reservation')
 
 
 
@@ -899,6 +916,27 @@ def delete_vechicle_type(request, id):
     messages.success(request, "Vehicle type deleted successfully!")
     return redirect('vehicle_type_list')
 
+
+# ====== Vehicle Type all associated Vehicle list ========
+@login_required
+def vehicleType_vehicle_list(request, id):
+    user = request.user
+    transportation_company = getattr(user, 'transportation_company', None)
+    vehicle_type = VechicleType.objects.get(id=id)
+    
+    if transportation_company:
+        vehicles = BusReservation.objects.filter(
+            transportation_company=transportation_company,
+            type=vehicle_type
+        )
+    else:
+        vehicles = BusReservation.objects.filter(type=vehicle_type)
+    
+    context = {
+        'vehicle_type': vehicle_type,
+        'context': vehicles
+    }
+    return render(request, 'admin/vehicle_type_details_list.html', context)
     
 
 
@@ -1630,3 +1668,35 @@ def update_reservation_commission_rate(request):
     
     return redirect('reservation_payment_details')
 
+
+
+# =================
+# Trips
+# =================
+@login_required 
+def all_trips(request):
+    user = request.user
+    transportation_company = getattr(user, 'transportation_company', None)
+    
+    # Get all trips for client-side filtering
+    trips = Trip.objects.all().order_by('-scheduled_departure')
+    
+    # Filter by company if user belongs to one
+    if transportation_company:
+        trips = trips.filter(bus__transportation_company=transportation_company)
+        
+    # Get distinct routes for filter dropdown
+    routes = Route.objects.filter(trip__in=trips).distinct() if transportation_company else Route.objects.all()
+    
+    context = {
+        'trips': trips,
+        'status_choices': Trip._meta.get_field('status').choices,
+        'routes': routes,
+    }
+    
+    return render(request, 'admin/all_trips.html', context)
+
+
+# ====== trip details ========
+def trip_details(request,id):
+    pass

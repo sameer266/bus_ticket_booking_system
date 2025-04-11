@@ -29,14 +29,17 @@ urlpatterns = [
   path('delete-staff/<int:staff_id>/', views.delete_staff, name='delete_staff'),
 
   # ======== Vehicle Reservation Management ==========
-  path('reservations/', views.vehicle_reservation, name='vehicle-reservation'),
+  path('reservations/', views.vehicle_reservation, name='vehicle_reservation'),
   path('reservations/<int:id>/', views.edit_vehicle_reservation, name='vehicle_reservation_edit'),
+  path('vehicle_reservation_delete/<int:id>/',views.delete_vehicle_reservation,name="delete_vehicle_reservation"),
 
   # ======== Vehicle Type Management ==========
   path('vehicle-type-management/', views.vechicle_type_list, name='vehicle_type_list'),
   path('vehicle-type-add/', views.vechicle_type_list, name='create_vehicle_type'),
   path('vehicle-type-edit/<int:id>/', views.edit_vechicle_type, name='edit_vehicle_type'),
   path('vehicle-type-delete/<int:id>/', views.delete_vechicle_type, name='delete_vehicle_type'),
+  path('vehicle-type/vehicles/<int:id>', views.vehicleType_vehicle_list, name='vehicle_type_vehicles'),
+
 
   # ======== Route Management ==========
   path('routes-management/', views.route_list_and_add, name='route_list_add'),
@@ -87,4 +90,10 @@ urlpatterns = [
 
   # ======== Bus Earnings ==========
   path('bus-earning-details/<int:bus_id>/', views.bus_earning_details, name='bus_earnings'),
+  
+  # ========== trips details =========
+  path('all-trips/',views.all_trips,name="all_trips"),
+  path('trips-details/<int:id>/',views.trip_details,name="trip_detail"),
+  
+  # ====== All Trips =========
 ]

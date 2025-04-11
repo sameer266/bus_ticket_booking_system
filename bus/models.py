@@ -6,6 +6,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from decimal import Decimal
 from django.db import transaction
+from route.models import Schedule
 
 # Importing related models
 from custom_user.models import CustomUser,TransportationCompany
@@ -154,7 +155,8 @@ class BusLayout(models.Model):
     """
     Represents the seating layout of a bus.
     """
-    bus = models.ForeignKey(Bus, on_delete=models.CASCADE)
+    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE,null=True,blank=True)
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE,null=True,blank=True)
     rows = models.PositiveIntegerField()
     column = models.PositiveIntegerField()
     aisle_column = models.PositiveIntegerField()

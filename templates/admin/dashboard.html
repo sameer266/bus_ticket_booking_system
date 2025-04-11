@@ -98,6 +98,7 @@
                 <div class="admin-table-card">
                     <div class="admin-card-header">
                         <h6 class="admin-card-title">Recent Bookings</h6>
+                        
                         <a href={% url 'booking_list' %} class="admin-view-all-btn">View All</a>
                     </div>
                     <div class="admin-card-body">
@@ -145,8 +146,8 @@
             <div class="admin-table-section">
                 <div class="admin-table-card">
                     <div class="admin-card-header">
-                        <h6 class="admin-card-title">Recent Trips</h6>
-
+                        <h6 class="admin-card-title">Recent Bus  Trips</h6>
+                        <a href={% url 'all_trips' %} class="admin-view-all-btn">View All</a>
                     </div>
                     <div class="admin-card-body">
                         <div class="admin-table-container">
@@ -159,7 +160,7 @@
                                         <th>Departure</th>
                                         <th>Arrival</th>
                                         <th>Status</th>
-                                        <th>Price</th>
+                                        <th>Price  Per Seat</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -175,7 +176,7 @@
                                                 {{ trip.status }}
                                             </span>
                                         </td>
-                                        <td>Rs. {{ trip.ticket_price }}</td>
+                                        <td>Rs. {{ trip.schedule.price }}</td>
                                     </tr>
                                     {% empty %}
                                     <tr>

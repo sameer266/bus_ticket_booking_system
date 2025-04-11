@@ -169,7 +169,7 @@ class CustomerReviewAdmin(admin.ModelAdmin):
 # ========================= Bus Layout =========================
 @admin.register(BusLayout)
 class BusLayoutAdmin(admin.ModelAdmin):
-    list_display = ('bus', 'rows', 'column', 'aisle_column', 'layout_data', 'created_at')
+    list_display = ('bus','schedule', 'rows', 'column', 'aisle_column', 'layout_data', 'created_at')
     search_fields = ('bus__bus_number',)
     list_filter = ('created_at',)
 
