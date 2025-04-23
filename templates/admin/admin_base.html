@@ -1,0 +1,85 @@
+{% extends 'components/base.html' %}
+
+{% block content %}
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <div class="admin-sidebar" id="adminSidebar">
+        {% include 'components/sidebar.html' %}
+    </div>
+    
+    <!-- Main Content -->
+    <div class="admin-main-content" id="mainContent">
+        <!-- Navbar -->
+        {% include 'components/navbar.html' %}
+        
+        <div class="admin-container py-4">
+            <!-- Messages --> 
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Page Title -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                <h1 class="admin-title mb-0">{% block page_title %}Admin Dashboard{% endblock %}</h1>
+                <div class="d-flex gap-2">
+                    {% block page_actions %}{% endblock %}
+                </div>
+            </div>
+            
+            <!-- Page Content -->
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<!-- Include responsive styles -->
+{% include 'admin/admin_responsive.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- Common admin JavaScript -->
+<script>
+    // Handle sidebar toggle for mobile
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.getElementById('adminSidebar');
+        const mainContent = document.getElementById('mainContent');
+        
+        if (sidebarToggle && sidebar && mainContent) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('sidebar-collapsed');
+                mainContent.classList.toggle('content-expanded');
+                
+                // Save state to localStorage
+                const isCollapsed = sidebar.classList.contains('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', isCollapsed);
+            });
+            
+            // Check localStorage on page load
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                sidebar.classList.add('sidebar-collapsed');
+                mainContent.classList.add('content-expanded');
+            }
+            
+            // Auto-collapse on mobile
+            const handleResize = function() {
+                if (window.innerWidth < 768) {
+                    sidebar.classList.add('sidebar-collapsed');
+                    mainContent.classList.add('content-expanded');
+                }
+            };
+            
+            // Initial check and listen for resize
+            handleResize();
+            window.addEventListener('resize', handleResize);
+        }
+    });
+</script>
+{% block page_js %}{% endblock %}
+{% endblock %}

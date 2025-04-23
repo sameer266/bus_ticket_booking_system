@@ -1,0 +1,235 @@
+{% extends 'components/base.html' %}
+
+{% block title %}Vehicle Booking Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-8">
+            <!-- Header with booking reference -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Booking Details</h2>
+                <span class="badge bg-{% if vehicle_booking.status == 'booked' %}success{% elif vehicle_booking.status == 'pending' %}warning{% else %}secondary{% endif %} fs-6">
+                    {{ vehicle_booking.get_status_display|upper }}
+                </span>
+            </div>
+            
+
+               <!-- Messages --> 
+               {% if messages %}
+               {% for message in messages %}
+                   <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2" role="alert">
+                       {{ message }}
+                       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                   </div>
+               {% endfor %}
+           {% endif %}
+
+           
+            <!-- Main card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Booking #{{ vehicle_booking.id }}</h4>
+                        <small class="text-white-50">Created: {{ vehicle_booking.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- User Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="card h-100 border-0 shadow-none">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="bi bi-person-circle me-2"></i>User Information
+                                    </h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item px-0 d-flex justify-content-between">
+                                            <span class="fw-bold">Name:</span>
+                                            <span>{{ vehicle_booking.user.full_name }}</span>
+                                        </li>
+                                        <li class="list-group-item px-0 d-flex justify-content-between">
+                                            <span class="fw-bold">Phone:</span>
+                                            <span>{{ vehicle_booking.user.phone }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-none">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">
+                                        <i class="bi bi-calendar-event me-2"></i>Travel Dates
+                                    </h5>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item px-0 d-flex justify-content-between">
+                                            <span class="fw-bold">Departure:</span>
+                                            <span>{{ vehicle_booking.start_date|date:"M d, Y" }}</span>
+                                        </li>
+                                        <li class="list-group-item px-0 d-flex justify-content-between">
+                                            <span class="fw-bold">Duration:</span>
+                                            <span>{{ vehicle_booking.date }} day{{ vehicle_booking.date|pluralize }}</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Journey Details Section -->
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header bg-light py-2">
+                            <h5 class="mb-0 text-primary">
+                                <i class="bi bi-geo-alt me-2"></i>Journey Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center justify-content-around text-center">
+                                <div>
+                                    <h6 class="text-muted">From</h6>
+                                    <h4 class="text-primary">{{ vehicle_booking.source }}</h4>
+                                </div>
+                                <div class="text-primary mx-3">
+                                    <i class="bi bi-arrow-right" style="font-size: 2rem;"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted">To</h6>
+                                    <h4 class="text-primary">{{ vehicle_booking.destination }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vehicle Information Section -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light py-2">
+                            <h5 class="mb-0 text-primary">
+                                <i class="bi bi-bus-front me-2"></i>Vehicle Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    {% if vehicle_booking.bus_reserve.image %}
+                                    <div class="ratio ratio-16x9 mb-3">
+                                        <img src="{{ vehicle_booking.bus_reserve.image.url }}" 
+                                             class="img-fluid rounded" 
+                                             alt="Vehicle Image"
+                                             style="object-fit: cover;">
+                                    </div>
+                                    {% endif %}
+                                    <a href="{{ vehicle_booking.bus_reserve.image.url }}" 
+                                       class="btn btn-sm btn-outline-primary w-100" 
+                                       target="_blank">
+                                        View Full Image
+                                    </a>
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item px-0 d-flex justify-content-between">
+                                                    <span class="fw-bold">Vehicle Number:</span>
+                                                    <span>{{ vehicle_booking.bus_reserve.vechicle_number }}</span>
+                                                </li>
+                                                <li class="list-group-item px-0 d-flex justify-content-between">
+                                                    <span class="fw-bold">Type:</span>
+                                                    <span>{{ vehicle_booking.bus_reserve.type }}</span>
+                                                </li>
+                                                <li class="list-group-item px-0 d-flex justify-content-between">
+                                                    <span class="fw-bold">Color:</span>
+                                                    <span>{{ vehicle_booking.bus_reserve.color }}</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <ul class="list-group list-group-flush">
+                                                <li class="list-group-item px-0 d-flex justify-content-between">
+                                                    <span class="fw-bold">Capacity:</span>
+                                                    <span>{{ vehicle_booking.bus_reserve.bus.capacity }} seats</span>
+                                                </li>
+                                                <li class="list-group-item px-0 d-flex justify-content-between">
+                                                    <span class="fw-bold">Driver:</span>
+                                                    <span>{{ vehicle_booking.bus_reserve.driver.full_name }}</span>
+                                                </li>
+                                                <li class="list-group-item px-0 d-flex justify-content-between">
+                                                    <span class="fw-bold">Staff:</span>
+                                                    <span>{{ vehicle_booking.bus_reserve.staff.full_name }}</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pricing Section -->
+                    <div class="card border-success">
+                        <div class="card-header bg-light py-2">
+                            <h5 class="mb-0 text-primary">
+                                <i class="bi   me-2"></i>Pricing
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted">Total Amount</h6>
+                                    <h3 class="text-success">Rs {{ vehicle_booking.bus_reserve.price }}</h3>
+                                </div>
+                                {% if vehicle_booking.status == 'pending' %}
+                                <button class="btn btn-primary btn-lg px-4">
+                                    <i class="bi bi-credit-card me-2"></i>Proceed to Payment
+                                </button>
+                                {% else %}
+                                <span class="badge bg-success fs-6 p-2">
+                                    <i class="bi bi-check-circle me-1"></i>Payment Completed
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card Footer -->
+                <div class="card-footer bg-light d-flex justify-content-between">
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back
+                    </a>
+                    <div>
+                        <button class="btn btn-outline-primary me-2">
+                            <i class="bi bi-printer me-2"></i>Print
+                        </button>
+                        <button class="btn btn-outline-primary">
+                            <i class="bi bi-download me-2"></i>Download
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .card-header {
+        border-bottom: none;
+    }
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+    }
+    .list-group-item:first-child {
+        border-top: none;
+    }
+    .list-group-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}

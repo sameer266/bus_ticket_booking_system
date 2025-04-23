@@ -1,0 +1,283 @@
+{% extends 'components/base.html' %}
+{% block title %}Edit Reservation | Go Sewa{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reservation-form-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #1a3c6d, #0d6efd);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 20px;
+        margin-bottom: 0;
+    }
+    
+    .form-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0;
+        color: white;
+    }
+    
+    .form-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: none;
+        overflow: hidden;
+    }
+    
+    .form-body {
+        padding: 30px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+        height: auto;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-submit {
+        background-color: #1a3c6d;
+        border: none;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-submit:hover {
+        background-color: #0d6efd;
+        transform: translateY(-2px);
+    }
+    
+    .btn-back {
+        background-color: #f8f9fa;
+        color: #495057;
+        border: 1px solid #dee2e6;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-back:hover {
+        background-color: #e9ecef;
+        color: #1a3c6d;
+    }
+    
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+    
+    @media (max-width: 768px) {
+        .form-body {
+            padding: 20px;
+        }
+        
+        .form-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column-reverse;
+            gap: 10px;
+        }
+        
+        .btn-submit, .btn-back {
+            width: 100%;
+        }
+    }
+    
+    /* Validation styles */
+    .is-invalid {
+        border-color: #dc3545;
+    }
+    
+    .invalid-feedback {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 5px;
+    }
+    
+    .was-validated .form-control:invalid, 
+    .was-validated .form-select:invalid {
+        border-color: #dc3545;
+    }
+    
+    .was-validated .form-control:valid, 
+    .was-validated .form-select:valid {
+        border-color: #198754;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reservation-form-container mt-5">
+    <div class="card form-card">
+        <div class="form-header">
+            <h1><i class="bi bi-pencil-square me-2"></i>Edit Reservation</h1>
+        </div>
+        <div class="card-body form-body">
+            <form method="POST" action="{% url 'vehicle_reservation_edit' reservation.id %}" class="needs-validation" novalidate>
+                {% csrf_token %}
+                <div class="row g-3">
+                    <!-- Name -->
+                    <div class="col-md-6 form-group">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ reservation.name }}" required>
+                        <div class="invalid-feedback">Please enter a name.</div>
+                    </div>
+
+                    <!-- Type -->
+                    <div class="col-md-6 form-group">
+                        <label for="type" class="form-label">Vehicle Type</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="" disabled>Select vehicle type</option>
+                            {% for vehicle_type in vechicle_types %}
+                                <option value="{{ vehicle_type.name }}" {% if vehicle_type.name == reservation.type.name %}selected{% endif %}>
+                                    {{ vehicle_type.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a vehicle type.</div>
+                    </div>
+
+                    <!-- Vehicle Number -->
+                    <div class="col-md-6 form-group">
+                        <label for="vehicle_number" class="form-label">Vehicle Number</label>
+                        <input type="text" class="form-control" id="vehicle_number" name="vehicle_number" value="{{ reservation.vechicle_number }}" required>
+                        <div class="invalid-feedback">Please enter a vehicle number.</div>
+                    </div>
+
+                    <!-- Vehicle Model -->
+                    <div class="col-md-6 form-group">
+                        <label for="vehicle_model" class="form-label">Vehicle Model</label>
+                        <input type="text" class="form-control" id="vehicle_model" name="vehicle_model" value="{{ reservation.vechicle_model }}" required>
+                        <div class="invalid-feedback">Please enter a vehicle model.</div>
+                    </div>
+
+                    <!-- Color -->
+                    <div class="col-md-6 form-group">
+                        <label for="color" class="form-label">Color</label>
+                        <input type="text" class="form-control" id="color" name="color" value="{{ reservation.color }}">
+                    </div>
+
+                    <!-- Driver -->
+                    <div class="col-md-6 form-group">
+                        <label for="driver_id" class="form-label">Driver</label>
+                        <select class="form-select" id="driver_id" name="driver_id">
+                            <option value="">None</option>
+                            {% for driver in unassigned_drivers %}
+                                <option value="{{ driver.id }}" {% if driver.id == reservation.driver.id %}selected{% endif %}>
+                                    {{ driver.full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Staff -->
+                    <div class="col-md-6 form-group">
+                        <label for="staff_id" class="form-label">Staff</label>
+                        <select class="form-select" id="staff_id" name="staff_id">
+                            <option value="">None</option>
+                            {% for staff in unassigned_staff %}
+                                <option value="{{ staff.id }}" {% if staff.id == reservation.staff.id %}selected{% endif %}>
+                                    {{ staff.full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Total Seats -->
+                    <div class="col-md-6 form-group">
+                        <label for="total_seats" class="form-label">Total Seats</label>
+                        <input type="number" class="form-control" id="total_seats" name="total_seats" value="{{ reservation.total_seats }}" min="1" required>
+                        <div class="invalid-feedback">Please enter a valid number of seats.</div>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="col-md-6 form-group">
+                        <label for="price" class="form-label">Price (NRP)</label>
+                        <input type="number" class="form-control" id="price" name="price" value="{{ reservation.price }}" step="0.01" required>
+                        <div class="invalid-feedback">Please enter a valid price.</div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <a href="{% url 'vehicle_reservation' %}" class="btn btn-back">
+                        <i class="bi bi-arrow-left me-2"></i>Back to List
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-submit">
+                        <i class="bi bi-save me-2"></i>Update Reservation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    (function () {
+        'use strict';
+        var forms = document.querySelectorAll('.needs-validation');
+        
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Scroll to the first invalid field
+                    var invalidFields = form.querySelectorAll(':invalid');
+                    if (invalidFields.length > 0) {
+                        invalidFields[0].scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                }
+                
+                form.classList.add('was-validated');
+            }, false);
+        });
+        
+        // Add real-time validation
+        document.querySelectorAll('.needs-validation input, .needs-validation select').forEach(function(input) {
+            input.addEventListener('input', function() {
+                if (this.checkValidity()) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+            });
+        });
+    })();
+</script>
+{% endblock %}

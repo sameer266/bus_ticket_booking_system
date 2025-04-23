@@ -1,0 +1,180 @@
+{% extends 'components/base.html' %}
+{% block title %}Verify OTP | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="container-fluid d-flex justify-content-center align-items-center min-vh-100 bg-light">
+    <div class="row justify-content-center w-100">
+        <div class="col-12 col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0 animate__animated animate__fadeIn">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="text-center fw-bold mb-4 text-primary">
+                        <i class="bi bi-key me-2"></i>Verify OTP
+                    </h2>
+                    <p class="text-center text-muted mb-4">Enter the OTP sent to your phone</p>
+
+                    <form method="POST" action="{% url 'verify_otp' %}" id="verifyOtpForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <!-- OTP Field -->
+                        <div class="mb-4">
+                            <label for="otp" class="form-label fw-medium">OTP <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">
+                                    <i class="bi bi-lock text-primary"></i>
+                                </span>
+                                <input type="text" class="form-control border-start-0" id="otp" name="otp" 
+                                       placeholder="Enter 6-digit OTP" pattern="\d{6}" maxlength="6" required>
+                                <div class="invalid-feedback">
+                                    Please enter a valid 6-digit OTP
+                                </div>
+                            </div>
+                            <small class="text-muted">Check your phone for the code</small>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary w-100 py-2 fw-medium d-flex align-items-center justify-content-center">
+                            <i class="bi bi-check-circle me-2"></i> Verify OTP
+                        </button>
+
+                        <!-- Message Display -->
+                        {% if message %}
+                            <div class="alert {% if 'success' in message|lower %}alert-success{% else %}alert-danger{% endif %} alert-dismissible fade show mt-3" role="alert">
+                                <i class="bi {% if 'success' in message|lower %}bi-check-circle{% else %}bi-exclamation-triangle{% endif %} me-2"></i>{{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endif %}
+                    </form>
+                </div>
+                <div class="card-footer text-center bg-white border-top-0 py-3">
+                    <small class="text-muted">Didn't receive OTP? <a href="{% url 'verify_otp' %}" class="text-primary text-decoration-none">Resend OTP</a></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1090">
+    <div id="otpToast" class="toast hide" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-info-circle text-primary me-2"></i>
+            <strong class="me-auto">Notification</strong>
+            <small>Just now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+            OTP verified successfully!
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom Styles */
+    .min-vh-100 {
+        min-height: 100vh;
+    }
+
+    .card {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-control {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .input-group-text {
+        border-radius: 8px 0 0 8px;
+    }
+
+    .btn-primary {
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+    }
+
+    .alert {
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 576px) {
+        .card {
+            margin: 1rem;
+            border-radius: 10px;
+        }
+
+        .card-body {
+            padding: 1.5rem !important;
+        }
+
+        .form-control {
+            font-size: 0.9rem;
+            padding: 0.65rem 0.9rem;
+        }
+
+        .btn-primary {
+            padding: 0.65rem;
+        }
+    }
+
+    /* Animation */
+    .animate__animated.animate__fadeIn {
+        animation-duration: 0.8s;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap components
+        const otpToast = new bootstrap.Toast(document.getElementById('otpToast'), {
+            delay: 3000
+        });
+
+        // Form validation
+        const form = document.getElementById('verifyOtpForm');
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+
+        // OTP input formatting
+        const otpInput = document.getElementById('otp');
+        otpInput.addEventListener('input', function(e) {
+            // Allow only numbers
+            e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+        });
+
+        // Focus on OTP input by default
+        otpInput.focus();
+
+        // Show toast if successful (you'd typically set this from the backend)
+        if (window.location.search.includes('success')) {
+            document.getElementById('toastMessage').textContent = 'OTP verified successfully!';
+            otpToast.show();
+        }
+    });
+</script>
+{% endblock %}

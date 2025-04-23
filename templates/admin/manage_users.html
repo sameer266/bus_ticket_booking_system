@@ -1,0 +1,443 @@
+{% extends 'components/base.html' %}
+{% block title %}Manage Users | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
+            {% include 'components/sidebar.html' %}
+        </div>
+        
+        <!-- Main Content -->
+        <main class="mt-5 col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+                <h1 class="h2 fw-bold">
+                    <i class="bi bi-people-fill me-2 text-primary"></i>Manage Users
+                </h1>
+                <div class="btn-toolbar d-none d-md-flex">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                            <i class="bi bi-plus-lg me-1"></i> New User
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+               <!-- Messages --> 
+               {% if messages %}
+               {% for message in messages %}
+                   <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2" role="alert">
+                       {{ message }}
+                       <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                   </div>
+               {% endfor %}
+           {% endif %}
+
+            <!-- Mobile Action Buttons -->
+            <div class="d-flex d-md-none mb-3 gap-2">
+                <button type="button" class="btn btn-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add User
+                </button>
+            </div>
+
+            <!-- Users List Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="bi bi-people me-2"></i>User List
+                    </h5>
+                    <div class="input-group input-group-sm w-auto">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" id="searchUsers" placeholder="Search users..." style="max-width: 200px;">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">User</th>
+                                    <th>Email</th>
+                                    <th class="d-none d-md-table-cell">Phone</th>
+                                    <th class="d-none d-md-table-cell">Gender</th>
+                                   
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center">
+                                            {% if user.profile_image %}
+                                                <img src="{{ user.profile_image.url }}" alt="Profile" class="rounded-circle me-3" width="40" height="40">
+                                            {% else %}
+                                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-person"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0">{{ user.full_name }}</h6>
+                                                <small class="text-muted d-md-none">ID: {{ user.id }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ user.email }}</td>
+                                    <td class="d-none d-md-table-cell">{{ user.phone }}</td>
+                                    <td class="d-none d-md-table-cell">
+                                        <span class="badge bg-{% if user.gender == 'male' %}primary{% elif user.gender == 'female' %}danger{% else %}secondary{% endif %}">
+                                            {{ user.gender|title }}
+                                        </span>
+                                    </td>
+                                   
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <div class="py-4">
+                                            <i class="bi bi-people display-5 text-muted d-block mb-3"></i>
+                                            <h5 class="text-muted">No users found</h5>
+                                            <p class="text-muted">Add your first user to get started</p>
+                                            <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                                                <i class="bi bi-plus-circle me-1"></i> Add User
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <!-- Pagination -->
+{% if users.has_other_pages %}
+<div class="card-footer bg-white py-3">
+    <nav aria-label="User pagination">
+        <ul class="pagination justify-content-center mb-0">
+            <!-- Previous Button -->
+            {% if users.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            <!-- Page Numbers -->
+            {% for num in users.paginator.page_range %}
+                {% if users.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next Button -->
+            {% if users.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ users.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel"><i class="bi bi-person-plus me-2 text-primary"></i>Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" enctype="multipart/form-data" id="addUserForm">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" name="full_name" placeholder="John Doe" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" placeholder="john@example.com" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Phone Number</label>
+                            <input type="number" class="form-control" name="phone" placeholder="+977 98..." required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Gender</label>
+                            <select name="gender" class="form-select">
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Profile Image</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" name="profile_image" id="userProfileUpload">
+                                <label class="input-group-text" for="userProfileUpload"><i class="bi bi-upload"></i></label>
+                            </div>
+                            <div class="form-text">Upload a clear photo (JPEG or PNG)</div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="add_user" value="1">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addUserForm" class="btn btn-primary">
+                    <i class="bi bi-person-plus me-1"></i> Add User
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+ 
+    
+    .sidebar {
+    
+        
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        background-color: #fff;
+        transition: all 0.3s;
+    }
+    #sidebar-wrapper {
+        min-height: 100vh;
+        width: 250px;
+        transition: margin 0.25s ease-out;
+        background-color: white;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        z-index: 1;
+    }
+
+    .pagination .page-link {
+        color: var(--primary-color);
+        border-radius: 0.5rem;
+        margin: 0 0.125rem;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.2s;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .pagination .page-item.disabled .page-link {
+        color: #6c757d;
+        background-color: transparent;
+        border-color: #dee2e6;
+    }
+    
+    .pagination .page-link:hover:not(.active) {
+        background-color: rgba(78, 115, 223, 0.1);
+        border-color: var(--primary-color);
+    }
+    
+    .main-content {
+        transition: all 0.3s;
+    }
+    
+    @media (min-width: 768px) {
+        .main-content {
+            margin-left: 16.66667%;
+        }
+    }
+    
+    @media (min-width: 992px) {
+        .main-content {
+            margin-left: 16.66667%;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .sidebar {
+            width: 100%;
+            height: auto;
+            position: relative;
+            padding-top: 0;
+        }
+        
+        .main-content {
+            margin-left: 0;
+        }
+        
+        .sidebar-toggle {
+            display: block;
+        }
+    }
+    
+    .card {
+        border: none;
+        border-radius: 0.75rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+    
+    .card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+    }
+    
+    .table-hover tbody tr {
+        transition: all 0.2s;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(78, 115, 223, 0.05) !important;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .form-control:focus, .form-select:focus, .btn:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(78, 115, 223, 0.25);
+    }
+    
+    .btn {
+        border-radius: 0.5rem;
+        padding: 0.375rem 1rem;
+        transition: all 0.2s;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--primary-hover);
+        border-color: var(--primary-hover);
+    }
+    
+    .btn-outline-primary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-color: #ced4da;
+    }
+    
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+    
+    .dropdown-item:active {
+        background-color: var(--primary-color);
+    }
+    
+    .modal-content {
+        border-radius: 0.75rem;
+        border: none;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .modal-footer {
+        border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .text-primary {
+        color: var(--primary-color) !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Search functionality for users
+        document.getElementById('searchUsers').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const userTable = document.querySelector('.table tbody');
+            const rows = userTable.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                if (row.querySelector('td') && !row.querySelector('td[colspan]')) {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                }
+            });
+            
+            // Show empty state if no results
+            const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none' && !row.querySelector('td[colspan]')).length;
+            const emptyRow = userTable.querySelector('tr td[colspan]');
+            
+            if (visibleRows === 0 && !emptyRow) {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `<td colspan="5" class="text-center py-3">
+                    <i class="bi bi-search text-muted d-block mb-2"></i>
+                    <p class="text-muted">No users matching "${searchTerm}"</p>
+                </td>`;
+                newRow.classList.add('search-empty');
+                userTable.appendChild(newRow);
+            } else if (visibleRows > 0 && document.querySelector('.search-empty')) {
+                document.querySelector('.search-empty').remove();
+            }
+        });
+        
+        // Toggle sidebar on mobile
+        const sidebar = document.getElementById('sidebarMenu');
+        const sidebarToggle = document.querySelector('[data-bs-target="#sidebarMenu"]');
+        
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

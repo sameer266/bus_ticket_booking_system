@@ -1,0 +1,486 @@
+{% extends 'components/base.html' %}
+{% block content %}
+<div class="container py-5" style="margin-top:80px !important">
+    <!-- Header Section with improved design -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-primary mb-1">{{ route.source }} → {{ route.destination }}</h2>
+            <p class="text-muted mb-md-0"><i class="bi bi-bus-front me-2"></i>{{ total_buses }} buses available on this route</p>
+        </div>
+        <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+            <a href="{% url 'route_list_add' %}" class="btn btn-outline-primary rounded-pill">
+                <i class="bi bi-arrow-left me-2"></i> Back to Routes
+            </a>
+        </div>
+    </div>
+
+    <!-- Bus List Card with improved styling -->
+    <div class="card shadow-sm rounded-4 overflow-hidden border-0 mb-4">
+        <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 gap-3">
+            <h5 class="mb-0 fw-bold text-primary d-flex align-items-center">
+                <i class="bi bi-bus-front me-2"></i>Bus Details
+            </h5>
+            <div class="input-group input-group-sm w-100 w-md-auto">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" id="searchBuses" placeholder="Search buses..." style="max-width: 250px;">
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="fw-semibold">Bus Number</th>
+                            <th class="fw-semibold">Bus Type</th>
+
+                            <th class="fw-semibold d-none d-md-table-cell">Features</th>
+                            <th class="fw-semibold d-none d-md-table-cell">Total Seats</th>
+
+                            <th class="fw-semibold text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bus in buses %}
+                        <tr class="bus-row">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bus-icon bg-primary bg-opacity-10 rounded-circle p-2 me-3 d-none d-sm-block">
+                                        <i class="bi bi-bus-front fs-5 text-primary"></i>
+                                    </div>
+                                    <span class="fw-semibold">{{ bus.bus_number }}</span>
+                                </div>
+                            </td>
+                            <td>{{ bus.get_bus_type_display }}</td>
+                           
+                            <td class="d-none d-md-table-cell">
+                                {% if bus.features %}
+                                    <div class="d-flex flex-wrap gap-1">
+                                    {% for feature in bus.features %}
+                                        <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3">{{ feature }}</span>
+                                    {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3">No Features</span>
+                                {% endif %}
+                            </td>
+                            <td class="d-none d-md-table-cell">{{ bus.total_seats }}</td>
+                            
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-primary rounded-pill view-more" data-bus-id="{{ bus.id }}">
+                                    <i class="bi bi-eye me-md-2"></i><span class="d-none d-md-inline">View Details</span>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="py-4">
+                                    <div class="empty-state-icon bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                        <i class="bi bi-bus-front fs-1 text-muted"></i>
+                                    </div>
+                                    <h5 class="text-muted">No buses available for this route</h5>
+                                    <p class="text-muted mb-4">Add your first bus to get started</p>
+                                    <a href={% url 'create_bus' %} class="btn btn-primary rounded-pill px-4">
+                                        <i class="bi bi-plus me-2"></i> Add Bus
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View More Modal with improved design -->
+<div class="modal fade" id="busDetailsModal" tabindex="-1" aria-labelledby="busDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 overflow-hidden">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title" id="busDetailsModalLabel">
+                    <i class="bi bi-info-circle me-2"></i>Bus Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
+                            <div class="bg-primary text-white px-4 py-3">
+                                <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Bus Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center mb-4 position-relative">
+                                    <img id="modal-bus-image" src="" alt="Bus Image" class="img-fluid rounded-4" style="max-height: 200px; width: 100%; object-fit: cover;">
+                                    <div class="position-absolute bottom-0 end-0 mb-2 me-2">
+                                        <span id="modal-seat-badge" class="badge bg-success rounded-pill px-3 py-2">
+                                            <i class="bi bi-person-check me-1"></i><span id="modal-available-seats"></span> Available
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-bg bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                                <i class="bi bi-123 text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Bus Number</small>
+                                                <strong id="modal-bus-number" class="fs-6"></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-bg bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                                <i class="bi bi-tag text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Bus Type</small>
+                                                <strong id="modal-bus-type" class="fs-6"></strong>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                             
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-start">
+                                            <div class="icon-bg bg-primary bg-opacity-10 rounded-circle p-2 me-3 mt-1">
+                                                <i class="bi bi-stars text-primary"></i>
+                                            </div>
+                                            <div style="flex: 1">
+                                                <small class="text-muted d-block mb-2">Features</small>
+                                                <div id="modal-features" class="d-flex flex-wrap gap-2"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row g-4 h-100">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                                    <div class="bg-info text-white px-4 py-3">
+                                        <h6 class="mb-0 fw-bold"><i class="bi bi-person-badge me-2"></i>Driver Information</h6>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <img id="modal-driver-image" src="" alt="Driver Image" class="rounded-circle border border-3 border-light shadow" style="width: 80px; height: 80px; object-fit: cover;">
+                                            </div>
+                                            <div>
+                                                <h6 id="modal-driver-name" class="fw-bold mb-1"></h6>
+                                                <p class="text-muted mb-1 d-flex align-items-center">
+                                                    <i class="bi bi-telephone me-2"></i>
+                                                    <span id="modal-driver-phone"></span>
+                                                </p>
+                                                <p class="text-muted mb-0 d-flex align-items-center">
+                                                    <i class="bi bi-card-heading me-2"></i>
+                                                    <span id="modal-driver-license"></span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                                    <div class="bg-warning text-white px-4 py-3">
+                                        <h6 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Staff Information</h6>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <img id="modal-staff-image" src="" alt="Staff Image" class="rounded-circle border border-3 border-light shadow" style="width: 80px; height: 80px; object-fit: cover;">
+                                            </div>
+                                            <div>
+                                                <h6 id="modal-staff-name" class="fw-bold mb-1"></h6>
+                                                <p class="text-muted mb-1 d-flex align-items-center">
+                                                    <i class="bi bi-telephone me-2"></i>
+                                                    <span id="modal-staff-phone"></span>
+                                                </p>
+                                                <p class="text-muted mb-0 d-flex align-items-center">
+                                                    <i class="bi bi-briefcase me-2"></i>
+                                                    <span id="modal-staff-role"></span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-2"></i>Close
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill">
+                    <i class="bi bi-pencil me-2"></i>Edit Details
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #4361ee;
+        --secondary-color: #3f37c9;
+        --success-color: #4cc9a4;
+        --info-color: #4895ef;
+        --warning-color: #f9c74f;
+        --danger-color: #f94144;
+        --light-color: #f8f9fa;
+        --dark-color: #212529;
+    }
+
+    body {
+        background-color: #f5f7ff;
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+        padding: 0.85rem 1rem;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.05);
+    }
+
+    .card {
+        border: none;
+        border-radius: 16px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-header {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+
+    .rounded-pill {
+        border-radius: 50rem !important;
+    }
+
+    .rounded-4 {
+        border-radius: 1rem !important;
+    }
+
+    .btn {
+        font-weight: 500;
+        padding: 0.5rem 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-primary:hover, .btn-primary:focus {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+
+    .btn-outline-primary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .text-primary {
+        color: var(--primary-color) !important;
+    }
+
+    .bg-primary {
+        background-color: var(--primary-color) !important;
+    }
+
+    .icon-bg {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bus-icon {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .empty-state-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .empty-state-icon:hover {
+        transform: scale(1.1);
+    }
+
+    .modal-content {
+        border: none;
+        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header, .modal-footer {
+        border: none;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .btn {
+            padding: 0.4rem 1rem;
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+    }
+
+    /* Animation for bus rows */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bus-row {
+        animation: fadeIn 0.3s ease forwards;
+    }
+    
+    .bus-row:nth-child(1) { animation-delay: 0.05s; }
+    .bus-row:nth-child(2) { animation-delay: 0.1s; }
+    .bus-row:nth-child(3) { animation-delay: 0.15s; }
+    .bus-row:nth-child(4) { animation-delay: 0.2s; }
+    .bus-row:nth-child(5) { animation-delay: 0.25s; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        document.getElementById('searchBuses').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                if (row.cells && row.cells.length > 1) {
+                    const busNumber = row.cells[0].textContent.toLowerCase();
+                    const busType = row.cells[1].textContent.toLowerCase();
+                    row.style.display = (busNumber.includes(searchTerm) || busType.includes(searchTerm)) ? '' : 'none';
+                }
+            });
+        });
+
+        // View More Modal functionality with API integration
+        const viewMoreButtons = document.querySelectorAll('.view-more');
+        const modal = new bootstrap.Modal(document.getElementById('busDetailsModal'));
+        
+        viewMoreButtons.forEach(button => {
+            button.addEventListener('click', async function() {
+                const busId = this.getAttribute('data-bus-id');
+                
+            
+                    // Fetch bus details from API
+                    const response = await fetch(`/route_bus_details/${busId}/`);
+                    const data = await response.json();
+                    console.log(data.data)
+              
+                    
+                    if (data.success) {
+                        const busData = data.data;
+
+                        // Update Bus Information
+                        document.getElementById('modal-bus-number').textContent = busData.bus_number;
+                        document.getElementById('modal-bus-type').textContent = busData.bus_type.replace('_', ' ').toUpperCase();
+                       
+                        document.getElementById('modal-available-seats').textContent = busData.available_seats;
+                        document.getElementById('modal-bus-image').src = busData.bus_image;
+
+                        // Update Features
+                        const featuresContainer = document.getElementById('modal-features');
+                        featuresContainer.innerHTML = '';
+                        if (busData.features && busData.features.length > 0) {
+                            busData.features.forEach(feature => {
+                                const badge = document.createElement('span');
+                                badge.className = 'badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2';
+                                badge.textContent = feature;
+                                featuresContainer.appendChild(badge);
+                            });
+                        } else {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-2';
+                            badge.textContent = 'No Features';
+                            featuresContainer.appendChild(badge);
+                        }
+
+                        // Update Driver Information
+                        document.getElementById('modal-driver-name').textContent = busData.driver?.full_name || "Nan";
+                        document.getElementById('modal-driver-phone').textContent = busData.driver?.phone || "Nan";
+                        document.getElementById('modal-driver-license').textContent = 'License Available';
+                        document.getElementById('modal-driver-image').src = busData.driver?.driver_profile  || "Nan";
+
+                        // Update Staff Information
+                        document.getElementById('modal-staff-name').textContent = busData.staff?.full_name || "Nan";
+                        document.getElementById('modal-staff-phone').textContent = busData.staff?.phone || "Nan";
+                        document.getElementById('modal-staff-role').textContent = 'Bus Staff';
+                        document.getElementById('modal-staff-image').src = busData.staff?.staff_profile || "Nan";
+
+                        // Update seat availability color
+                        const availableSeatsNum = parseInt(busData.available_seats);
+                        const seatBadge = document.getElementById('modal-seat-badge');
+                        if (availableSeatsNum <= 0) {
+                            seatBadge.className = 'badge bg-danger rounded-pill px-3 py-2';
+                        } else if (availableSeatsNum < 5) {
+                            seatBadge.className = 'badge bg-warning rounded-pill px-3 py-2';
+                        } else {
+                            seatBadge.className = 'badge bg-success rounded-pill px-3 py-2';
+                        }
+
+                        modal.show();
+                    } else {
+                        alert('Failed to fetch bus details');
+                    }
+                
+            });
+        });
+    });
+</script>
+{% endblock %}

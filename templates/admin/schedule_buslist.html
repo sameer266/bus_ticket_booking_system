@@ -1,0 +1,636 @@
+{% extends 'components/base.html' %}
+
+{% block content %}
+<div class="container py-4" style="margin-top:80px !important">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-primary mb-0">
+            <i class="bi bi-bus-front me-2"></i>Bus {{ bus.bus_number }} Details
+        </h3>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </a>
+    </div>
+
+    <!-- Bus Details Section -->
+    <div class="card shadow-sm rounded-4 mb-4 border-0 overflow-hidden">
+        <div class="card-header bg-primary text-white py-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <h5 class="mb-0">Bus Information</h5>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-lg-4 position-relative">
+                    <img src="{{ bus.bus_image.url }}" alt="Bus Image" class="img-fluid w-100 h-100" style="object-fit: cover; min-height: 250px;">
+                    <div class="position-absolute bottom-0 start-0 bg-dark bg-opacity-75 text-white px-3 py-2 rounded-top-end">
+                        <i class="bi bi-tag-fill me-1"></i> {{ bus.get_bus_type_display }}
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                        <i class="bi bi-signpost-2 text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Route</small>
+                                        <span class="fw-medium">{{ schedule.route.source }} <i class="bi bi-arrow-right"></i> {{schedule.route.destination }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                        <i class="bi bi-person-fill text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Driver</small>
+                                        <span class="fw-medium">{{ bus.driver.full_name|default:"Not Assigned" }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                        <i class="bi bi-people-fill text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Staff</small>
+                                        <span class="fw-medium">{{ bus.staff.full_name|default:"Not Assigned" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                        <i class="bi bi-cash-stack text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Price per Seat</small>
+                                        <span class="fw-medium">NPR {{ schedule.price|floatformat:2 }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                        <i class="bi bi-currency-dollar text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Total Amount</small>
+                                        <span class="fw-medium">NPR {{ total_amount|floatformat:2 }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex mb-3">
+                                    <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                                        <i class="bi bi-stars text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <small class="text-muted d-block">Features</small>
+                                        <div class="mt-1">
+                                            {% for feature in bus.features %}
+                                                <span class="badge bg-info bg-opacity-10 text-info rounded-pill me-1 mb-1">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>{{ feature }}
+                                                </span>
+                                            {% empty %}
+                                                <span class="badge bg-secondary rounded-pill">No Features</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Seat Status Summary -->
+            <div class="bg-light p-3 border-top">
+                <div class="row text-center g-3">
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="rounded-circle bg-success bg-opacity-10 p-2 me-2">
+                                <i class="bi bi-grid-3x3 text-success"></i>
+                            </div>
+                            <div class="text-start">
+                                <small class="text-muted d-block">Total Seats</small>
+                                <span class="fw-bold">{{ bus.total_seats }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-2 me-2">
+                                <i class="bi bi-check-circle text-primary"></i>
+                            </div>
+                            <div class="text-start">
+                                <small class="text-muted d-block">Available</small>
+                                <span class="fw-bold">{{ schedule.available_seats }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="rounded-circle bg-danger bg-opacity-10 p-2 me-2">
+                                <i class="bi bi-x-circle text-danger"></i>
+                            </div>
+                            <div class="text-start">
+                                <small class="text-muted d-block">Booked</small>
+                                <span class="fw-bold">{{ total_booked }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seat Layout Section -->
+    <div class="card shadow-sm rounded-4 border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                <h5 class="mb-0">Seat Layout</h5>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="bg-light p-3 rounded-3">
+                        <div class="d-flex gap-4 flex-wrap justify-content-center">
+                            <div class="d-flex align-items-center">
+                                <div class="seat available me-2"></div>
+                                <span><i class="bi bi-check-circle-fill text-success me-1"></i>Available</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="seat booked me-2"></div>
+                                <span><i class="bi bi-x-circle-fill text-danger me-1"></i>Booked</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-info-circle text-primary me-1"></i>
+                                <span>Click on a booked seat to view details</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Driver's Cabin -->
+            <div class="mb-4 position-relative">
+                <div class="drivers-cabin mx-auto mb-3 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-person-vcard"></i> Driver's Cabin
+                </div>
+                <div class="d-flex align-items-center justify-content-center mb-2">
+                    <div class="bus-door me-3">
+                        <i class="bi bi-door-open-fill"></i>
+                    </div>
+                    <div class="bus-front-indicator d-flex align-items-center justify-content-center">
+                        <i class="bi bi-arrow-right me-1"></i> Front
+                    </div>
+                </div>
+            </div>
+            
+            <div class="seat-layout mx-auto" style="max-width: 650px;">
+                <div class="overflow-auto">
+                    {% for row in seat_layout %}
+                        <div class="seat-row d-flex justify-content-center gap-2 mb-2">
+                            {% for seat in row %}
+                                {% if seat == 0 %}
+                                    <div class="seat aisle d-flex align-items-center justify-content-center">
+                                        <i class="bi bi-arrows-expand text-muted"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="seat {{ seat.status }} position-relative"
+                                         data-seat="{{ seat.seat }}"
+                                         {% if seat.status == "booked" and seat.user %}
+                                             data-bs-toggle="tooltip"
+                                             data-bs-placement="top"
+                                             title="Booked by: {{ seat.user }}"
+                                             data-booking-id="{{ seat.booking_id }}"
+                                         {% endif %}>
+                                        {{ seat.seat }}
+                                        {% if seat.status == "booked" %}
+                                            <i class="bi bi-lock-fill seat-icon"></i>
+                                        {% else %}
+                                            <i class="bi bi-check-circle-fill seat-icon"></i>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Details Modal -->
+<div class="modal fade" id="bookingDetailsModal" tabindex="-1" aria-labelledby="bookingDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="bookingDetailsModalLabel">
+                    <i class="bi bi-ticket-perforated-fill me-2"></i>Booking Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-column gap-3">
+
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-ticket-perforated text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Ticket Number</small>
+                            <span id="modal-ticket-id" class="fw-medium"></span>
+                        </div>
+                    </div>
+
+
+
+
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-person-fill text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Passenger</small>
+                            <span id="modal-user" class="fw-medium"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-telephone-fill text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Phone Number</small>
+                            <span id="modal-user-phone" class="fw-medium"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-bus-front-fill text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Bus Number</small>
+                            <span id="modal-bus-number" class="fw-medium"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-signpost-split-fill text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Route</small>
+                            <span id="modal-route" class="fw-medium"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-check2-circle text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Booking Status</small>
+                            <span id="modal-booking-status" class="fw-medium"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-chair-fill text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Seats</small>
+                            <span id="modal-seats" class="fw-medium"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-calendar-check-fill text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Booked At</small>
+                            <span id="modal-booked-at" class="fw-medium"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-123 text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Total Seats</small>
+                            <span id="modal-total-seat" class="fw-medium"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <span class="rounded-circle bg-primary bg-opacity-10 p-2 me-3">
+                            <i class="bi bi-cash text-primary"></i>
+                        </span>
+                        <div>
+                            <small class="text-muted d-block">Total Price</small>
+                            <span class="fw-medium">NPR <span id="modal-total-price"></span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+                    <i class="bi bi-x me-1"></i> Close
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill d-none" id="btnPrintTicket">
+                    <i class="bi bi-printer me-1"></i> Print Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Seat styles */
+    .seat {
+        width: 45px;
+        height: 45px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .seat.available {
+        background-color: #4cc9a4;
+        color: white;
+    }
+
+    .seat.booked {
+        background-color: #f94144;
+        color: white;
+    }
+
+    .seat.aisle {
+        background-color: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .seat:hover:not(.aisle) {
+        transform: scale(1.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        z-index: 10;
+    }
+    
+    .seat-icon {
+        position: absolute;
+        bottom: -5px;
+        right: -5px;
+        font-size: 12px;
+        background: white;
+        border-radius: 50%;
+        width: 14px;
+        height: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .seat.available .seat-icon {
+        color: #4cc9a4;
+    }
+    
+    .seat.booked .seat-icon {
+        color: #f94144;
+    }
+
+    /* Bus driver's cabin */
+    .drivers-cabin {
+        width: 120px;
+        height: 50px;
+        background-color: #e9ecef;
+        border-radius: 10px 10px 0 0;
+        color: #6c757d;
+        font-size: 12px;
+    }
+    
+    .bus-door {
+        color: #6c757d;
+        font-size: 22px;
+    }
+    
+    .bus-front-indicator {
+        background-color: #e9ecef;
+        border-radius: 20px;
+        padding: 2px 10px;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .seat-layout {
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+    }
+
+    .card {
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .seat {
+            width: 40px;
+            height: 40px;
+            font-size: 12px;
+        }
+        
+        .seat-layout {
+            padding: 10px;
+        }
+        
+        .drivers-cabin {
+            width: 100px;
+            height: 40px;
+            font-size: 11px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .seat {
+            width: 35px;
+            height: 35px;
+            font-size: 11px;
+        }
+        
+        .seat-row {
+            gap: 4px !important;
+        }
+        
+        .seat-layout {
+            padding: 8px;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        
+        .drivers-cabin {
+            width: 90px;
+            height: 35px;
+            font-size: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Handle seat clicks for booked seats
+        const bookedSeats = document.querySelectorAll('.seat.booked');
+        const modal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
+
+        bookedSeats.forEach(seat => {
+            seat.addEventListener('click', async function() {
+                const bookingId = this.getAttribute('data-booking-id');
+                
+                // Show loading indicator
+                this.innerHTML = '<div class="spinner-border spinner-border-sm text-light" role="status"><span class="visually-hidden">Loading...</span></div>';
+                
+                try {
+                    const response = await fetch(`/booking-details/${bookingId}/`);
+                    
+                    // Restore original seat content
+                    this.innerHTML = `${this.getAttribute('data-seat')}<i class="bi bi-lock-fill seat-icon"></i>`;
+                    
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Populate modal with booking details
+                    document.getElementById('modal-ticket-id').textContent=data.id;
+                    document.getElementById('modal-user').textContent = data.user;
+                    document.getElementById('modal-user-phone').textContent = data.user_phone || 'N/A';
+                    document.getElementById('modal-bus-number').textContent = data.bus_number;
+                    document.getElementById('modal-route').textContent = `${data.source} → ${data.destination}`;
+                    
+                    // Add status badge with appropriate color
+                    const statusElem = document.getElementById('modal-booking-status');
+                    let statusClass = 'text-success';
+                    let statusIcon = 'bi-check-circle-fill';
+                    
+                    if (data.booking_status.toLowerCase() === 'pending') {
+                        statusClass = 'text-warning';
+                        statusIcon = 'bi-hourglass-split';
+                    } else if (data.booking_status.toLowerCase() === 'cancelled') {
+                        statusClass = 'text-danger';
+                        statusIcon = 'bi-x-circle-fill';
+                    }
+                    
+                    statusElem.innerHTML = `<span class="${statusClass}"><i class="bi ${statusIcon} me-1"></i>${data.booking_status}</span>`;
+                    
+                    document.getElementById('modal-seats').textContent = data.seat.join(', ');
+                    
+                    // Format date in a user-friendly way
+                    const bookingDate = new Date(data.booked_at);
+                    const formattedDate = bookingDate.toLocaleDateString('en-US', {
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    document.getElementById('modal-booked-at').textContent = formattedDate;
+                    
+                    document.getElementById('modal-total-seat').textContent = data.total_seat;
+                    document.getElementById('modal-total-price').textContent = data.total_price
+
+                    // Show print button conditionally
+                    const printBtn = document.getElementById('btnPrintTicket');
+                    if (data.booking_status.toLowerCase() === 'confirmed') {
+                        printBtn.classList.remove('d-none');
+                    } else {
+                        printBtn.classList.add('d-none');
+                    }
+
+                    modal.show();
+                } catch (error) {
+                    // Restore original seat content on error
+                    this.innerHTML = `${this.getAttribute('data-seat')}<i class="bi bi-lock-fill seat-icon"></i>`;
+                    console.error('Error fetching booking details:', error);
+                    
+                    // Show user-friendly error
+                    const errorToast = new bootstrap.Toast(Object.assign(document.createElement('div'), {
+                        className: 'toast position-fixed bottom-0 end-0 m-3',
+                        innerHTML: `
+                            <div class="toast-header bg-danger text-white">
+                                <i class="bi bi-exclamation-circle me-2"></i>
+                                <strong class="me-auto">Error</strong>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                            </div>
+                            <div class="toast-body">
+                                Failed to load booking details. Please try again.
+                            </div>
+                        `
+                    }));
+                    document.body.appendChild(errorToast.element);
+                    errorToast.show();
+                }
+            });
+        });
+        
+        // Print ticket functionality
+        document.getElementById('btnPrintTicket')?.addEventListener('click', function() {
+            // Implement print functionality here
+            window.print();
+        });
+        
+        // Enhance responsive behavior
+        function adjustSeatSize() {
+            const containerWidth = document.querySelector('.seat-layout').offsetWidth;
+            const rowLength = document.querySelectorAll('.seat-row')[0]?.children.length || 0;
+            
+            if (rowLength > 0 && containerWidth < 400 && rowLength > 5) {
+                document.querySelectorAll('.seat').forEach(seat => {
+                    seat.style.width = '30px';
+                    seat.style.height = '30px';
+                    seat.style.fontSize = '10px';
+                });
+            }
+        }
+        
+        // Call on load and resize
+        adjustSeatSize();
+        window.addEventListener('resize', adjustSeatSize);
+    });
+</script>
+{% endblock %}

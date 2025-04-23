@@ -1,0 +1,225 @@
+{% extends 'components/base.html' %}
+{% block title %}Add Notification | Go Sewa{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
+            {% include 'components/sidebar.html' %}
+        </div>
+        <!-- Main Content -->
+        <main class="mt-5 col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content">
+            <!-- Messages --> 
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Header -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                <h1 class="h2 fw-bold">
+                    <i class="bi bi-bell-plus me-2 text-primary"></i>Add Notification
+                </h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <a href="{% url 'all_notification' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Notifications
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Add Notification Card -->
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="mb-0 fw-bold text-primary">
+                                <i class="bi bi-send me-2"></i>Create System Notification
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{% url 'add_notification' %}">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="title" class="form-label fw-bold">Notification Title <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="title" name="title" placeholder="Enter notification title" required>
+                                    <div class="form-text text-muted">Keep the title short and descriptive</div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="message" class="form-label fw-bold">Message <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="message" name="message" rows="5" placeholder="Enter notification message" required></textarea>
+                                    <div class="form-text text-muted">Provide details of the notification</div>
+                                </div>
+                                
+                               
+                                
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                                    <button type="reset" class="btn btn-outline-secondary me-md-2">
+                                        <i class="bi bi-x-circle me-1"></i> Cancel
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-send me-1"></i> Send Notification
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                   
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        background-color: #fff;
+        transition: all 0.3s;
+    }
+    
+    #sidebar-wrapper {
+        min-height: 100vh;
+        width: 250px;
+        transition: margin 0.25s ease-out;
+        background-color: white;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        z-index: 1;
+    }
+    
+    .main-content {
+        background-color: #fff;
+    }
+    
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    /* Notification specific styles */
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .bg-primary-soft {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+    
+    .notification-preview {
+        background-color: #fff;
+        transition: all 0.3s ease;
+    }
+    
+    /* Form improvements */
+    .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    
+    /* Animation for preview */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .preview-update {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Live preview functionality
+        const titleInput = document.getElementById('title');
+        const messageInput = document.getElementById('message');
+        const previewTitle = document.querySelector('.preview-title');
+        const previewMessage = document.querySelector('.preview-message');
+        
+        // Update the preview when inputs change
+        titleInput.addEventListener('input', function() {
+            previewTitle.textContent = this.value || 'Notification Title';
+            updatePreview();
+        });
+        
+        messageInput.addEventListener('input', function() {
+            previewMessage.textContent = this.value || 'Your notification message will appear here.';
+            updatePreview();
+        });
+        
+        // Add animation when preview updates
+        function updatePreview() {
+            const previewElement = document.querySelector('.notification-preview');
+            previewElement.classList.add('preview-update');
+            
+            // Remove the class after animation completes
+            setTimeout(() => {
+                previewElement.classList.remove('preview-update');
+            }, 300);
+        }
+        
+        // Form validation and submission
+        const notificationForm = document.querySelector('form');
+        notificationForm.addEventListener('submit', function(e) {
+            if (!titleInput.value.trim()) {
+                e.preventDefault();
+                titleInput.classList.add('is-invalid');
+                return false;
+            }
+            
+            if (!messageInput.value.trim()) {
+                e.preventDefault();
+                messageInput.classList.add('is-invalid');
+                return false;
+            }
+        });
+        
+        // Remove invalid class on input
+        titleInput.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+        
+        messageInput.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+        
+        // Reset button functionality
+        const resetButton = document.querySelector('button[type="reset"]');
+        resetButton.addEventListener('click', function() {
+            // Clear the form
+            notificationForm.reset();
+            
+            // Reset the preview
+            previewTitle.textContent = 'Notification Title';
+            previewMessage.textContent = 'Your notification message will appear here.';
+            
+            // Add animation
+            updatePreview();
+            
+            // Prevent form submission
+            return false;
+        });
+    });
+</script>
+{% endblock %}

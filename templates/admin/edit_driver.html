@@ -1,0 +1,167 @@
+{% extends 'components/base.html' %}
+
+{% block title %}Edit Driver | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4" style="margin-top: 90px !important;">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-12">
+            <!-- Card -->
+            <div class="card shadow-sm animate__animated animate__fadeIn">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                    <h2 class="h4 fw-bold mb-0">
+                        <i class="bi bi-person-circle me-2 text-primary"></i>Edit Driver
+                    </h2>
+                    <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data" id="editDriverForm">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <!-- Full Name -->
+                            <div class="col-md-6">
+                                <label for="full_name" class="form-label fw-bold">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="full_name" name="full_name" value="{{ driver.full_name }}" placeholder="e.g., John Doe" required>
+                            </div>
+
+                            <!-- Phone Number -->
+                            <div class="col-md-6">
+                                <label for="phone_number" class="form-label fw-bold">Phone Number <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number" value="{{ driver.phone_number }}" placeholder="e.g., +977-123-456-7890" pattern="^\+?[1-9]\d{1,14}$" required>
+                                <small class="text-muted">Format: +977-123-456-7890</small>
+                            </div>
+
+                            <!-- Profile Photo -->
+                            <div class="col-md-6">
+                                <label for="driver_profile" class="form-label fw-bold">Profile Photo</label>
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="driver_profile" name="driver_profile" accept="image/*">
+                                    <label class="input-group-text" for="driver_profile"><i class="bi bi-upload"></i></label>
+                                </div>
+                                {% if driver.profile_photo %}
+                                <div class="mt-2">
+                                    <img src="{{ driver.profile_photo.url }}" alt="Current Profile Photo" class="rounded" style="max-width: 100px; max-height: 100px; object-fit: cover;" id="current_profile_preview">
+                                    <small class="d-block text-muted mt-1">Current photo</small>
+                                </div>
+                                {% endif %}
+                                <div class="mt-2" id="profile_preview" style="display: none;">
+                                    <img src="#" alt="Profile Preview" class="rounded" style="max-width: 100px; max-height: 100px; object-fit: cover;">
+                                    <small class="d-block text-muted mt-1">New photo preview</small>
+                                </div>
+                            </div>
+
+                            <!-- Driver's License -->
+                            <div class="col-md-6">
+                                <label for="license_image" class="form-label fw-bold">Driver's License</label>
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="license_image" name="license_image" accept="image/*">
+                                    <label class="input-group-text" for="license_image"><i class="bi bi-upload"></i></label>
+                                </div>
+                                {% if driver.license_image %}
+                                <div class="mt-2">
+                                    <img src="{{ driver.license_image.url }}" alt="Current License Image" class="rounded" style="max-width: 100px; max-height: 100px; object-fit: cover;" id="current_license_preview">
+                                    <small class="d-block text-muted mt-1">Current license</small>
+                                </div>
+                                {% endif %}
+                                <div class="mt-2" id="license_preview" style="display: none;">
+                                    <img src="#" alt="License Preview" class="rounded" style="max-width: 100px; max-height: 100px; object-fit: cover;">
+                                    <small class="d-block text-muted mt-1">New license preview</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i> Update Driver
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+    }
+    .form-control:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    .btn {
+        border-radius: 5px;
+    }
+    .input-group-text {
+        cursor: pointer;
+    }
+    @media (max-width: 576px) {
+        .card-body {
+            padding: 1.5rem;
+        }
+        .btn {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .d-flex {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Preview Profile Photo
+        document.getElementById('driver_profile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('profile_preview');
+            const previewImg = preview.querySelector('img');
+            if (file) {
+                previewImg.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Preview License Image
+        document.getElementById('license_image').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('license_preview');
+            const previewImg = preview.querySelector('img');
+            if (file) {
+                previewImg.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Basic form validation feedback
+        document.getElementById('editDriverForm').addEventListener('submit', function(event) {
+            const phone = document.getElementById('phone_number').value;
+            const phonePattern = /^\+?[1-9]\d{1,14}$/;
+            if (!phonePattern.test(phone)) {
+                event.preventDefault();
+                alert('Please enter a valid phone number (e.g., +977-123-456-7890)');
+            }
+        });
+    });
+</script>
+{% endblock %}

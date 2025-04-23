@@ -1,0 +1,603 @@
+{% extends 'components/base.html' %}
+{% block content %}
+<div class="admin-wrapper">
+  
+    
+    <div class="admin-sidebar" id="adminSidebar">
+        {% include 'components/sidebar.html'%}
+    </div>
+    
+    <div class="admin-main-content" id="mainContent">
+        <div class="admin-container py-4">
+            
+            <h1 class="admin-title mb-4">Admin Dashboard</h1>
+
+            <!-- Stats Cards -->
+            <div class="admin-stats-grid">
+                <!-- Card 1: Total Revenue -->
+                <div class="admin-stat-card revenue-card">
+                    <div class="admin-card-inner">
+                        <div class="admin-card-content">
+                            <div class="admin-card-label">Total Revenue</div>
+                            <div class="admin-card-value">Rs. {{ data.total_revenue }}</div>
+                        </div>
+                        <div class="admin-card-icon">
+                            <i class="bi bi-currency-dollar"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Active Buses -->
+                <div class="admin-stat-card buses-card">
+                    <div class="admin-card-inner">
+                        <div class="admin-card-content">
+                            <div class="admin-card-label">Active Buses</div>
+                            <div class="admin-card-value">{{ data.total_active_bus }}</div>
+                        </div>
+                        <div class="admin-card-icon">
+                            <i class="bi bi-bus-front"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Registered Users -->
+                <div class="admin-stat-card users-card">
+                    <div class="admin-card-inner">
+                        <div class="admin-card-content">
+                            <div class="admin-card-label">Registered Users</div>
+                            <div class="admin-card-value">{{ data.total_user }}</div>
+                        </div>
+                        <div class="admin-card-icon">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Pending Bookings -->
+                <div class="admin-stat-card pending-card">
+                    <div class="admin-card-inner">
+                        <div class="admin-card-content">
+                            <div class="admin-card-label">Pending Bookings</div>
+                            <div class="admin-card-value">{{ data.total_booking_pending }}</div>
+                        </div>
+                        <div class="admin-card-icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Completed Trips -->
+                <div class="admin-stat-card trips-card">
+                    <div class="admin-card-inner">
+                        <div class="admin-card-content">
+                            <div class="admin-card-label">Completed Trips</div>
+                            <div class="admin-card-value">{{ data.total_trip_completed }}</div>
+                        </div>
+                        <div class="admin-card-icon">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 6: Tickets Booked -->
+                <div class="admin-stat-card tickets-card">
+                    <div class="admin-card-inner">
+                        <div class="admin-card-content">
+                            <div class="admin-card-label">Tickets Booked</div>
+                            <div class="admin-card-value">{{ data.ticket_booked }}</div>
+                        </div>
+                        <div class="admin-card-icon">
+                            <i class="bi bi-ticket-perforated"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Bookings Table -->
+            <div class="admin-table-section">
+                <div class="admin-table-card">
+                    <div class="admin-card-header">
+                        <h6 class="admin-card-title">Recent Bookings</h6>
+                        
+                        <a href={% url 'booking_list' %} class="admin-view-all-btn">View All</a>
+                    </div>
+                    <div class="admin-card-body">
+                        <div class="admin-table-container">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Booking ID</th>
+                                        <th>Customer</th>
+                                        <th>Trip</th>
+                                        <th>Seats</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for booking in recent_booking %}
+                                    <tr>
+                                        <td>{{ booking.id }}</td>
+                                        <td>{{ booking.user.full_name }}</td>
+                                        <td>{{ booking.schedule.route.source }} to {{ booking.schedule.route.destination }}</td>
+                                        <td>{{ booking.seat|join:", " }}</td>
+                                        <td>
+                                            <span class="admin-status-badge {% if booking.booking_status == 'booked' %}admin-status-success{% elif booking.booking_status == 'pending' %}admin-status-warning{% else %}admin-status-danger{% endif %}">
+                                                {{ booking.booking_status }}
+                                            </span>
+                                        </td>
+                                        <td>{{ booking.booked_at|date:"d M, Y" }}</td>
+                                        <td>Rs. {{ booking.schedule.price }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">No recent bookings</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Trips Table -->
+            <div class="admin-table-section">
+                <div class="admin-table-card">
+                    <div class="admin-card-header">
+                        <h6 class="admin-card-title">Recent Bus  Trips</h6>
+                        <a href={% url 'all_trips' %} class="admin-view-all-btn">View All</a>
+                    </div>
+                    <div class="admin-card-body">
+                        <div class="admin-table-container">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Trip ID</th>
+                                        <th>Route</th>
+                                        <th>Bus</th>
+                                        <th>Departure</th>
+                                        <th>Arrival</th>
+                                        <th>Status</th>
+                                        <th>Price  Per Seat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for trip in trip_data %}
+                                    <tr>
+                                        <td>{{ trip.id }}</td>
+                                        <td>{{ trip.route.source }} to {{ trip.route.destination }}</td>
+                                        <td>{{ trip.bus.bus_number }}</td>
+                                        <td>{{ trip.scheduled_departure|date:"d M, Y H:i" }}</td>
+                                        <td>{{ trip.scheduled_departure|date:"d M, Y H:i" }}</td>
+                                        <td>
+                                            <span class="admin-status-badge {% if trip.status == 'completed' %}admin-status-success{% elif trip.status == 'scheduled' %}admin-status-info{% elif trip.status == 'cancelled' %}admin-status-danger{% else %}admin-status-warning{% endif %}">
+                                                {{ trip.status }}
+                                            </span>
+                                        </td>
+                                        <td>Rs. {{ trip.schedule.price }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">No recent trips</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('adminSidebar');
+    const mainContent = document.getElementById('mainContent');
+    
+    sidebarToggle.addEventListener('click', function() {
+        sidebar.classList.toggle('admin-sidebar-active');
+        mainContent.classList.toggle('admin-main-shifted');
+    });
+    
+    // Close sidebar when clicking outside on small screens
+    document.addEventListener('click', function(event) {
+        const isMobile = window.innerWidth < 992;
+        if (isMobile && !sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
+            sidebar.classList.remove('admin-sidebar-active');
+            mainContent.classList.remove('admin-main-shifted');
+        }
+    });
+    
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 992) {
+            sidebar.classList.remove('admin-sidebar-active');
+            mainContent.classList.remove('admin-main-shifted');
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Namespace all styles with 'admin-' prefix to avoid conflicts */
+.admin-wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Sidebar Toggle Button */
+.admin-sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1040;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #4e73df;
+    color: white;
+    text-align: center;
+    line-height: 40px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.admin-sidebar-toggle:hover {
+    background-color: #2e59d9;
+}
+
+/* Sidebar Container */
+.admin-sidebar {
+    width: 250px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1030;
+    background-color: #4e73df; /* Adjust to match your sidebar color */
+    transition: all 0.3s ease;
+}
+
+.admin-main-content {
+    flex: 1;
+    padding-top: 70px;
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+}
+
+.admin-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    max-width: 100%;
+}
+
+.admin-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1.5rem;
+}
+
+/* Responsive stats grid */
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Stat cards */
+.admin-stat-card {
+    border-radius: 0.375rem;
+    box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.15);
+    background-color: #fff;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 0.25rem solid transparent;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.25rem 2rem rgba(0, 0, 0, 0.2);
+}
+
+.admin-card-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem;
+}
+
+.admin-card-content {
+    flex: 1;
+}
+
+.admin-card-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 0.375rem;
+    letter-spacing: 0.03em;
+}
+
+.admin-card-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.admin-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 1rem;
+}
+
+.admin-card-icon i {
+    font-size: 2rem;
+    opacity: 0.4;
+}
+
+/* Card color styles */
+.revenue-card {
+    border-left-color: #4e73df;
+}
+.revenue-card .admin-card-label {
+    color: #4e73df;
+}
+
+.buses-card {
+    border-left-color: #1cc88a;
+}
+.buses-card .admin-card-label {
+    color: #1cc88a;
+}
+
+.users-card {
+    border-left-color: #36b9cc;
+}
+.users-card .admin-card-label {
+    color: #36b9cc;
+}
+
+.pending-card {
+    border-left-color: #f6c23e;
+}
+.pending-card .admin-card-label {
+    color: #f6c23e;
+}
+
+.trips-card {
+    border-left-color: #4e73df;
+}
+.trips-card .admin-card-label {
+    color: #4e73df;
+}
+
+.tickets-card {
+    border-left-color: #1cc88a;
+}
+.tickets-card .admin-card-label {
+    color: #1cc88a;
+}
+
+/* Table sections */
+.admin-table-section {
+    margin-bottom: 2rem;
+}
+
+.admin-table-card {
+    border-radius: 0.375rem;
+    box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.15);
+    background-color: #fff;
+    overflow: hidden;
+}
+
+.admin-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.admin-card-title {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #4e73df;
+}
+
+.admin-view-all-btn {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: #4e73df;
+    border-radius: 0.25rem;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.admin-view-all-btn:hover {
+    background-color: #2e59d9;
+    text-decoration: none;
+    color: #fff;
+}
+
+.admin-card-body {
+    padding: 0;
+}
+
+.admin-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 0.75rem;
+    border: 1px solid #e3e6f0;
+}
+
+.admin-table thead th {
+    background-color: #f8f9fc;
+    color: #5a5c69;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+/* Status badges */
+.admin-status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.25rem;
+    text-transform: capitalize;
+}
+
+.admin-status-success {
+    background-color: rgba(28, 200, 138, 0.1);
+    color: #1cc88a;
+}
+
+.admin-status-warning {
+    background-color: rgba(246, 194, 62, 0.1);
+    color: #f6c23e;
+}
+
+.admin-status-danger {
+    background-color: rgba(231, 74, 59, 0.1);
+    color: #e74a3b;
+}
+
+.admin-status-info {
+    background-color: rgba(54, 185, 204, 0.1);
+    color: #36b9cc;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991px) {
+    .admin-sidebar-toggle {
+        display: block;
+    }
+    
+    .admin-sidebar {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+    
+    .admin-sidebar-active {
+        transform: translateX(0);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .admin-main-content {
+        margin-left: 0;
+        padding-top: 60px;
+    }
+    
+    .admin-main-shifted {
+        margin-left: 0;
+    }
+    
+    .admin-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .admin-stats-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+    }
+    
+    .admin-card-value {
+        font-size: 1.25rem;
+    }
+    
+    .admin-card-icon i {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .admin-stats-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+    
+    .admin-title {
+        font-size: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .admin-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .admin-title {
+        font-size: 1.25rem;
+    }
+    
+    .admin-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .admin-card-inner {
+        padding: 1rem;
+    }
+    
+    .admin-card-label {
+        font-size: 0.7rem;
+    }
+    
+    .admin-card-value {
+        font-size: 1.2rem;
+    }
+    
+    .admin-card-icon i {
+        font-size: 1.5rem;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: 0.4rem;
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

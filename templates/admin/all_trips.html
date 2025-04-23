@@ -1,0 +1,535 @@
+{% extends 'components/base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="margin-top:90px">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Trips </h1>
+    </div>
+    
+    <!-- Filter and Search Card -->
+    <div class="card mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-white">
+                <i class="fas fa-filter mr-1"></i>
+                Filter Trips
+            </h6>
+        </div>
+        <div class="card-body">
+            <form id="filterForm" class="form-inline">
+                <div class="row w-100">
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label for="status" class="sr-only">Status</label>
+                        <select name="status" id="status" class="form-control w-100">
+                            <option value="">All Statuses</option>
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label for="route" class="sr-only">Route</label>
+                        <select name="route" id="route" class="form-control w-100">
+                            <option value="">All Routes</option>
+                            {% for route in routes %}
+                                <option value="{{ route.id }}">{{ route.source }}->{{route.destination}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2 col-sm-6 mb-2">
+                        <label for="date" class="sr-only">Date</label>
+                        <div class="input-group">
+                           
+                            <input type="date" name="date" id="date" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2 col-sm-6 mb-2">
+                        <label for="search" class="sr-only">Search</label>
+                        <div class="input-group">
+                           
+                            <input type="text" name="search" id="search" class="form-control" placeholder="Search...">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2 col-sm-12 mb-2">
+                        <button type="button" id="applyFilters" class="btn btn-primary w-100">
+                            <i class="fas fa-filter"></i> Apply
+                        </button>
+                        <button type="button" id="resetFilters" class="btn btn-outline-secondary w-100 mt-2">
+                            <i class="fas fa-sync-alt"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Trips Table -->
+    <div class="card mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-white">
+                <i class="fas fa-bus mr-1"></i>
+                Trip Records
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="tripTable" width="100%" cellspacing="0">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Bus</th>
+                            <th>Route</th>
+                            <th>Driver</th>
+                            <th>Staff</th>
+                            <th>Scheduled</th>
+                            <th>Actual</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trip in trips %}
+                        <tr data-route="{{ trip.route.id }}" data-status="{{ trip.status }}" 
+                            data-scheduled-date="{{ trip.scheduled_departure|date:'Y-m-d' }}"
+                            data-bus="{{ trip.bus.bus_number }}" data-license="{{ trip.bus.license_plate }}"
+                            data-driver="{{ trip.driver.full_name }}" data-route-name="{{ trip.route.name }}">
+                            <td>
+                                <div class="font-weight-bold">{{ trip.bus.bus_number }}</div>
+                                <small class="text-muted">{{ trip.bus.license_plate }}</small>
+                            </td>
+                            <td>
+                                <div class="font-weight-bold">{{ trip.route.source }} → {{ trip.route.destination }}</div>
+                                <small class="text-muted">{{ trip.route.name }}</small>
+                            </td>
+                            <td>{{ trip.driver.full_name }}</td>
+                            <td>{{ trip.staff.full_name }}</td>
+                            <td>
+                                <div><strong>Dep:</strong> {{ trip.scheduled_departure|date:"M d, H:i" }}</div>
+                                <div><strong>Arr:</strong> {{ trip.scheduled_arrival|date:"M d, H:i" }}</div>
+                            </td>
+                            <td>
+                                {% if trip.actual_departure %}
+                                    <div><strong>Dep:</strong> {{ trip.actual_departure|date:"M d, H:i" }}</div>
+                                {% else %}
+                                    <div class="text-muted">Not departed</div>
+                                {% endif %}
+                                {% if trip.actual_arrival %}
+                                    <div><strong>Arr:</strong> {{ trip.actual_arrival|date:"M d, H:i" }}</div>
+                                {% else %}
+                                    <div class="text-muted">Not arrived</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if trip.status == 'on_time' %}badge-success
+                                    {% elif trip.status == 'delayed' %}badge-warning
+                                    {% else %}badge-primary
+                                    {% endif %}">
+                                    {{ trip.get_status_display|default:"None" }}
+                                </span>
+                            </td>
+                            <td class="action-buttons">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'bus_details' trip.schedule.id %}" class="btn btn-info" title="View Tcket Booking Details">
+                                        <i class="bi bi-eye-fill"></i> View
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr id="no-trips-row">
+                            <td colspan="8" class="text-center py-4">
+                                <i class="fas fa-bus-slash fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No trips found</h5>
+                                <a href="#" class="btn btn-primary mt-2">
+                                    <i class="fas fa-plus"></i> Create New Trip
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination - We'll implement this client-side too -->
+            <div id="pagination-container" class="mt-4" {% if trips|length == 0 %}style="display:none"{% endif %}>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- Pagination will be generated by JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Custom Styles */
+    .card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg,rgb(0, 0, 0) 0%,rgb(23, 51, 100) 100%);
+        color: white;
+        border-radius: 10px 10px 0 0 !important;
+    }
+    
+    .badge {
+        padding: 0.5em 0.75em;
+        font-size: 0.85em;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-success {
+        background-color: #28a745 !important;
+    }
+    
+    .badge-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+    
+    .badge-primary {
+        background-color: #007bff !important;
+    }
+    
+    .table th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 10;
+    }
+    
+    .table-responsive {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .form-control, .btn {
+        border-radius: 5px;
+    }
+    
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .hidden-row {
+        display: none;
+    }
+    
+    @media (max-width: 768px) {
+        .form-inline .form-group {
+            margin-bottom: 0.5rem;
+            width: 100%;
+        }
+        
+        .form-inline .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .table-responsive {
+            max-height: none;
+        }
+        
+        .action-buttons .btn-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .action-buttons .btn {
+            margin-bottom: 0.25rem;
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Set default date if empty
+        if (!$('#date').val()) {
+            let today = new Date().toISOString().split('T')[0];
+            $('#date').val(today);
+        }
+        
+        // Store all trips for client-side filtering
+        let allTrips = [];
+        let currentPage = 1;
+        const rowsPerPage = 10;
+        
+        // Collect all trip rows
+        $('#tripTable tbody tr').each(function() {
+            if (!$(this).attr('id') || $(this).attr('id') !== 'no-trips-row') {
+                allTrips.push($(this));
+            }
+        });
+        
+        // Initialize tooltips
+        $('[title]').tooltip();
+        
+        // Apply filters function
+        function applyFilters() {
+            const statusFilter = $('#status').val();
+            const routeFilter = $('#route').val();
+            const dateFilter = $('#date').val();
+            const searchQuery = $('#search').val().toLowerCase();
+            
+            let filteredTrips = allTrips;
+            
+            // Reset all rows first - show everything
+            allTrips.forEach(row => {
+                row.removeClass('hidden-row');
+            });
+            
+            // Only apply filters if any filter is selected
+            if (statusFilter || routeFilter || (dateFilter && $('#date').data('filtered')) || searchQuery) {
+                // Hide all rows first
+                allTrips.forEach(row => {
+                    row.addClass('hidden-row');
+                });
+                
+                // Filter the trips
+                filteredTrips = allTrips.filter(row => {
+                    const rowRoute = row.data('route');
+                    const rowStatus = row.data('status');
+                    const rowDate = row.data('scheduled-date');
+                    const rowBus = row.data('bus').toLowerCase();
+                    const rowLicense = row.data('license').toLowerCase();
+                    const rowDriver = row.data('driver').toLowerCase();
+                    const rowRouteName = row.data('route-name').toLowerCase();
+                    
+                    // Check if row matches all selected filters
+                    const matchesStatus = !statusFilter || rowStatus === statusFilter;
+                    const matchesRoute = !routeFilter || rowRoute == routeFilter;
+                    const matchesDate = !dateFilter || !$('#date').data('filtered') || rowDate === dateFilter;
+                    
+                    // Check if row matches search query
+                    const matchesSearch = !searchQuery || 
+                                        rowBus.includes(searchQuery) || 
+                                        rowLicense.includes(searchQuery) || 
+                                        rowDriver.includes(searchQuery) ||
+                                        rowRouteName.includes(searchQuery);
+                    
+                    return matchesStatus && matchesRoute && matchesDate && matchesSearch;
+                });
+                
+                // Show filtered rows
+                filteredTrips.forEach(row => {
+                    row.removeClass('hidden-row');
+                });
+            }
+            
+            // No results handling
+            if (filteredTrips.length === 0) {
+                $('#no-trips-row').removeClass('hidden-row');
+                $('#pagination-container').hide();
+            } else {
+                $('#no-trips-row').addClass('hidden-row');
+                
+                // Only show pagination if we have more rows than the page size
+                if (filteredTrips.length > rowsPerPage) {
+                    $('#pagination-container').show();
+                    
+                    // Implement pagination
+                    const totalPages = Math.ceil(filteredTrips.length / rowsPerPage);
+                    const startIndex = (currentPage - 1) * rowsPerPage;
+                    const endIndex = Math.min(startIndex + rowsPerPage, filteredTrips.length);
+                    
+                    // Paginate by hiding rows not on current page
+                    filteredTrips.forEach((row, index) => {
+                        if (index < startIndex || index >= endIndex) {
+                            row.addClass('hidden-row');
+                        }
+                    });
+                    
+                    // Update pagination controls
+                    updatePagination(totalPages);
+                } else {
+                    $('#pagination-container').hide();
+                }
+            }
+            
+            return filteredTrips.length;
+        }
+        
+        // Generate pagination controls
+        function updatePagination(totalPages) {
+            const $pagination = $('#pagination');
+            $pagination.empty();
+            
+            if (totalPages <= 1) {
+                $('#pagination-container').hide();
+                return;
+            }
+            
+            $('#pagination-container').show();
+            
+            // First & Previous buttons
+            if (currentPage > 1) {
+                $pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" data-page="1" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                `);
+            }
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPage || 
+                    i === 1 || 
+                    i === totalPages || 
+                    (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    $pagination.append(`
+                        <li class="page-item ${i === currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" data-page="${i}">${i}</a>
+                        </li>
+                    `);
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    $pagination.append(`
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#">...</a>
+                        </li>
+                    `);
+                }
+            }
+            
+            // Next & Last buttons
+            if (currentPage < totalPages) {
+                $pagination.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="#" data-page="${totalPages}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                `);
+            }
+            
+            // Bind click events to pagination links
+            $('.page-link').on('click', function(e) {
+                e.preventDefault();
+                const newPage = $(this).data('page');
+                if (newPage) {
+                    currentPage = newPage;
+                    applyFilters();
+                    
+                    // Scroll to top of table
+                    $('.table-responsive').scrollTop(0);
+                }
+            });
+        }
+        
+        // Apply filters when button clicked
+        $('#applyFilters').on('click', function() {
+            currentPage = 1; // Reset to first page when applying new filters
+            
+            // Mark date as filtered only when apply is clicked
+            if ($('#date').val()) {
+                $('#date').data('filtered', true);
+            }
+            
+            applyFilters();
+        });
+        
+        // Reset filters
+        $('#resetFilters').on('click', function() {
+            $('#status').val('');
+            $('#route').val('');
+            
+            // Reset date to today but mark as not filtered
+            $('#date').val(new Date().toISOString().split('T')[0]);
+            $('#date').data('filtered', false);
+            
+            $('#search').val('');
+            currentPage = 1;
+            
+            // Show all data
+            allTrips.forEach(row => {
+                row.removeClass('hidden-row');
+            });
+            
+            // Hide no results message
+            $('#no-trips-row').addClass('hidden-row');
+            
+            // Implement pagination for all rows if needed
+            if (allTrips.length > rowsPerPage) {
+                $('#pagination-container').show();
+                
+                // Paginate all rows
+                allTrips.forEach((row, index) => {
+                    if (index >= rowsPerPage) {
+                        row.addClass('hidden-row');
+                    }
+                });
+                
+                // Update pagination controls
+                updatePagination(Math.ceil(allTrips.length / rowsPerPage));
+            } else {
+                $('#pagination-container').hide();
+            }
+        });
+        
+        // Handle filter form submission (prevent default)
+        $('#filterForm').on('submit', function(e) {
+            e.preventDefault();
+            currentPage = 1;
+            
+            // Mark date as filtered when form is submitted
+            if ($('#date').val()) {
+                $('#date').data('filtered', true);
+            }
+            
+            applyFilters();
+        });
+        
+        // Search on keyup (after small delay)
+        let searchTimeout;
+        $('#search').on('keyup', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(function() {
+                currentPage = 1;
+                applyFilters();
+            }, 300);
+        });
+        
+        // On page load, show all data with pagination if needed
+        if (allTrips.length > rowsPerPage) {
+            // Initial pagination - hide rows after first page
+            allTrips.forEach((row, index) => {
+                if (index >= rowsPerPage) {
+                    row.addClass('hidden-row');
+                }
+            });
+            
+            // Initialize pagination
+            updatePagination(Math.ceil(allTrips.length / rowsPerPage));
+        } else {
+            $('#pagination-container').hide();
+        }
+        
+        // Don't treat the initial date value as a filter
+        $('#date').data('filtered', false);
+    });
+</script>
+{% endblock %}

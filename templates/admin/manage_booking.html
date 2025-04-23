@@ -1,0 +1,512 @@
+{% extends 'components/base.html' %}
+
+{% block title %}
+    Booking Management
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
+            {% include 'components/sidebar.html' %}
+        </div>
+
+        <!-- Main Content -->
+
+        
+        <div class="col-md-9 col-lg-10 ms-md-auto px-md-4 py-4 main-content " style="margin-top:80px">
+            <h1 class="h2 mb-4">Booking Management</h1>
+
+            {% if error %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Error:</strong> {{ error }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+
+            {% comment %} ==== Messages ====== {% endcomment %}
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Filter and Search Section -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h3 class="h5 mb-0">Filters & Search</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="global-search" placeholder="Search across all bookings...">
+                                <button class="btn btn-outline-secondary" type="button" id="clear-search">Clear</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <select class="form-select" id="status-filter">
+                                        <option value="">All Statuses</option>
+                                        <option value="booked">Booked</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="cancelled">Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" class="form-control" id="start-date" placeholder="From Date">
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="date" class="form-control" id="end-date" placeholder="To Date">
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-primary w-100" id="today-filter">
+                                        <i class="bi bi-calendar-day me-1"></i> Today
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs mb-4" id="bookingTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="bus-tab" data-bs-toggle="tab" data-bs-target="#bus-reservations" type="button" role="tab">
+                        Vehicle Reservations
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="bookings-tab" data-bs-toggle="tab" data-bs-target="#bookings-list" type="button" role="tab">
+                        Seat Bookings List 
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="bookingTabsContent">
+                <!-- Bus Reservations Tab -->
+                <div class="tab-pane fade show active" id="bus-reservations" role="tabpanel" aria-labelledby="bus-tab">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h3 class="h5 mb-0">Vehicle Reservations</h3>
+                            <div class="text-muted small">
+                                Showing <span id="bus-showing-count">{{ bus_reserve_data|length }}</span> of {{ bus_reserve_data.paginator.count }} records
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0" id="bus-reservations-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Bus</th>
+                                            <th>Status</th>
+                                            <th>Route</th>
+                                            <th>Price</th>
+                                            <th>Start Date</th>
+                                            <th>Duration</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for bus_booking in bus_reserve_data %}
+                                            <tr class="bus-row" 
+                                                data-status="{{ bus_booking.status|lower }}"
+                                                data-start-date="{{ bus_booking.start_date|date:'Y-m-d' }}"
+                                                data-search="{{ bus_booking.user.full_name }} {{ bus_booking.bus_reserve.bus_number }} {{ bus_booking.source }} {{ bus_booking.destination }}">
+                                                <td>{{ bus_booking.user.full_name }} <span class="text-muted d-block small">{{bus_booking.user.phone}}</span></td>
+                                                <td>{{ bus_booking.bus_reserve.vechicle_number }}</td>
+                                                <td>
+                                                    <form action="{% url "update_status_reservation" bus_booking.id %}" method="post" class="d-flex align-items-center gap-2">
+                                                        {% csrf_token %}
+                                                        <select name="status" class="form-select form-select-sm" style="width: 100px;">
+                                                            <option value="booked" {% if bus_booking.status == "booked" %}selected{% endif %}>Booked</option>
+                                                            <option value="pending" {% if bus_booking.status == "pending" %}selected{% endif %}>Pending</option>
+                                                            <option value="cancelled" {% if bus_booking.status == "cancelled" %}selected{% endif %}>Cancelled</option>
+                                                        </select>
+                                                        <button type="submit" class="btn btn-sm btn-primary px-2 py-1">
+                                                            <i class="bi bi-check2"></i>
+                                                        </button>
+                                                    </form>
+                                                    
+                                                </td>
+                                                <td>
+                                                    <span class="d-block">From: {{ bus_booking.source }}</span>
+                                                    <span class="d-block">To: {{ bus_booking.destination }}</span>
+                                                </td>
+                                                <td>Rs {{bus_booking.bus_reserve.price}}</td>
+                                                <td>{{ bus_booking.start_date }}</td>
+                                                <td>{{ bus_booking.date }} days</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="6" class="text-center py-3">No reservations found</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Pagination remains the same -->
+                        {% if bus_reserve_data.paginator.num_pages > 1 %}
+                        <div class="card-footer bg-white">
+                            <nav aria-label="Bus reservations pagination">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if bus_reserve_data.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ bus_reserve_data.previous_page_number }}" aria-label="Previous">
+                                                <span aria-hidden="true">«</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">«</span>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in bus_reserve_data.paginator.page_range %}
+                                        {% if bus_reserve_data.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > bus_reserve_data.number|add:'-3' and num < bus_reserve_data.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if bus_reserve_data.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ bus_reserve_data.next_page_number }}" aria-label="Next">
+                                                <span aria-hidden="true">»</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">»</span>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Bookings Tab (unchanged) -->
+                <div class="tab-pane fade" id="bookings-list" role="tabpanel" aria-labelledby="bookings-tab">
+                    <!-- Previous bookings tab content remains unchanged -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h3 class="h5 mb-0">Booking List</h3>
+                            <div class="text-muted small">
+                                Showing <span id="booking-showing-count">{{ booking_data|length }}</span> of {{ booking_data.paginator.count }} records
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover mb-0" id="bookings-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Booking ID</th>
+                                            <th>Customer</th>
+                                            <th>Trip</th>
+                                            <th>Seats</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for booking in booking_data %}
+                                            <tr class="booking-row" 
+                                                data-status="{{ booking.booking_status|lower }}"
+                                                data-booked-date="{{ booking.booked_at|date:'Y-m-d' }}"
+                                                data-search="#{{ booking.id }} {{ booking.user.full_name }} {{ booking.schedule.source }} to {{ booking.schedule.destination }}">
+                                                <td>#{{ booking.id }}</td>
+                                                <td>{{ booking.user.full_name }}</td>
+                                                <td>{{ booking.schedule.route.source }} to {{ booking.schedule.route.destination }}</td>
+                                                <td>{{ booking.seat|join:", " }}</td>
+                                                <td>
+                                                    <span class="badge {% if booking.booking_status == 'booked' %}bg-success{% elif booking.booking_status == 'pending' %}bg-warning{% elif booking.booking_status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                        {{ booking.booking_status }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ booking.booked_at|date:"d M, Y" }}</td>
+                                                <td>Rs. {{ booking.schedule.price|floatformat:2 }}</td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="7" class="text-center py-3">No bookings found</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        {% if booking_data.paginator.num_pages > 1 %}
+                        <div class="card-footer bg-white">
+                            <nav aria-label="Bookings pagination">
+                                <ul class="pagination justify-content-center mb-0">
+                                    {% if booking_data.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ booking_data.previous_page_number }}" aria-label="Previous">
+                                                <span aria-hidden="true">«</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">«</span>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in booking_data.paginator.page_range %}
+                                        {% if booking_data.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > booking_data.number|add:'-3' and num < booking_data.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if booking_data.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ booking_data.next_page_number }}" aria-label="Next">
+                                                <span aria-hidden="true">»</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">»</span>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast HTML (unchanged) -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="deleteToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong class="me-auto">Confirm Delete</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body">
+            <p>Are you sure you want to delete this booking?</p>
+            <div class="mt-2 pt-2 border-top">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="toast">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .sidebar {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        background-color: #fff;
+        transition: all 0.3s;
+    }
+    .main-content {
+        background-color: #f8f9fa;
+    }
+    .table th, .table td {
+        vertical-align: middle;
+    }
+    .card {
+        border: none;
+        border-radius: 12px;
+        transition: transform 0.2s ease-in-out;
+    }
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    .card-header {
+        border-bottom: 1px solid #e9ecef;
+        background-color: #fff;
+    }
+    .table-responsive {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    thead {
+        position: sticky;
+        top: 0;
+        background-color: #fff;
+        z-index: 10;
+        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+    }
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        color: #495057;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom: 2px solid #0d6efd;
+    }
+    .btn-outline-primary {
+        transition: all 0.3s ease;
+    }
+    .btn-outline-primary:hover {
+        transform: translateY(-1px);
+    }
+    .form-select-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    .hidden-row {
+        display: none;
+    }
+
+    @media (max-width: 767.98px) {
+        .sidebar {
+            position: static;
+            height: auto;
+        }
+        .main-content {
+            margin-left: 0 !important;
+            padding: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const globalSearch = document.getElementById('global-search');
+    const statusFilter = document.getElementById('status-filter');
+    const startDate = document.getElementById('start-date');
+    const endDate = document.getElementById('end-date');
+    const clearSearch = document.getElementById('clear-search');
+    const todayFilter = document.getElementById('today-filter');
+    const busShowingCount = document.getElementById('bus-showing-count');
+    const bookingShowingCount = document.getElementById('booking-showing-count');
+
+    function filterTables() {
+        const searchTerm = globalSearch.value.toLowerCase();
+        const statusValue = statusFilter.value.toLowerCase();
+        const startDateValue = startDate.value;
+        const endDateValue = endDate.value;
+
+        let visibleBusRows = 0;
+        document.querySelectorAll('#bus-reservations-table tbody tr.bus-row').forEach(row => {
+            const matchesSearch = row.getAttribute('data-search').toLowerCase().includes(searchTerm);
+            const matchesStatus = statusValue === '' || row.getAttribute('data-status') === statusValue;
+            const rowDate = row.getAttribute('data-start-date');
+            const matchesDate = (!startDateValue || rowDate >= startDateValue) && 
+                              (!endDateValue || rowDate <= endDateValue);
+
+            if (matchesSearch && matchesStatus && matchesDate) {
+                row.classList.remove('hidden-row');
+                visibleBusRows++;
+            } else {
+                row.classList.add('hidden-row');
+            }
+        });
+
+        let visibleBookingRows = 0;
+        document.querySelectorAll('#bookings-table tbody tr.booking-row').forEach(row => {
+            const matchesSearch = row.getAttribute('data-search').toLowerCase().includes(searchTerm);
+            const matchesStatus = statusValue === '' || row.getAttribute('data-status') === statusValue;
+            const rowDate = row.getAttribute('data-booked-date');
+            const matchesDate = (!startDateValue || rowDate >= startDateValue) && 
+                              (!endDateValue || rowDate <= endDateValue);
+
+            if (matchesSearch && matchesStatus && matchesDate) {
+                row.classList.remove('hidden-row');
+                visibleBookingRows++;
+            } else {
+                row.classList.add('hidden-row');
+            }
+        });
+
+        busShowingCount.textContent = visibleBusRows;
+        bookingShowingCount.textContent = visibleBookingRows;
+
+        showNoResultsMessage('#bus-reservations-table', visibleBusRows);
+        showNoResultsMessage('#bookings-table', visibleBookingRows);
+    }
+
+    function showNoResultsMessage(tableId, visibleCount) {
+        const table = document.querySelector(tableId);
+        const noResultsRow = table.querySelector('tbody tr:not([class*="row"])');
+        
+        if (visibleCount === 0 && noResultsRow && !noResultsRow.textContent.includes('No')) {
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `<td colspan="${tableId === '#bus-reservations-table' ? 6 : 7}" class="text-center py-3">No matching records found</td>`;
+            table.querySelector('tbody').appendChild(newRow);
+        } else if (visibleCount > 0 && noResultsRow && noResultsRow.textContent.includes('No matching')) {
+            noResultsRow.remove();
+        }
+    }
+
+    globalSearch.addEventListener('input', filterTables);
+    statusFilter.addEventListener('change', filterTables);
+    startDate.addEventListener('change', filterTables);
+    endDate.addEventListener('change', filterTables);
+    
+    clearSearch.addEventListener('click', function() {
+        globalSearch.value = '';
+        statusFilter.value = '';
+        startDate.value = '';
+        endDate.value = '';
+        filterTables();
+    });
+
+    todayFilter.addEventListener('click', function() {
+        const today = new Date().toISOString().split('T')[0];
+        startDate.value = today;
+        endDate.value = today;
+        filterTables();
+    });
+
+    filterTables();
+
+    const deleteToast = new bootstrap.Toast(document.getElementById('deleteToast'), {
+        autohide: false
+    });
+
+    let deleteUrl = '';
+    document.querySelectorAll('.delete-schedule-btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            deleteUrl = this.href;
+            deleteToast.show();
+        });
+    });
+
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        if (deleteUrl) {
+            window.location.href = deleteUrl;
+        }
+        deleteToast.hide();
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

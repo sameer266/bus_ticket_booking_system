@@ -1,0 +1,45 @@
+{% extends 'components/base.html' %}
+
+{% block content %}
+<div class="container mt-5" style="margin-top:90px !important">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h2 class="card-title mb-0">Edit Staff</h2>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" value="{{ staff.full_name }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ staff.phone_number }}" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="staff_profile" class="form-label">Profile Photo</label>
+                            <input type="file" class="form-control" id="staff_profile" name="staff_profile">
+                            {% if staff.profile_photo %}
+                            <div class="mt-2">
+                                <small class="text-muted">Current photo: <a href="{{ staff.profile_photo.url }}" target="_blank">{{ staff.profile_photo.name }}</a></small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Staff</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

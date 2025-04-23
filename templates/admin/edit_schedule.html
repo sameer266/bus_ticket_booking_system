@@ -1,0 +1,103 @@
+{% extends 'components/base.html' %}
+
+{% block content %}
+<div class="container py-4" style="margin-top:80px">
+    <div class="row">
+        <div class="col-md-8 col-lg-6 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="mb-0 fs-4">Edit Schedule</h2>
+                        <a href="{% url 'schedule_list' %}" class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'schedule_edit' schedule.id %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="route" class="form-label fw-bold">Route:</label>
+                            <select class="form-select" id="route" name="route" required>
+                                {% for route in all_routes %}
+                                    <option value="{{ route.id }}" {% if route.id == schedule.route.id %}selected{% endif %}>
+                                        {{ route.source }} → {{ route.destination }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="bus" class="form-label fw-bold">Bus:</label>
+                            <select class="form-select" id="bus" name="bus" required>
+                                {% for bus in all_buses %}
+                                    <option value="{{ bus.id }}" {% if bus.id == schedule.bus.id %}selected{% endif %}>
+                                        {{ bus.bus_number }} - {{ bus.get_bus_type_display }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="departure_time" class="form-label fw-bold">Departure Time:</label>
+                                    <!-- Use datetime-local input for both date and time -->
+                                    <input type="datetime-local" class="form-control" id="departure_time" name="departure_time"
+                                           value="{{ schedule.departure_time|date:'Y-m-d\TH:i' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="arrival_time" class="form-label fw-bold">Arrival Time:</label>
+                                    <!-- Use datetime-local input for both date and time -->
+                                    <input type="datetime-local" class="form-control" id="arrival_time" name="arrival_time"
+                                           value="{{ schedule.arrival_time|date:'Y-m-d\TH:i' }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        
+                        </div>
+                        
+                        
+
+                        <div class="mb-3">
+                            <label for="price" class="form-label fw-bold">Price (NPR):</label>
+                            <div class="input-group">
+                                <span class="input-group-text">NPR</span>
+                                <input type="number" step="0.01" class="form-control" id="price" name="price" 
+                                       value="{{ schedule.price }}" required>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'schedule_list' %}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Update Schedule</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add client-side validation if needed
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            const departureTime = document.getElementById('departure_time').value;
+            const arrivalTime = document.getElementById('arrival_time').value;
+            
+            if (!departureTime || !arrivalTime) {
+                event.preventDefault();
+                alert('Please set both departure and arrival times');
+            }
+        });
+    });
+</script>
+{% endblock %}

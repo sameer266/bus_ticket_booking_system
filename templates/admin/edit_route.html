@@ -1,0 +1,128 @@
+{% extends 'components/base.html' %}
+
+{% block title %}Edit Route | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5 mt-4" >
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10 col-12">
+            <!-- Card -->
+            <div class="card shadow animate__animated animate__fadeIn">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                    <h2 class="h4 fw-bold text-primary mb-0">
+                        <i class="bi bi-map me-2"></i>Edit Route
+                    </h2>
+                    <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary rounded-pill">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" id="editRouteForm" novalidate>
+                        {% csrf_token %}
+                        <div class="row g-4">
+                            <!-- Source -->
+                            <div class="col-md-6">
+                                <label for="source" class="form-label fw-bold">Source <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control rounded-pill" id="source" name="source" value="{{ route.source }}" placeholder="e.g., Kathmandu" required>
+                                <div class="invalid-feedback">Please enter the source location.</div>
+                            </div>
+
+                            <!-- Destination -->
+                            <div class="col-md-6">
+                                <label for="destination" class="form-label fw-bold">Destination <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control rounded-pill" id="destination" name="destination" value="{{ route.destination }}" placeholder="e.g., Pokhara" required>
+                                <div class="invalid-feedback">Please enter the destination location.</div>
+                            </div>
+
+                            <!-- Distance -->
+                            <div class="col-md-6">
+                                <label for="distance" class="form-label fw-bold">Distance (km) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text rounded-start-pill"><i class="bi bi-rulers"></i></span>
+                                    <input type="number" class="form-control rounded-end-pill" id="distance" name="distance" value="{{ route.distance }}" placeholder="e.g., 200" min="1" step="0.1" required>
+                                </div>
+                                <small class="text-muted">Enter distance in kilometers</small>
+                                <div class="invalid-feedback">Please enter a valid distance.</div>
+                            </div>
+
+                            <!-- Estimated Time -->
+                            <div class="col-md-6">
+                                <label for="estimated_time" class="form-label fw-bold">Estimated Time (hours) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text rounded-start-pill"><i class="bi bi-clock"></i></span>
+                                    <input type="number" class="form-control rounded-end-pill" id="estimated_time" name="estimated_time" value="{{ route.estimated_time }}" placeholder="e.g., 6" min="0" step="0.1" required>
+                                </div>
+                                <small class="text-muted">Enter time in hours (e.g., 6.5 for 6 hours 30 minutes)</small>
+                                <div class="invalid-feedback">Please enter a valid estimated time.</div>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-3 mt-4">
+                            <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill flex-grow-1">
+                                <i class="bi bi-x-circle me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill flex-grow-1">
+                                <i class="bi bi-check-circle me-1"></i> Update Route
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" integrity="sha512-c42qTSw/wPZ3/5LBzD+Bw5f7bSF2oxou6wEb+I/lqeaKV5FDIfMvvRp772y4jcJLKuGUOpbJMdg/BTl50fJYAw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+    .card {
+        border-radius: 1rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+        border-bottom: 1px solid #dee2e6;
+        border-radius: 1rem 1rem 0 0;
+    }
+    .form-control:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: #0d6efd;
+    }
+    .input-group-text {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+    .btn {
+        transition: all 0.3s ease;
+    }
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    @media (max-width: 576px) {
+        .btn {
+            width: 100%;
+        }
+        .d-flex {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form Validation
+        const form = document.getElementById('editRouteForm');
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+</script>
+{% endblock %}

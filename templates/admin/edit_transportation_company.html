@@ -1,0 +1,222 @@
+{% extends 'components/base.html' %}
+{% block title %}Edit Transportation Company | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="container py-4 " style="margin-top:60px">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0" style="color: #2c3e50;">
+                <i class="bi bi-pencil-square me-2"></i>Edit Transportation Company
+            </h2>
+          
+        </div>
+        <a href="{% url 'transportation_company_list' %}" class="btn btn-outline-secondary rounded-pill">
+            <i class="bi bi-arrow-left me-1"></i> Back to Companies
+        </a>
+    </div>
+
+    <!-- Edit Form Card -->
+    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0">
+                <i class="bi bi-building me-2"></i>Update Company Details
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" class="needs-validation" novalidate enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <!-- Company Information Section -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                        <i class="bi bi-info-circle me-1"></i>Company Information
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="companyName" class="form-label fw-semibold">Company Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-building text-primary"></i></span>
+                                <input type="text" id="companyName" name="company_name" class="form-control" 
+                                       value="{{ transportation_company.company_name }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a company name.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vatNumber" class="form-label fw-semibold">VAT Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-file-earmark-text text-primary"></i></span>
+                                <input type="text" id="vatNumber" name="vat_number" class="form-control" 
+                                       value="{{ transportation_company.vat_number }}">
+                                <div class="invalid-feedback">
+                                    Please provide a valid VAT number.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="country" class="form-label fw-semibold">Country</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-globe text-primary"></i></span>
+                                <input type="text" id="country" name="country" class="form-control" 
+                                       value="{{ transportation_company.country }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a country.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="locationName" class="form-label fw-semibold">Location</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-geo-alt text-primary"></i></span>
+                                <input type="text" id="locationName" name="location_name" class="form-control" 
+                                       value="{{ transportation_company.location_name }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a location.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banking Information Section -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                        <i class="bi bi-bank me-1"></i>Banking Information
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="bankName" class="form-label fw-semibold">Bank Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-building text-primary"></i></span>
+                                <input type="text" id="bankName" name="bank_name" class="form-control" 
+                                       value="{{ transportation_company.bank_name }}">
+                                <div class="invalid-feedback">
+                                    Please provide a bank name.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="accountName" class="form-label fw-semibold">Account Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-person text-primary"></i></span>
+                                <input type="text" id="accountName" name="account_name" class="form-control" 
+                                       value="{{ transportation_company.account_name }}">
+                                <div class="invalid-feedback">
+                                    Please provide an account name.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="accountNumber" class="form-label fw-semibold">Account Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-credit-card text-primary"></i></span>
+                                <input type="text" id="accountNumber" name="account_number" class="form-control" 
+                                       value="{{ transportation_company.account_number }}">
+                                <div class="invalid-feedback">
+                                    Please provide an account number.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="qrImage" class="form-label fw-semibold">QR Code Image</label>
+                            <input type="file" id="qrImage" name="qr_image" class="form-control" accept="image/*">
+                            {% if transportation_company.qr_image %}
+                            <div class="mt-2">
+                                <small class="text-muted">Current Image:</small><br>
+                                <img src="{{ transportation_company.qr_image.url }}" alt="Current QR Code" style="max-width: 100px; height: auto;">
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Information Section -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                        <i class="bi bi-person-gear me-1"></i>Admin Information
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="fullName" class="form-label fw-semibold">Full Name</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-person text-primary"></i></span>
+                                <input type="text" id="fullName" name="full_name" class="form-control" 
+                                       value="{{ user.full_name }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide admin's full name.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-semibold">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-envelope text-primary"></i></span>
+                                <input type="email" id="email" name="email" class="form-control" 
+                                       value="{{ user.email }}">
+                                <div class="invalid-feedback">
+                                    Please provide a valid email.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label fw-semibold">Phone</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-telephone text-primary"></i></span>
+                                <input type="text" id="phone" name="phone" class="form-control" 
+                                       value="{{ user.phone }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a phone number.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="gender" class="form-label fw-semibold">Gender</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-gender-ambiguous text-primary"></i></span>
+                                <select id="gender" name="gender" class="form-select" required>
+                                    <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Male</option>
+                                    <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Female</option>
+                                    <option value="other" {% if user.gender == 'other' %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="reset" class="btn btn-outline-secondary rounded-pill px-4">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                    </button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="bi bi-check-circle me-1"></i> Update Company
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Form Validation Script -->
+<script>
+(function () {
+    'use strict'
+    
+    var forms = document.querySelectorAll('.needs-validation')
+    
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                
+                form.classList.add('was-validated')
+            }, false)
+        })
+})();
+</script>
+{% endblock %}

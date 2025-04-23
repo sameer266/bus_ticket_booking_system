@@ -1,0 +1,952 @@
+{% extends 'components/base.html' %}
+{% block title %}Manage Buses | Go Sewa{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
+            {% include 'components/sidebar.html' %}
+        </div>
+        <!-- Main Content -->
+        <main class="mt-5 col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content ">
+
+
+            <!-- Mesage --> 
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 mt-4">
+                <h1 class="h2 fw-bold">
+                    <i class="bi bi-bus-front me-2 text-primary"></i>Manage Buses
+                </h1>
+                <div class="btn-toolbar d-none d-md-flex">
+                    <div class="btn-group me-2">
+                        <button id="addBusBtn" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus-lg me-1"></i> New Bus
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Action Buttons -->
+            <div class="d-flex d-md-none mb-3 gap-2">
+                <button id="mobileAddBusBtn" class="btn btn-primary flex-grow-1">
+                    <i class="bi bi-plus-lg me-1"></i> Add Bus
+                </button>
+            </div>
+            <!-- Buses List Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="bi bi-bus-front me-2"></i>Bus List
+                    </h5>
+                    <div class="input-group input-group-sm w-auto">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" id="searchBuses" placeholder="Search buses..." style="max-width: 200px;">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Bus</th>
+
+                               
+
+                                    
+                                    <th class="d-none d-md-table-cell">Type</th>
+                                    <th class="d-none d-md-table-cell">Seats</th>
+                                    <th class="d-none d-md-table-cell">Features</th>
+                                    <th class="d-none d-md-table-cell">Status</th>
+                                    <th class="text-end pe-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bus in buses %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center">
+                                            {% if bus.bus_image %}
+                                                <img src="{{ bus.bus_image.url }}" alt="Bus" class="rounded me-3" width="50" height="40">
+                                            {% else %}
+                                                <div class="rounded bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 40px;">
+                                                    <i class="bi bi-bus-front"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h6 class="mb-0">{{ bus.bus_number }}</h6>
+                                                
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td class="d-none d-md-table-cell">{{ bus.get_bus_type_display }}</td>
+                                    <td class="d-none d-md-table-cell">{{ bus.total_seats }}</td>
+                                    <td class="d-none d-md-table-cell">
+                                        {% if bus.features %}
+                                            <div class="d-flex flex-wrap gap-1">
+                                                {% for feature in bus.features %}
+                                                    <span class="badge bg-light text-dark border">{{ feature }}</span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="d-none d-md-table-cell">
+                                        <div class="d-flex gap-1">
+                                            {% if bus.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                            {% if bus.is_running %}
+                                                <span class="badge bg-info">Running</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button class="btn btn-sm btn-outline-warning edit-bus-btn" data-bus-id="{{ bus.id }}" title="Edit Bus">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <a  href={% url 'delete_bus'  bus.id %} class="btn btn-sm btn-outline-danger delete-bus-btn" title="Delete Bus">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="py-4">
+                                            <i class="bi bi-bus-front display-5 text-muted d-block mb-3"></i>
+                                            <h5 class="text-muted">No buses found</h5>
+                                            <p class="text-muted">Add your first bus to get started</p>
+                                            <button id="emptyAddBusBtn" class="btn btn-primary mt-2">
+                                                <i class="bi bi-plus-circle me-1"></i> Add Bus
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+
+
+<!-- Add Bus Modal -->
+<div class="modal fade" id="addBusModal" tabindex="-1" aria-labelledby="addBusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBusModalLabel"><i class="bi bi-bus-front me-2 text-primary"></i>Add New Bus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" enctype="multipart/form-data" action="{% url 'create_bus' %}" >
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Bus Number*</label>
+                            <input type="text" class="form-control" name="bus_number" placeholder="BA 1-2345" required>
+                        </div>
+                        <!-- In the add bus modal -->
+                        <div class="col-md-6">
+                            <label class="form-label">Bus Type*</label>
+                            <select class="form-select" name="bus_type" required>
+                                {% for value, display in bus_types %}
+                                <option value="{{ value }}" {% if value == "deluxe_bus" %}selected{% endif %}>{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                      
+
+                        <div class="col-md-6">
+                            <label class="form-label">Total Seats*</label>
+                            <input type="number" class="form-control" name="total_seats" id="totalSeatsInput" value="35" min="1" required readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Driver</label>
+                            <select class="form-select" name="driver" id="driverSelect">
+                                <option value="">-- Select Driver --</option>
+                                {% for driver in all_drivers %}
+                                <option value="{{ driver.id }}">{{ driver.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Staff</label>
+                            <select class="form-select" name="staff" id="staffSelect">
+                                <option value="">-- Select Staff --</option>
+                                {% for staff in all_staff %}
+                                <option value="{{ staff.id }}">{{ staff.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Features</label>
+                            <div class="border rounded p-3">
+                                <div class="row g-2" id="edit_features_container">
+                                    {% for value, display in feature_choices %}
+                                    <div class="col-md-3 col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="features" value="{{ value }}" id="edit_feature_{{ value }}">
+                                            <label class="form-check-label" for="edit_feature_{{ value }}">{{ display }}</label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Bus Image</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" name="bus_image" id="busImageUpload">
+                                <label class="input-group-text" for="busImageUpload"><i class="bi bi-upload"></i></label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mt-4">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
+                                    <label class="form-check-label" for="isActive">Active</label>
+                                </div>
+                               
+                            </div>
+                        </div>
+                        
+                        <!-- Bus Layout Configuration -->
+                        <div class="col-md-12">
+                            <label class="form-label">Seat Layout Configuration</label>
+                            <div class="border rounded p-3">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Rows</label>
+                                        <input type="number" class="form-control" id="rowsInput" value="6" min="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Columns</label>
+                                        <input type="number" class="form-control" id="columnsInput" value="5" min="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Aisle After Column</label>
+                                        <input type="number" class="form-control" id="aisleAfterInput" value="2" min="0">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-check mt-4 pt-2">
+                                            <input class="form-check-input" type="checkbox" id="includeBackRow" checked>
+                                            <label class="form-check-label" for="includeBackRow">Include Back Row</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3" id="backRowSeatsContainer">
+                                        <label class="form-label">Back Row Seats</label>
+                                        <input type="number" class="form-control" id="backRowSeatsInput" value="5" min="1">
+                                    </div>
+                                    <div class="col-md-12">
+                                       
+                                        <button type="button" class="btn btn-sm btn-outline-success me-2" id="selectAllSeatsBtn">
+                                            <i class="bi bi-check-all me-1"></i> Select All
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="deselectAllSeatsBtn">
+                                            <i class="bi bi-x-circle me-1"></i> Deselect All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Seat Layout Preview -->
+                        <div class="col-md-12">
+                            <label class="form-label">Seat Layout Preview</label>
+                            <div class="border rounded p-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Total Selected Seats: <span id="selectedSeatsCount">0</span></span>
+                                </div>
+                                <div id="seatLayoutContainer" class="d-grid gap-2" style="grid-template-columns: repeat(5, 1fr);">
+                                    <!-- Seat layout will be generated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="layout" id="layoutData">
+                    <input type="hidden" name="add_bus" value="1">
+
+
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit"  class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Add Bus
+                        </button>
+                
+
+                </form>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<!-- Edit Bus Modal -->
+<div class="modal fade" id="editBusModal" tabindex="-1" aria-labelledby="editBusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBusModalLabel"><i class="bi bi-bus-front me-2 text-primary"></i>Edit Bus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" enctype="multipart/form-data" id="editBusForm">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Bus Number*</label>
+                            <input type="text" class="form-control" name="bus_number" id="edit_bus_number" placeholder="BA 1-2345" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Bus Type*</label>
+                            <select class="form-select" name="bus_type" id="edit_bus_type" required>
+                                {% for value, display in bus_types %}
+                                <option value="{{ value }}">{{ display }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                       
+
+                        <div class="col-md-6">
+                            <label class="form-label">Total Seats*</label>
+                            <input type="number" class="form-control" name="total_seats" id="edit_total_seats" min="1" required readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Driver</label>
+                            <select class="form-select" name="driver" id="edit_driver">
+                                <option value="">-- Select Driver --</option>
+                                {% for driver in all_drivers %}
+                                <option value="{{ driver.id }}">{{ driver.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Staff</label>
+                            <select class="form-select" name="staff" id="edit_staff">
+                                <option value="">-- Select Staff --</option>
+                                {% for staff in all_staff %}
+                                <option value="{{ staff.id }}">{{ staff.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label">Features</label>
+                            <div class="border rounded p-3">
+                                <div class="row g-2" id="edit_features_container">
+                                    {% for value, display in feature_choices %}
+                                    <div class="col-md-3 col-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="features" value="{{ value }}" id="edit_feature_{{ value }}">
+                                            <label class="form-check-label" for="edit_feature_{{ value }}">{{ display }}</label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Bus Image</label>
+                            <div class="input-group">
+                                <input type="file" class="form-control" name="bus_image" id="edit_busImageUpload">
+                                <label class="input-group-text" for="edit_busImageUpload"><i class="bi bi-upload"></i></label>
+                            </div>
+                            <div id="current_image_preview" class="mt-2"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mt-4">
+                                <div class="form-check form-switch mb-2">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="edit_isActive">
+                                    <label class="form-check-label" for="edit_isActive">Active</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="is_running" id="edit_isRunning">
+                                    <label class="form-check-label" for="edit_isRunning">Currently Running</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bus Layout Configuration for Edit -->
+                        <div class="col-md-12">
+                            <label class="form-label">Seat Layout Configuration</label>
+                            <div class="border rounded p-3">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Rows</label>
+                                        <input type="number" class="form-control" id="edit_rowsInput" value="6" min="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Columns</label>
+                                        <input type="number" class="form-control" id="edit_columnsInput" value="5" min="1">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Aisle After Column</label>
+                                        <input type="number" class="form-control" id="edit_aisleAfterInput" value="2" min="0">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-check mt-4 pt-2">
+                                            <input class="form-check-input" type="checkbox" id="edit_includeBackRow" checked>
+                                            <label class="form-check-label" for="edit_includeBackRow">Include Back Row</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3" id="edit_backRowSeatsContainer">
+                                        <label class="form-label">Back Row Seats</label>
+                                        <input type="number" class="form-control" id="edit_backRowSeatsInput" value="5" min="1">
+                                    </div>
+                                    <div class="col-md-12">
+                                       
+                                        <button type="button" class="btn btn-sm btn-outline-success me-2" id="edit_selectAllSeatsBtn">
+                                            <i class="bi bi-check-all me-1"></i> Select All
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="edit_deselectAllSeatsBtn">
+                                            <i class="bi bi-x-circle me-1"></i> Deselect All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Seat Layout Preview for Edit -->
+                        <div class="col-md-12">
+                            <label class="form-label">Seat Layout Preview</label>
+                            <div class="border rounded p-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span>Total Selected Seats: <span id="edit_selectedSeatsCount">0</span></span>
+                                </div>
+                                <div id="edit_seatLayoutContainer" class="d-grid gap-2" style="grid-template-columns: repeat(5, 1fr);">
+                                    <!-- Seat layout will be generated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="layout" id="edit_layoutData">
+                    <input type="hidden" name="bus_id" id="edit_bus_id">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="editBusForm" class="btn btn-warning">
+                    <i class="bi bi-pencil-square me-1"></i> Update Bus
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel"><i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this bus? This action cannot be undone.</p>
+                <p class="fw-bold" id="deleteBusNumber"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" id="deleteBusForm" action="">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i> Delete Bus
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    /* Previous CSS styles remain the same */
+    .sidebar {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        background-color: #fff;
+        transition: all 0.3s;
+    }
+    #sidebar-wrapper {
+        min-height: 100vh;
+        width: 250px;
+        transition: margin 0.25s ease-out;
+        background-color: white;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+        z-index: 1;
+    }
+
+    /* Action Buttons */
+.action-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1;
+}
+
+.btn-outline-warning {
+    color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-outline-warning:hover {
+    color: #fff;
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    color: #fff;
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+    
+    /* Seat Layout Styles */
+    .seat-item {
+        padding: 0.5rem;
+        border: 1px solid #dee2e6;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+        border-radius: 0.25rem;
+    }
+    .seat-item.selected {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .seat-item.aisle {
+        background-color: #f8f9fa;
+        cursor: default;
+    }
+    #seatLayoutContainer, #edit_seatLayoutContainer {
+        grid-template-columns: repeat(var(--columns, 5), 1fr);
+    }
+</style>
+{% endblock %}
+{% block extra_js %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Bootstrap initialization (unchanged)
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    const addBusModalElement = document.getElementById('addBusModal');
+    const editBusModalElement = document.getElementById('editBusModal');
+    const deleteConfirmModalElement = document.getElementById('deleteConfirmModal');
+    
+    const addBusModal = new bootstrap.Modal(addBusModalElement, { backdrop: true });
+    const editBusModal = new bootstrap.Modal(editBusModalElement, { backdrop: true });
+    const deleteConfirmModal = new bootstrap.Modal(deleteConfirmModalElement, { backdrop: true });
+    
+    [addBusModalElement, editBusModalElement, deleteConfirmModalElement].forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', function () {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        });
+    });
+
+    // Grid layout function
+    function updateGridLayout(containerId, columns, aisleAfter) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        let gridTemplateColumns = '';
+        for (let i = 0; i < columns; i++) {
+            gridTemplateColumns += (i === aisleAfter ? '0.5fr ' : '1fr ');
+        }
+        container.style.gridTemplateColumns = gridTemplateColumns.trim();
+    }
+
+    // Show Add Bus Modal
+    ['addBusBtn', 'mobileAddBusBtn', 'emptyAddBusBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                addBusModal.show();
+                initializeSeatLayout();
+            });
+        }
+    });
+
+    // Core layout generation function
+    function generateSeatLayout(containerId, rows, columns, aisleAfter, includeBackRow, backRowSeats, existingLayout = null) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        container.innerHTML = '';
+        updateGridLayout(containerId, columns, aisleAfter);
+        
+        let layout = [];
+        let totalSeats = 0;
+
+        // Main rows
+        for (let r = 0; r < rows; r++) {
+            const row = [];
+            for (let c = 0; c < columns; c++) {
+                if (c === aisleAfter) {
+                    const aisle = document.createElement('div');
+                    aisle.className = 'seat-item aisle';
+                    aisle.textContent = ' ';
+                    container.appendChild(aisle);
+                    row.push({ seat: 'AISLE', status: 'aisle' });
+                    continue;
+                }
+
+                const effectiveCol = c > aisleAfter ? c - 1 : c;
+                const seatNumber = `${String.fromCharCode(65 + effectiveCol)}${r + 1}`;
+                const seat = document.createElement('div');
+                seat.className = 'seat-item';
+                seat.textContent = seatNumber;
+                seat.dataset.seat = seatNumber;
+                seat.dataset.row = r;
+                seat.dataset.col = effectiveCol;
+
+                // Default to unselected (unavailable) for new layout, selected (available) for edit
+                let isSelected = existingLayout ? false : true;
+                if (existingLayout && existingLayout.layout) {
+                    const rowData = existingLayout.layout[r];
+                    if (rowData && rowData[c] && rowData[c].status === 'available') {
+                        isSelected = true;
+                    } else if (rowData && rowData[c] && rowData[c].status === 'booked') {
+                        seat.classList.add('booked');
+                        isSelected = false; // Booked seats can't be changed here
+                    }
+                }
+
+                if (isSelected) {
+                    seat.classList.add('selected');
+                }
+
+                // Make seats selectable unless booked
+                if (!seat.classList.contains('booked')) {
+                    seat.addEventListener('click', () => {
+                        seat.classList.toggle('selected');
+                        updateLayoutData(containerId === 'seatLayoutContainer');
+                    });
+                }
+
+                container.appendChild(seat);
+                row.push({ seat: seatNumber, status: isSelected ? 'available' : 'unavailable' });
+                if (isSelected) totalSeats++;
+            }
+            layout.push(row);
+        }
+
+        // Back row
+        if (includeBackRow) {
+            const backRowLabel = document.createElement('div');
+            backRowLabel.className = 'w-100 text-center mt-3 mb-2';
+            backRowLabel.textContent = 'Back Row';
+            backRowLabel.style.gridColumn = '1 / -1';
+            container.appendChild(backRowLabel);
+
+            const backRowContainer = document.createElement('div');
+            backRowContainer.className = 'd-flex justify-content-center w-100';
+            backRowContainer.style.gridColumn = '1 / -1';
+            container.appendChild(backRowContainer);
+
+            const backRow = [];
+            for (let c = 0; c < backRowSeats; c++) {
+                const seatNumber = `${String.fromCharCode(65 + c)}${rows + 1}`;
+                const seat = document.createElement('div');
+                seat.className = 'seat-item mx-1';
+                seat.textContent = seatNumber;
+                seat.dataset.seat = seatNumber;
+                seat.dataset.row = rows;
+                seat.dataset.col = c;
+
+                let isSelected = existingLayout ? false : true;
+                if (existingLayout && existingLayout.layout) {
+                    const backRowData = existingLayout.layout[rows];
+                    if (backRowData && backRowData[c] && backRowData[c].status === 'available') {
+                        isSelected = true;
+                    } else if (backRowData && backRowData[c] && backRowData[c].status === 'booked') {
+                        seat.classList.add('booked');
+                        isSelected = false;
+                    }
+                }
+
+                if (isSelected) {
+                    seat.classList.add('selected');
+                }
+
+                if (!seat.classList.contains('booked')) {
+                    seat.addEventListener('click', () => {
+                        seat.classList.toggle('selected');
+                        updateLayoutData(containerId === 'seatLayoutContainer');
+                    });
+                }
+
+                backRowContainer.appendChild(seat);
+                backRow.push({ seat: seatNumber, status: isSelected ? 'available' : 'unavailable' });
+                if (isSelected) totalSeats++;
+            }
+            layout.push(backRow);
+        }
+
+        updateSeatCount(containerId, totalSeats);
+        return layout;
+    }
+
+    // Update layout data
+    function updateLayoutData(isAddModal = true) {
+        const prefix = isAddModal ? '' : 'edit_';
+        const rows = parseInt(document.getElementById(`${prefix}rowsInput`).value) || 6;
+        const columns = parseInt(document.getElementById(`${prefix}columnsInput`).value) || 5;
+        const aisleAfter = parseInt(document.getElementById(`${prefix}aisleAfterInput`).value) || 2;
+        const includeBackRow = document.getElementById(`${prefix}includeBackRow`).checked;
+        const backRowSeats = parseInt(document.getElementById(`${prefix}backRowSeatsInput`).value) || 5;
+        const containerId = isAddModal ? 'seatLayoutContainer' : 'edit_seatLayoutContainer';
+
+        const seats = document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle)');
+        let layout = [];
+        let totalSeats = 0;
+
+        for (let r = 0; r < (includeBackRow ? rows + 1 : rows); r++) {
+            const row = [];
+            const rowSeats = Array.from(seats).filter(seat => parseInt(seat.dataset.row) === r);
+            
+            if (r < rows) {
+                for (let c = 0; c < columns; c++) {
+                    if (c === aisleAfter) {
+                        row.push({ seat: 'AISLE', status: 'aisle' });
+                        continue;
+                    }
+                    const effectiveCol = c > aisleAfter ? c - 1 : c;
+                    const seatNumber = `${String.fromCharCode(65 + effectiveCol)}${r + 1}`;
+                    const seat = rowSeats.find(s => s.dataset.seat === seatNumber);
+                    const isSelected = seat?.classList.contains('selected') || false;
+                    const isBooked = seat?.classList.contains('booked') || false;
+                    const status = isBooked ? 'booked' : (isSelected ? 'available' : 'unavailable');
+                    row.push({ seat: seatNumber, status: status });
+                    if (status === 'available') totalSeats++;
+                }
+            } else if (includeBackRow) {
+                for (let c = 0; c < backRowSeats; c++) {
+                    const seatNumber = `${String.fromCharCode(65 + c)}${r + 1}`;
+                    const seat = rowSeats.find(s => s.dataset.seat === seatNumber);
+                    const isSelected = seat?.classList.contains('selected') || false;
+                    const isBooked = seat?.classList.contains('booked') || false;
+                    const status = isBooked ? 'booked' : (isSelected ? 'available' : 'unavailable');
+                    row.push({ seat: seatNumber, status: status });
+                    if (status === 'available') totalSeats++;
+                }
+            }
+            layout.push(row);
+        }
+
+        const layoutData = {
+            rows, columns, aisleAfterColumn: aisleAfter,
+            includeBackRow, backRowSeats, layout, totalSeats: totalSeats
+        };
+
+        document.getElementById(`${prefix}layoutData`).value = JSON.stringify(layoutData);
+        document.getElementById(`${prefix}total_seats`).value = totalSeats;
+        document.getElementById(`${prefix}selectedSeatsCount`).textContent = totalSeats;
+    }
+    
+
+    // Helper function to update seat count
+    function updateSeatCount(containerId, count) {
+        const prefix = containerId === 'seatLayoutContainer' ? '' : 'edit_';
+        document.getElementById(`${prefix}selectedSeatsCount`).textContent = count;
+        document.getElementById(`${prefix}total_seats`).value = count;
+    }
+
+    // Initialization functions
+    function initializeSeatLayout() {
+        const rows = parseInt(document.getElementById('rowsInput').value) || 6;
+        const columns = parseInt(document.getElementById('columnsInput').value) || 5;
+        const aisleAfter = parseInt(document.getElementById('aisleAfterInput').value) || 2;
+        const includeBackRow = document.getElementById('includeBackRow').checked;
+        const backRowSeats = parseInt(document.getElementById('backRowSeatsInput').value) || 5;
+        generateSeatLayout('seatLayoutContainer', rows, columns, aisleAfter, includeBackRow, backRowSeats);
+        updateLayoutData(true);
+    }
+
+    function initializeEditSeatLayout(layoutData = null) {
+        const rows = parseInt(document.getElementById('edit_rowsInput').value) || 6;
+        const columns = parseInt(document.getElementById('edit_columnsInput').value) || 5;
+        const aisleAfter = parseInt(document.getElementById('edit_aisleAfterInput').value) || 2;
+        const includeBackRow = document.getElementById('edit_includeBackRow').checked;
+        const backRowSeats = parseInt(document.getElementById('edit_backRowSeatsInput').value) || 5;
+        generateSeatLayout('edit_seatLayoutContainer', rows, columns, aisleAfter, includeBackRow, backRowSeats, layoutData);
+        updateLayoutData(false);
+    }
+
+    // Event listeners for real-time updates
+    function setupRealtimeListeners(prefix = '') {
+        const inputs = ['rowsInput', 'columnsInput', 'aisleAfterInput', 'backRowSeatsInput', 'includeBackRow'];
+        inputs.forEach(id => {
+            const element = document.getElementById(`${prefix}${id}`);
+            if (element) {
+                element.addEventListener('change', () => {
+                    if (prefix === 'edit_') {
+                        initializeEditSeatLayout();
+                    } else {
+                        initializeSeatLayout();
+                    }
+                });
+            }
+        });
+
+        const generateBtn = document.getElementById(`${prefix}generateLayoutBtn`);
+        const selectAllBtn = document.getElementById(`${prefix}selectAllSeatsBtn`);
+        const deselectAllBtn = document.getElementById(`${prefix}deselectAllSeatsBtn`);
+        const containerId = prefix === '' ? 'seatLayoutContainer' : 'edit_seatLayoutContainer';
+
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => {
+                prefix === 'edit_' ? initializeEditSeatLayout() : initializeSeatLayout();
+            });
+        }
+
+        if (selectAllBtn) {
+            selectAllBtn.style.display = 'inline-block';
+            selectAllBtn.addEventListener('click', () => {
+                document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle):not(.booked)')
+                    .forEach(seat => seat.classList.add('selected'));
+                updateLayoutData(prefix === '');
+            });
+        }
+
+        if (deselectAllBtn) {
+            deselectAllBtn.style.display = 'inline-block';
+            deselectAllBtn.addEventListener('click', () => {
+                document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle):not(.booked)')
+                    .forEach(seat => seat.classList.remove('selected'));
+                updateLayoutData(prefix === '');
+            });
+        }
+    }
+
+    setupRealtimeListeners('');
+    setupRealtimeListeners('edit_');
+
+    // Edit Bus Handling
+    document.querySelectorAll('.edit-bus-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const busId = this.dataset.busId;
+            document.getElementById('editBusForm').action = `/edit-bus/${busId}/edit/`;
+            document.getElementById('edit_bus_id').value = busId;
+            
+            fetch(`/get_bus/${busId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('edit_bus_number').value = data.bus_number;
+                    document.getElementById('edit_bus_type').value = data.bus_type;
+
+                    document.getElementById('edit_driver').value = data.driver || '';
+                    document.getElementById('edit_staff').value = data.staff || '';
+
+
+                    document.getElementById('edit_isActive').checked = data.is_active;
+                    document.getElementById('edit_isRunning').checked = data.is_running;
+                    
+                    document.querySelectorAll('#edit_features_container .form-check-input')
+                        .forEach(checkbox => checkbox.checked = data.features.includes(checkbox.value));
+                    
+                    const layout = JSON.parse(data.layout || '{}');
+                    document.getElementById('edit_rowsInput').value = layout.rows || 6;
+                    document.getElementById('edit_columnsInput').value = layout.columns || 5;
+                    document.getElementById('edit_aisleAfterInput').value = layout.aisleAfterColumn || 2;
+                    document.getElementById('edit_includeBackRow').checked = layout.includeBackRow !== false;
+                    document.getElementById('edit_backRowSeatsInput').value = layout.backRowSeats || 5;
+                    document.getElementById('edit_backRowSeatsContainer').style.display = 
+                        layout.includeBackRow !== false ? 'block' : 'none';
+                    
+                    initializeEditSeatLayout(layout);
+                    editBusModal.show();
+                })
+                .catch(error => console.error('Error:', error));
+        });
+    });
+
+    // Form submission
+    document.getElementById('editBusForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateLayoutData(false);
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                editBusModal.hide();
+                window.location.href = data.redirect;
+            } else {
+                alert(data.error);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
+    document.getElementById('addBusForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateLayoutData(true);
+        const formData = new FormData(this);
+        
+       
+    });
+
+    // Delete handling
+    document.querySelectorAll('.delete-bus-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const busId = this.dataset.busId;
+            const busNumber = this.closest('tr').querySelector('h6').textContent;
+            document.getElementById('deleteBusNumber').textContent = busNumber;
+            document.getElementById('deleteBusForm').action = `/delete_bus/${busId}/`;
+            deleteConfirmModal.show();
+        });
+    });
+
+    // Search
+    document.getElementById('searchBuses').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const busNumber = row.querySelector('h6')?.textContent.toLowerCase() || '';
+            row.style.display = busNumber.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Initial layout
+    initializeSeatLayout();
+});
+</script>
+{% endblock %}
+{% endblock %}

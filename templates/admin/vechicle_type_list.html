@@ -1,0 +1,261 @@
+{% extends 'components/base.html' %}
+{% block title %}Vehicle Types | Go Sewa{% endblock %}
+{% block content %}
+<div class="container-fluid py-4" style="margin-top:80px">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header with back button -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'vehicle_reservation' %}" class="btn btn-outline-primary me-3">
+                        <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Back</span>
+                    </a>
+                    <h1 class="h2 mb-0 fw-bold">
+                        <i class="bi bi-list-check me-2 text-primary"></i>Vehicle Types
+                    </h1>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTypeModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Type
+                </button>
+            </div>
+
+            <!-- Vehicle Types List Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 gap-2">
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="bi bi-list-check me-2"></i>Types List
+                    </h5>
+                    <div class="input-group input-group-sm w-100 w-md-auto">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" id="searchTypes" placeholder="Search types...">
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Type Name</th>
+                                    <th class="text-center d-none d-md-table-cell">Image</th>
+                                    <th class="text-center d-none d-md-table-cell">Associated Vehicles</th>
+                                    
+                                    <th class="text-end pe-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for vehicle_type in vehicle_types %}
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded bg-light d-flex align-items-center justify-content-center me-3 d-md-none" style="width: 40px; height: 40px;">
+                                                {% if vehicle_type.image %}
+                                                    <img src="{{ vehicle_type.image.url }}" alt="{{ vehicle_type.name }}" class="img-fluid rounded" style="max-width: 30px; max-height: 30px;">
+                                                {% else %}
+                                                    <i class="bi bi-car-front text-secondary"></i>
+                                                {% endif %}
+                                            </div>
+                                            <span class="fw-medium">{{ vehicle_type.name }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center d-none d-md-table-cell">
+                                        {% if vehicle_type.image %}
+                                            <img src="{{ vehicle_type.image.url }}" alt="{{ vehicle_type.name }}" class="img-thumbnail" style="max-width: 50px; max-height: 50px;">
+                                        {% else %}
+                                            <span class="text-muted">No image</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center d-none d-md-table-cell">
+                                        <div class="d-flex align-items-center justify-content-center gap-4">
+                                            <span class="badge bg-primary rounded-pill">{{ vehicle_type.vehicle_count }}</span>
+                                            <a href={% url 'vehicle_type_vehicles' vehicle_type.id %}  class="text-primary" title="View vehicles">
+                                                <i class="bi bi-eye-fill fs-4"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+
+                                    <td class="text-end pe-3">
+                                        <!-- Desktop actions -->
+                                        <div class="btn-group btn-group-sm d-none d-md-inline-flex">
+                                            <a href="{% url 'edit_vehicle_type' vehicle_type.id %}" class="btn btn-outline-primary" title="Edit">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <button class="btn btn-outline-danger delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Mobile actions -->
+                                        <div class="d-md-none">
+                                            <a href="{% url 'edit_vehicle_type' vehicle_type.id %}" class="btn btn-outline-primary btn-sm me-1" title="Edit">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <button class="btn btn-outline-danger btn-sm delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                       
+                                </tr>
+                                
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-5">
+                                        <div class="py-4">
+                                            <i class="bi bi-list-check display-5 text-muted d-block mb-3"></i>
+                                            <h5 class="text-muted">No vehicle types found</h5>
+                                            <p class="text-muted">Add your first vehicle type to get started</p>
+                                            <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addTypeModal">
+                                                <i class="bi bi-plus-circle me-1"></i> Add Vehicle Type
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Type Modal -->
+<div class="modal fade" id="addTypeModal" tabindex="-1" aria-labelledby="addTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addTypeModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Vehicle Type
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" enctype="multipart/form-data" action="{% url 'vehicle_type_list' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="typeName" class="form-label fw-medium">Type Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="typeName" name="name" required placeholder="e.g. Sedan, SUV, Truck">
+                    </div>
+                    <div class="mb-3">
+                        <label for="typeImage" class="form-label fw-medium">Image (Optional)</label>
+                        <input type="file" class="form-control" id="typeImage" name="image" accept="image/*">
+                        <small class="form-text text-muted">Recommended size: 200x200 pixels. Supports JPG, PNG.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Add Type
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Type Modal -->
+<div class="modal fade" id="deleteTypeModal" tabindex="-1" aria-labelledby="deleteTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteTypeModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deleteTypeForm" method="POST" action="">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>You are about to delete the vehicle type:</p>
+                    <p class="h5 fw-bold text-center my-3" id="deleteTypeName"></p>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-octagon-fill me-2"></i>
+                        This action cannot be undone. All vehicles associated with this type will need to be reassigned.
+                    </div>
+                    <div class="form-check form-check-danger">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                        <label class="form-check-label" for="confirmDelete">
+                            I understand this action is permanent
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" disabled id="deleteSubmitBtn">
+                        <i class="bi bi-trash me-1"></i> Delete Permanently
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+
+    // Add this to your existing 'DOMContentLoaded' event handler
+document.querySelectorAll('.delete-type-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Get the reservation ID and name
+        const row = this.closest('tr');
+        const reservationId = row.dataset.reservationId;
+        const reservationName = row.querySelector('h6').textContent;
+        
+        // Update the delete confirmation modal
+        document.getElementById('deleteReservationName').textContent = reservationName;
+        document.getElementById('deleteReservationForm').action = this.href;
+        
+        // Show the delete confirmation modal
+        const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        deleteConfirmModal.show();
+    });
+});
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('searchTypes');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = document.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const typeName = row.querySelector('td:first-child')?.textContent?.toLowerCase() || '';
+                    row.style.display = typeName.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+        
+        // Delete modal setup
+        const deleteModal = document.getElementById('deleteTypeModal');
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const typeId = button.getAttribute('data-type-id');
+                const typeName = button.getAttribute('data-type-name');
+                
+                document.getElementById('deleteTypeName').textContent = typeName;
+                document.getElementById('deleteTypeForm').action = `/vehicle-types/${typeId}/delete/`;
+                
+                // Reset the confirmation checkbox
+                const confirmCheckbox = document.getElementById('confirmDelete');
+                const deleteSubmitBtn = document.getElementById('deleteSubmitBtn');
+                confirmCheckbox.checked = false;
+                deleteSubmitBtn.disabled = true;
+            });
+        }
+        
+        // Enable delete button only when checkbox is checked
+        const confirmCheckbox = document.getElementById('confirmDelete');
+        if (confirmCheckbox) {
+            confirmCheckbox.addEventListener('change', function() {
+                document.getElementById('deleteSubmitBtn').disabled = !this.checked;
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

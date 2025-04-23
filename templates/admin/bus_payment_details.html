@@ -1,0 +1,477 @@
+{% extends 'components/base.html' %}
+
+{% block title %}Bus Payments & Commissions | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <div class="sidebar shadow-sm" id="sidebarMenu">
+        {% include 'components/sidebar.html' %}
+    </div>
+
+    
+
+   
+
+    <!-- Main Content -->
+    <main class="dashboard-content px-3 px-md-4 py-4 " style="margin-top:80px">
+        <div class="container-fluid">
+
+            <!-- Mesage --> 
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between flex-wrap align-items-center mb-4 pb-2 border-bottom">
+                <h1 class="h3 fw-bold text-primary mb-3 mb-md-0">
+                    <i class="bi bi-credit-card-2-front me-2"></i>Bus Payments & Commissions
+                </h1>
+            </div>
+
+
+            {% if user.is_superuser %}
+            <!-- Commission Rate Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="fw-bold mb-1">Current Commission Rate</h5>
+                            <p class="text-muted mb-md-0">Bus Seat Booking</p>
+                        </div>
+                        <div class="col-md-4">
+                            <div id="currentRateDisplay" class="d-flex align-items-center">
+                                <h3 class="mb-0 fw-bold text-indigo">{{ commission_rate }}%</h3>
+                                <button id="editRateBtn" class="btn btn-sm btn-link ms-2">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                            </div>
+                            <div id="rateEditForm" class="d-none">
+                                <form method="post" action="{% url 'update_seat_commission_rate' %}" class="d-flex align-items-center">
+                                    {% csrf_token %}
+                                    <div class="input-group">
+                                        <input type="number" name="commission_rate" min="0" max="100" step="0.01" 
+                                               value="{{ commission_rate }}" class="form-control" required>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary ms-2">Save</button>
+                                    <button type="button" id="cancelEditBtn" class="btn btn-sm btn-outline-secondary ms-2">Cancel</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <div class="icon-circle bg-indigo-soft rounded-circle p-3 d-inline-block">
+                                <i class="bi bi-percent fs-4 text-indigo"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {%endif %}
+            
+           
+            <!-- Summary Cards (Total Earnings, Net Received, Total Commission) -->
+            <div class="row g-3 mb-4">
+                <!-- Total Earnings -->
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Total Earnings</h6>
+                                    <h3 class="mb-0 fw-bold text-success">NRP {{ total_amount|floatformat:2 }}</h3>
+                                </div>
+                                <div class="icon-circle bg-success-soft rounded-circle p-3">
+                                    <i class="bi bi-currency-exchange fs-4 text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Received -->
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Net Received</h6>
+                                    <h3 class="mb-0 fw-bold text-primary">NRP {{ total_received|floatformat:2 }}</h3>
+                                </div>
+                                <div class="icon-circle bg-primary-soft rounded-circle p-3">
+                                    <i class="bi bi-wallet2 fs-4 text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Commission -->
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Total Commission</h6>
+                                    <h3 class="mb-0 fw-bold text-indigo">NRP {{ total_commission|floatformat:2 }}</h3>
+                                </div>
+                                <div class="icon-circle bg-indigo-soft rounded-circle p-3">
+                                    <i class="bi bi-percent fs-4 text-indigo"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bus Earnings Table -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
+                    <h5 class="card-title mb-0">Each Bus Earnings Summary</h5>
+                    <div class="d-flex align-items-center mt-2 mt-md-0">
+                        <select class="form-select form-select-sm me-2" id="timeRangeFilter">
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="year">This Year</option>
+                        </select>
+                      
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Bus Number</th>
+                                    <th>Bus Type</th>
+                                    <th>Total Earnings</th>
+                                    <th>Commission ({{ commission_rate }}%)</th>
+                                    <th>Net Earnings</th>
+                                    <th>Trips</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bus in bus_earnings %}
+                                <tr>
+                                    <td>{{ bus.bus_number }}</td>
+                                    <td>{{ bus.bus_type }}</td>
+                                    <td>NRP {{ bus.total_earning|floatformat:2 }}</td>
+                                    <td>NRP {{ bus.total_commission|floatformat:2 }}</td>
+                                    <td>NRP {{ bus.net_earning|floatformat:2 }}</td>
+                                    <td>{{ bus.total_trips }}</td>
+                                    <td>
+                                        <a href="/bus-earning-details/{{ bus.bus.id }}/" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View Details">
+                                            <i class="bi bi-eye-fill"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">No bus earnings found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if bus_earnings.paginator.num_pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center flex-wrap">
+                            {% if bus_earnings.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?earnings_page={{ bus_earnings.previous_page_number }}">Previous</a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in bus_earnings.paginator.page_range %}
+                            <li class="page-item {% if num == bus_earnings.number %}active{% endif %}">
+                                <a class="page-link" href="?earnings_page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endfor %}
+
+                            {% if bus_earnings.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?earnings_page={{ bus_earnings.next_page_number }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Payment Details Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
+                    <h5 class="card-title mb-0">Today's Payment Details</h5>
+                    <div class="d-flex mt-2 mt-md-0">
+                        <input type="text" class="form-control form-control-sm me-2" id="paymentSearch" placeholder="Search...">
+                        <select class="form-select form-select-sm" id="paymentMethodFilter">
+                            <option value="all">All Methods</option>
+                            <option value="cash">Esewa</option>
+                            <option value="card">Khalti</option>
+
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Transaction ID</th>
+                                    <th>Bus</th>
+                                    <th>Seat</th>
+                                    <th>Payment Method</th>
+                                    <th>Amount</th>
+                                    <th>Commission</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr>
+                                    <td>{{ payment.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ payment.transaction_id }}</td>
+                                    <td>{{ payment.booking.bus.bus_number }}</td>
+                                    <td>{{ payment.booking.seat|join:", " }}</td>
+                                    <td>{{ payment.payment_method }}</td>
+                                    <td>Rs {{ payment.booking.schedule.price }}</td>
+                                    <td>Rs {{ payment.booking.schedule.price}}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">No payments found today</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if payments.paginator.num_pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center flex-wrap">
+                            {% if payments.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?payment_page={{ payments.previous_page_number }}">Previous</a>
+                            </li>
+                            {% endif %}
+
+                            {% for num in payments.paginator.page_range %}
+                            <li class="page-item {% if num == payments.number %}active{% endif %}">
+                                <a class="page-link" href="?payment_page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endfor %}
+
+                            {% if payments.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?payment_page={{ payments.next_page_number }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Responsive sidebar */
+    @media (min-width: 768px) {
+        .dashboard-content {
+            margin-left: 220px;
+            transition: margin-left 0.3s ease;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .dashboard-content {
+            margin-left: 0;
+        }
+        
+        .sidebar {
+            width: 100%;
+            position: relative;
+            height: auto;
+        }
+    }
+    
+    /* Transitions and hover effects */
+    .hover-shadow {
+        transition: all 0.3s ease;
+    }
+    
+    .hover-shadow:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Custom colors */
+    .bg-success-soft {
+        background-color: rgba(40, 167, 69, 0.15);
+    }
+    
+    .bg-primary-soft {
+        background-color: rgba(13, 110, 253, 0.15);
+    }
+    
+    .bg-indigo-soft {
+        background-color: rgba(102, 16, 242, 0.15);
+    }
+    
+    .text-indigo {
+        color: #6610f2;
+    }
+    
+    /* Flexible tables */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Transition effects */
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+    
+    /* Pagination responsiveness */
+    .pagination {
+        gap: 5px;
+    }
+    
+    @media (max-width: 576px) {
+        .pagination .page-link {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Commission rate edit functionality
+        const editRateBtn = document.getElementById('editRateBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const currentRateDisplay = document.getElementById('currentRateDisplay');
+        const rateEditForm = document.getElementById('rateEditForm');
+        
+        if (editRateBtn && cancelEditBtn) {
+            editRateBtn.addEventListener('click', function() {
+                currentRateDisplay.classList.add('d-none');
+                rateEditForm.classList.remove('d-none');
+            });
+            
+            cancelEditBtn.addEventListener('click', function() {
+                currentRateDisplay.classList.remove('d-none');
+                rateEditForm.classList.add('d-none');
+            });
+        }
+        
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Payment search functionality
+        const paymentSearch = document.getElementById('paymentSearch');
+        if (paymentSearch) {
+            paymentSearch.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase();
+                const paymentTable = document.querySelector('.table-responsive table:last-of-type');
+                const rows = paymentTable.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        }
+        
+        // Payment method filter
+        const paymentMethodFilter = document.getElementById('paymentMethodFilter');
+        if (paymentMethodFilter) {
+            paymentMethodFilter.addEventListener('change', function() {
+                const filterValue = this.value.toLowerCase();
+                const paymentTable = document.querySelector('.table-responsive table:last-of-type');
+                const rows = paymentTable.querySelectorAll('tbody tr');
+                
+                rows.forEach(row => {
+                    if (filterValue === 'all') {
+                        row.style.display = '';
+                        return;
+                    }
+                    
+                    const methodCell = row.cells[4];
+                    if (methodCell) {
+                        const method = methodCell.textContent.toLowerCase();
+                        row.style.display = method.includes(filterValue) ? '' : 'none';
+                    }
+                });
+            });
+        }
+        
+        // Export functionality
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function() {
+                // Simple CSV export of the bus earnings table
+                const table = document.querySelector('.table-responsive table:first-of-type');
+                let csv = [];
+                const rows = table.querySelectorAll('tr');
+                
+                rows.forEach(row => {
+                    const rowData = [];
+                    const cols = row.querySelectorAll('th, td');
+                    
+                    cols.forEach(col => {
+                        // Skip the action column
+                        if (!col.querySelector('.btn')) {
+                            rowData.push('"' + col.innerText.replace(/"/g, '""') + '"');
+                        }
+                    });
+                    
+                    csv.push(rowData.join(','));
+                });
+                
+                const csvContent = csv.join('\n');
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'bus_earnings.csv');
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Toast Messages -->
+{% if messages %}
+<div class="position-fixed top-0 start-50 translate-middle-x mt-4" style="z-index: 1050;">
+    {% for message in messages %}
+    <div class="toast show align-items-center {% if message.tags == 'success' %}text-bg-success{% elif message.tags == 'error' %}text-bg-danger{% else %}text-bg-info{% endif %}" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body">
+                {{ message }}
+            </div>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light py-4 px-3">
+    <div class="w-100 max-w-md transform transition">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden hover-scale">
+            <div class="text-white text-center position-relative p-4 p-sm-5" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);">
+                <div class="position-absolute top-0 start-0 w-100 h-100" style="background: url('{% static 'images/pattern.svg' %}') center/cover; opacity: 0.1;"></div>
+                <div class="position-relative">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-white bg-opacity-10 rounded-circle p-3 mb-4" style="width: 64px; height: 64px;">
+                        <i class="bi bi-bus-front fs-3"></i>
+                    </div>
+                    <h1 class="fs-2 fw-bold mb-2">Welcome Back!</h1>
+                    <p class="text-white-50 mb-0">Sign in to continue to Go Sewa</p>
+                </div>
+            </div>
+            
+            <div class="card-body p-4 p-sm-5">
+                <!-- Error message display -->
+                {% if error_message %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ error_message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'login' %}" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="phone" class="form-label small fw-medium text-muted mb-1">
+                            Phone Number
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-telephone-fill text-success"></i>
+                            </span>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                name="phone" 
+                                class="form-control border-start-0 ps-0 {% if error_message %}is-invalid{% endif %}" 
+                                placeholder="Enter your phone number" 
+                                pattern="[0-9]{10}"
+                                required
+                                value="{{ request.POST.phone|default:'' }}"
+                            >
+                            <div class="invalid-feedback">
+                                Please enter a valid 10-digit phone number.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="password" class="form-label small fw-medium text-muted">
+                                Password
+                            </label>
+                            <a href="{% url 'forget_password' %}" class="text-success text-decoration-none small">
+                                Forgot Password?
+                            </a>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                <i class="bi bi-lock-fill text-success"></i>
+                            </span>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                class="form-control border-start-0 ps-0 {% if error_message %}is-invalid{% endif %}" 
+                                placeholder="Enter your password" 
+                                required
+                            >
+                            <button type="button" class="input-group-text bg-light border-start-0 password-toggle" data-target="password">
+                                <i class="bi bi-eye-slash text-muted"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback">
+                            Please enter your password.
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-3 mt-5">
+                        <button type="submit" class="btn btn-success btn-lg position-relative overflow-hidden" id="loginBtn">
+                            <span class="d-flex align-items-center justify-content-center gap-2">
+                                Sign In <i class="bi bi-arrow-right animation-pulse"></i>
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center bg-white bg-opacity-75" style="z-index: 9999;">
+    <div class="spinner-grow text-success" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .max-w-md {
+        max-width: 28rem;
+    }
+    
+    .rounded-4 {
+        border-radius: clamp(1rem, 2vw, 1.5rem);
+    }
+    
+    .hover-scale {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .hover-scale:hover {
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .animation-pulse {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: translateX(0); }
+        50% { transform: translateX(5px); }
+        100% { transform: translateX(0); }
+    }
+    
+    .form-control, .input-group-text {
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        border-color: rgba(0, 0, 0, 0.1);
+        background-color: var(--bg-light);
+    }
+    
+    .form-control:focus {
+        box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+        border-color: var(--primary-color);
+    }
+    
+    .input-group-text {
+        min-width: 46px;
+        justify-content: center;
+    }
+    
+    .password-toggle {
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .password-toggle:hover {
+        color: var(--primary-color);
+    }
+    
+    .btn-success {
+        padding: 0.875rem 1.5rem;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+    
+    .toast {
+        border-radius: var(--border-radius);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .alert {
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 576px) {
+        .card-body {
+            padding: 1.5rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            } else {
+                // Show loading overlay
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                const loginBtn = document.getElementById('loginBtn');
+                
+                loadingOverlay.classList.remove('d-none');
+                loadingOverlay.classList.add('d-flex');
+                
+                loginBtn.innerHTML = '<span class="d-flex align-items-center justify-content-center gap-2">Signing In... <div class="spinner-border spinner-border-sm" role="status"></div></span>';
+                loginBtn.disabled = true;
+            }
+            form.classList.add('was-validated');
+        });
+
+        // Password toggle
+        const toggleBtns = document.querySelectorAll('.password-toggle');
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('bi-eye-slash', 'bi-eye');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('bi-eye', 'bi-eye-slash');
+                }
+            });
+        });
+
+        // Auto-dismiss toasts
+        const toasts = document.querySelectorAll('.toast');
+        toasts.forEach(toast => {
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        });
+
+        // Auto-dismiss alerts
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 300);
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %}

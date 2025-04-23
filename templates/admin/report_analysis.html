@@ -1,0 +1,236 @@
+{% extends 'components/base.html' %}
+
+{% block title %}
+    Report Analysis - {{ month_year }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-0">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
+            {% include 'components/sidebar.html' %}
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 ms-md-auto px-md-4 report-container " style="margin-top:80px">
+            <!-- Header -->
+            <header class="report-header">
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h1 class="h3 mb-0 fw-bold text-dark">
+                                <i class="bi bi-bar-chart-line me-2 text-primary"></i>Report Analysis
+                            </h1>
+                            <small class="text-muted">Month: {{ month_year }}</small>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content -->
+            <main class="py-4">
+                <!-- Revenue and Commission Stats -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card stat-card shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Monthly Revenue</h6>
+                                <h3 class="mb-2 fw-bold">{{ monthly_revenue }} NPR</h3>
+                                <p class="text-muted small mb-0">Total income from bookings this month.</p>
+                                <small class="mt-2 d-block">
+                                    {% if prev_revenue %}
+                                        {% if revenue_diff_positive %}
+                                            <span class="text-success"><i class="bi bi-arrow-up me-1"></i>{{ revenue_diff }} NPR</span>
+                                        {% else %}
+                                            <span class="text-danger"><i class="bi bi-arrow-down me-1"></i>{{ revenue_diff }} NPR</span>
+                                        {% endif %}
+                                        vs last month ({{ prev_revenue }} NPR)
+                                    {% else %}
+                                        No previous data
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card stat-card shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Monthly Commission</h6>
+                                <h3 class="mb-2 fw-bold">{{ monthly_commission }} NPR</h3>
+                                <p class="text-muted small mb-0">Commission deducted from payments this month.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookings Stats -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="card stat-card shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Total Bookings</h6>
+                                <h3 class="mb-2 fw-bold">{{ total_bookings }}</h3>
+                                <p class="text-muted small mb-0">Number of bookings made this month.</p>
+                                <small class="mt-2 d-block">
+                                    {% if prev_bookings %}
+                                        {% if bookings_diff_positive %}
+                                            <span class="text-success"><i class="bi bi-arrow-up me-1"></i>{{ bookings_diff }}</span>
+                                        {% else %}
+                                            <span class="text-danger"><i class="bi bi-arrow-down me-1"></i>{{ bookings_diff }}</span>
+                                        {% endif %}
+                                        vs last month ({{ prev_bookings }})
+                                    {% else %}
+                                        No previous data
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card stat-card shadow-sm">
+                            <div class="card-body">
+                                <h6 class="text-muted mb-2">Canceled Bookings</h6>
+                                <h3 class="mb-2 fw-bold">{{ canceled_bookings }}</h3>
+                                <p class="text-muted small mb-0">Number of cancellations this month.</p>
+                                <small class="mt-2 d-block">
+                                    Cancellation Rate: {{ cancellation_rate|floatformat:1 }}%
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white border-bottom">
+                                <h5 class="mb-0 fw-semibold">Top Performing Buses</h5>
+                                <small class="text-muted">Most booked buses this month</small>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="topBusesChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-white border-bottom">
+                                <h5 class="mb-0 fw-semibold">Top Active Customers</h5>
+                                <small class="text-muted">Most active customers this month</small>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="topCustomersChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+ 
+    .report-container {
+        min-height: 100vh;
+        background-color: #f8f9fa;
+    }
+    .report-header {
+        padding: 1.5rem 0;
+        background-color: white;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        border: none;
+        border-radius: 0.5rem;
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+    }
+    .card-header {
+        padding: 1rem 1.5rem;
+    }
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .sidebar {
+            position: static;
+            height: auto;
+        }
+        .report-container {
+            margin-left: 0 !important;
+            padding: 1rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Top Buses Chart (Horizontal Bar)
+    const topBusesCtx = document.getElementById('topBusesChart').getContext('2d');
+    new Chart(topBusesCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for bus in top_buses %}'{{ bus.bus_number }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Bookings',
+                data: [{% for bus in top_buses %}{{ bus.total_bookings }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(0, 123, 255, 0.7)',
+                borderColor: 'rgba(0, 123, 255, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                y: { grid: { display: false } }
+            }
+        }
+    });
+
+    // Top Customers Chart (Horizontal Bar)
+    const topCustomersCtx = document.getElementById('topCustomersChart').getContext('2d');
+    new Chart(topCustomersCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for customer in top_customers %}'{{ customer.customer }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Bookings',
+                data: [{% for customer in top_customers %}{{ customer.total_bookings }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.05)' } },
+                y: { grid: { display: false } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
