@@ -1,7 +1,7 @@
 
 from bus.models import SeatLayoutBooking
-from booking.models import Booking, Payment, Commission, Rate,BusReservationBooking
-from route.models import Route, Schedule, Trip, CustomerReview
+from booking.models import Booking, Payment, BusReservationBooking
+from route.models import Route, Schedule,  CustomerReview,Notification
 from  custom_user.serializers import CustomUserSerializer
 from route.serializers import RouteSerializer,BookingSerializer, ScheduleSerializer,CustomReviewSerializer,PaymentSerializer,BusReservationBooking,VechicleReservationBookingSerializer
 
@@ -126,12 +126,12 @@ class UserBookingPaymentView(APIView):
 
     def post(self, request):
         try:
-            with transaction.atomic():  # Ensures atomicity of booking and payment
+            with transaction.atomic():  
                 user = request.user
                 print(user)
                 print(request.data)
 
-                seat = request.data.get('seat')  # Expecting a list of seats
+                seat = request.data.get('seat')  
                 schedule_id = request.data.get('schedule_id')
                 schedule_obj = Schedule.objects.get(bus=schedule_id)
 
@@ -156,7 +156,7 @@ class UserBookingPaymentView(APIView):
                  
                     schedule=schedule_obj
                 )
-
+                
                 # Khalti Payment Integration
                 payload = json.dumps({
                     "return_url": "https://example.com/payment-success",
@@ -182,7 +182,7 @@ class UserBookingPaymentView(APIView):
                 if "payment_url" not in new_res:
                     return Response({'success': False, 'error': 'Khalti Payment Failed'}, status=status.HTTP_400_BAD_REQUEST)
 
-                #  Prepare response data
+             
                 data = {
                     'bus_number': booking_obj.bus.bus_number,
                     'source': booking_obj.bus.route.source,
@@ -204,7 +204,7 @@ class UserBookingPaymentView(APIView):
             return Response({'success': False, "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     
 
-from decimal  import Decimal
+
     
 # ===== User Payment ===========
 class UserPayment(APIView):
@@ -222,11 +222,14 @@ class UserPayment(APIView):
             except Booking.DoesNotExist:
                 return Response({'success': False, 'error': 'Booking not found'}, status=400)
             transaction_id = request.data.get('transaction_id')
-            payment_obj = Payment.objects.create(user=user, price=total_amount, payment_status="completed", transaction_id=transaction_id, booking=booking_obj)
+            Payment.objects.create(user=user, price=total_amount, payment_status="completed", transaction_id=transaction_id, booking=booking_obj)
             
            
             booking_obj.booking_status = "booked"
             booking_obj.save()
+            message=f"Thank you ! Your seat has been booked on bus {booking_obj.schedule.bus.bus_number}. Have a safe journey !"
+            Notification.objects.create(type="booking",user=request.user,title="Booking",message=message)
+
             return Response({'success':True,'message':"Successfully payment"},status=200)
             
             

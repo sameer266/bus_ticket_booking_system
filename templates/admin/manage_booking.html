@@ -113,8 +113,11 @@
                                             <th>Status</th>
                                             <th>Route</th>
                                             <th>Price</th>
+                                            <th>Request At </th>
                                             <th>Start Date</th>
                                             <th>Duration</th>
+
+                                            
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -144,6 +147,7 @@
                                                     <span class="d-block">To: {{ bus_booking.destination }}</span>
                                                 </td>
                                                 <td>Rs {{bus_booking.bus_reserve.price}}</td>
+                                                <td> {{bus_booking.bus_reserve.created_at| timesince}} ago
                                                 <td>{{ bus_booking.start_date }}</td>
                                                 <td>{{ bus_booking.date }} days</td>
                                             </tr>

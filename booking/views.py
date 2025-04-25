@@ -1335,6 +1335,9 @@ def reservationBooking_update_status(request, id):
             # Update the status
             reservationBooking.status = status
             reservationBooking.save()
+            if status=='booked':
+                message=message=f"Thank you! Your reservation for vehicle {reservationBooking.bus_reserve.vechicle_number} has been successfully booked."
+                Notification.objects.create(type='booking',user=reservationBooking.user,title="Reservation",message=message)
 
             messages.success(request, "Vehicle Reservation status updated successfully")
             return redirect('booking_list')
@@ -1745,7 +1748,7 @@ def all_trips(request):
 @login_required
 def all_notification(request):
     notification_system = Notification.objects.filter(type='system').order_by('-created_at')
-    notification_user = Notification.objects.filter(type='user').order_by('-created_at')
+    notification_user = Notification.objects.filter(type='booking').order_by('-created_at')
 
     system_page = request.GET.get('system_page', 1)
     user_page = request.GET.get('user_page', 1)
@@ -1774,7 +1777,7 @@ def add_notification(request):
 
         Notification.send_notification_to_all_users(title, message)
         messages.success(request, "Notification added successfully!")
-        return redirect('notification')
+        return redirect('all_notification')
     return render(request, 'admin/add_notification.html')     
 
 
@@ -1787,7 +1790,7 @@ def edit_notification(request, id):
         notification.message = request.POST.get('message')
         notification.save()
         messages.success(request, "Notification updated successfully!")
-        return redirect('notification')
+        return redirect('all_notification')
 
     return render(request, 'admin/edit_notification.html', {'notification': notification})
 
@@ -1796,7 +1799,7 @@ def delete_notification(request, id):
     notification = get_object_or_404(Notification, id=id)
     notification.delete()
     messages.success(request, "Notification deleted successfully!")
-    return redirect('notification')
+    return redirect('all_notification')
 
 
 

@@ -25,7 +25,7 @@
                     <i class="bi bi-pencil-square me-2 text-primary"></i>Edit Notification
                 </h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
-                    <a href="{% url 'notification' %}" class="btn btn-sm btn-outline-secondary">
+                    <a href="{% url 'all_notification' %}" class="btn btn-sm btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i> Back to Notifications
                     </a>
                 </div>
@@ -45,7 +45,7 @@
                                 {% csrf_token %}
                                 <div class="mb-3">
                                     <label for="title" class="form-label fw-bold">Notification Title <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="title" name="title" value="{{ notification.tile }}" placeholder="Enter notification title" required>
+                                    <input type="text" class="form-control" id="title" name="title" value="{{ notification.title }}" placeholder="Enter notification title" required>
                                     <div class="form-text text-muted">Keep the title short and descriptive</div>
                                 </div>
                                 
@@ -55,28 +55,9 @@
                                     <div class="form-text text-muted">Provide details of the notification</div>
                                 </div>
                                 
-                                <div class="mb-3">
-                                    <div class="card bg-light border-0">
-                                        <div class="card-body py-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-3">
-                                                    <i class="bi bi-info-circle text-primary fs-5"></i>
-                                                </div>
-                                                <div>
-                                                    <h6 class="fw-bold mb-1">Notification Details</h6>
-                                                    <p class="mb-0 text-muted small">
-                                                        <span class="me-3"><i class="bi bi-clock me-1"></i>Created: {{ notification.craeted_at|date:"M d, Y h:i A" }}</span>
-                                                        <span class="me-3"><i class="bi bi-person me-1"></i>By: {{ notification.user.email }}</span>
-                                                        <span><i class="bi bi-tag me-1"></i>Type: {{ notification.choices }}</span>
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                                 
                                 <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                                    <a href="{% url 'notification' %}" class="btn btn-outline-secondary me-md-2">
+                                    <a href="{% url 'all_notification' %}" class="btn btn-outline-secondary me-md-2">
                                         <i class="bi bi-x-circle me-1"></i> Cancel
                                     </a>
                                     <button type="submit" class="btn btn-primary">
@@ -87,37 +68,7 @@
                         </div>
                     </div>
                     
-                    <!-- Notification Preview -->
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-white py-3">
-                            <h5 class="mb-0 fw-bold text-primary">
-                                <i class="bi bi-eye me-2"></i>Preview
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="notification-preview p-3 border rounded">
-                                <div class="d-flex align-items-start">
-                                    <div class="notification-icon bg-primary-soft rounded-circle p-2 me-3">
-                                        {% if notification.choices == 'system' %}
-                                        <i class="bi bi-gear text-primary fs-5"></i>
-                                        {% else %}
-                                        <i class="bi bi-calendar-check text-primary fs-5"></i>
-                                        {% endif %}
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-1 fw-bold preview-title">{{ notification.tile }}</h6>
-                                        <p class="mb-2 preview-message text-muted">{{ notification.message }}</p>
-                                        <small class="text-muted">
-                                            <i class="bi bi-clock me-1"></i>{{ notification.craeted_at|timesince }} ago
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-center mt-3">
-                                <small class="text-muted">This is how your notification will appear to users</small>
-                            </div>
-                        </div>
-                    </div>
+                  
                     
                     <!-- Delete Card -->
                     <div class="card shadow-sm mb-4 border-danger border-top border-4">
