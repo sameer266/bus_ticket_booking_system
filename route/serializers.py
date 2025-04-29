@@ -1,11 +1,11 @@
 # ==========================
 # Import Necessary Modules and Models
 # ==========================
-from .models import Route, Schedule, Trip, CustomerReview
+from .models import Route, Schedule, Trip, CustomerReview,Notification
 from custom_user.models import CustomUser,TransportationCompany
 from bus.models import Bus, TicketCounter, Driver, Staff, BusReservation, BusLayout, VechicleType,SeatLayoutBooking
 from rest_framework import serializers
-from booking.models import Booking, Payment, Commission, Rate, BusReservationBooking
+from booking.models import Booking, Payment, Commission,  BusReservationBooking
 
 # ==========================
 # Route and Schedule Serializers
@@ -54,8 +54,6 @@ class BusLayoutSerializer(serializers.ModelSerializer):
 
 
 class SeatLayoutBookingSerializer(serializers.ModelSerializer):
-    bus = BusLayoutSerializer()
-
     class Meta:
         model = SeatLayoutBooking
         fields = '__all__'
@@ -113,7 +111,7 @@ class BusReservationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BusReservation
-        fields = ['id', 'name', 'type', 'image', 'vechicle_number', 'vechicle_model', 'color', 'driver', 'staff', 'total_seats', 'price']
+        fields = ['id', 'name', 'type', 'image', 'vechicle_number', 'vechicle_model','source', 'color', 'driver', 'staff', 'total_seats', 'price']
 
 # Serializer for BusReservationBooking model
 class VechicleReservationBookingSerializer(serializers.ModelSerializer):
@@ -247,15 +245,6 @@ class CommissionSerializer(serializers.ModelSerializer):
         model = Commission
         fields = '__all__'
 
-# ==========================
-# Rate Serializer
-# ==========================
-
-# Serializer for Rate model
-class RateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Rate
-        fields = '__all__'
 
 
 #=======================
@@ -265,3 +254,9 @@ class TransportationCompanySerializer(serializers.Serializer):
     class Meta:
         model=TransportationCompany
         fileds='__all__'
+        
+# ======  Notification =======
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=Notification
+        fields=['title','message','is_read','created_at']

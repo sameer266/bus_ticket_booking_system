@@ -91,7 +91,7 @@ class Schedule(models.Model):
         ("finished","Finished")
     )
     transportation_company=models.ForeignKey('custom_user.TransportationCompany',on_delete=models.CASCADE,null=True,blank=True)
-    ticket_counter=models.ForeignKey('bus.TicketCounter',on_delete=models.CASCADE,null=True,blank=True)
+
     bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE)
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
     departure_time = models.DateTimeField(null=True, blank=True, help_text="Time when bus starts")
@@ -118,29 +118,30 @@ class Schedule(models.Model):
 
         BusLayout=apps.get_model('bus','BusLayout')
         bus_layout=BusLayout.objects.get(bus=self.bus)
-        SeatLayoutBooking.objects.create(
+        if SeatLayoutBooking.objects.filter(schedule=self).exists():
+            pass
+        else:
+            SeatLayoutBooking.objects.get_or_create(
             layout_data=bus_layout.layout_data,
             schedule=self )
     
     def delete(self, *args, **kwargs):
-        """
-        Custom delete method to remove associated Trip and BusAdmin records when a schedule is deleted.
-        """
         Trip = apps.get_model('route', 'Trip')
         BusAdmin = apps.get_model('bus', 'BusAdmin')
 
-        # Delete the corresponding trip for this specific schedule
+        # Delete corresponding trip
         trip = Trip.objects.filter(bus=self.bus, route=self.route, scheduled_departure=self.departure_time)
         if trip.exists():
             trip.delete()
 
-        # Delete the corresponding BusAdmin if no other schedules exist for this bus
+        # Delete BusAdmin if no other schedules exist for this bus
         if not Schedule.objects.filter(bus=self.bus).exclude(id=self.id).exists():
             bus_admin = BusAdmin.objects.filter(bus=self.bus)
             if bus_admin.exists():
                 bus_admin.delete()
 
         super().delete(*args, **kwargs)
+
         
     # --- To udpate the status of schedule according to time --
     @staticmethod

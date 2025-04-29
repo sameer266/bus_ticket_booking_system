@@ -111,7 +111,7 @@ class Bus(models.Model):
         ("wifi", "WiFi"),
     )
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
-    ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
+
     driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, null=True, blank=True)
    
@@ -328,7 +328,6 @@ class BusReservation(models.Model):
     """
    
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
-    ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
     
     name=models.CharField(max_length=100,default="None")
     type = models.ForeignKey(VechicleType, on_delete=models.CASCADE, null=True, blank=True)
@@ -341,7 +340,7 @@ class BusReservation(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, null=True, blank=True)
     total_seats = models.PositiveIntegerField(default=35)
     price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
-
+    source=models.CharField(max_length=200,null=True,blank=True)
     created_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)
     
    

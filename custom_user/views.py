@@ -4,6 +4,7 @@ from booking.models import Booking, Payment, BusReservationBooking
 from route.models import Route, Schedule,  CustomerReview,Notification
 from  custom_user.serializers import CustomUserSerializer
 from route.serializers import RouteSerializer,BookingSerializer, ScheduleSerializer,CustomReviewSerializer,PaymentSerializer,BusReservationBooking,VechicleReservationBookingSerializer
+from django.shortcuts import get_object_or_404
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -126,6 +127,7 @@ class UserBookingPaymentView(APIView):
 
     def post(self, request):
         try:
+            print(request.data)
             with transaction.atomic():  
                 user = request.user
                 print(user)
@@ -133,22 +135,21 @@ class UserBookingPaymentView(APIView):
 
                 seat = request.data.get('seat')  
                 schedule_id = request.data.get('schedule_id')
-                schedule_obj = Schedule.objects.get(bus=schedule_id)
-
+                schedule_obj = Schedule.objects.get(id=schedule_id)
                 count = len(seat)
                 schedule_obj.available_seats -= count
+               
+                
+                print("Schedule",schedule_obj)
+                bus_layout_obj = SeatLayoutBooking.objects.get(schedule=schedule_obj)
                 schedule_obj.save()
+                print("_Sa-sad",bus_layout_obj)
 
-                #  Calculate total price
+                bus_layout_obj.mark_seat_booked(seat)
                 total_price = schedule_obj.price * count
                 print(f"Total Price: {total_price}")
-
-                #  Mark seats as booked in bus layout
-                bus_layout = SeatLayoutBooking.objects.get(schedule=schedule_obj)
-                bus_layout = bus_layout.layout_data
-                bus_layout.mark_seat_booked(seat)
-
-                #  Create booking entry
+                
+                
                 booking_obj = Booking.objects.create(
                     user=user,
                     seat=seat,
@@ -156,12 +157,13 @@ class UserBookingPaymentView(APIView):
                  
                     schedule=schedule_obj
                 )
+                print("Bookinh-------")
                 
                 # Khalti Payment Integration
                 payload = json.dumps({
                     "return_url": "https://example.com/payment-success",
                     "website_url": "https://example.com",
-                    "amount": float(total_price)*100,
+                    "amount": 1000,
                     "booking_id": str(uuid.uuid4()), 
                     "purchase_order_id":booking_obj.id,
                     "purchase_order_name": "Bus Ticket Booking",
@@ -171,11 +173,11 @@ class UserBookingPaymentView(APIView):
                 })
 
                 headers = {
-                    'Authorization': "key c3ace8e77db241119661f858acd5f6de",
+                    'Authorization': "key live_secret_key_6b3430a73295415fbd073e91660d3006",
                     'Content-Type': 'application/json',
                 }
 
-                response = requests.post("https://a.khalti.com/api/v2/epayment/initiate/", headers=headers, data=payload)
+                response = requests.post("https://khalti.com/api/v2/epayment/initiate/", headers=headers, data=payload)
                 print(response.content)
                 new_res = response.json()
 
@@ -185,8 +187,8 @@ class UserBookingPaymentView(APIView):
              
                 data = {
                     'bus_number': booking_obj.bus.bus_number,
-                    'source': booking_obj.bus.route.source,
-                    'destination': booking_obj.bus.route.destination,
+                    'source': booking_obj.schedule.route.source,
+                    'destination': booking_obj.schedule.route.destination,
                     'booking_status': booking_obj.booking_status,
                     'seat': booking_obj.seat,
                     'booked_at': booking_obj.booked_at,
@@ -217,16 +219,18 @@ class UserPayment(APIView):
             user=request.user
             total_amount=request.data.get('amount')
             booking_id=request.data.get('booking_id')
+            transaction_id = request.data.get('transaction_id')
             try:
                 booking_obj = Booking.objects.get(id=booking_id)
             except Booking.DoesNotExist:
                 return Response({'success': False, 'error': 'Booking not found'}, status=400)
-            transaction_id = request.data.get('transaction_id')
-            Payment.objects.create(user=user, price=total_amount, payment_status="completed", transaction_id=transaction_id, booking=booking_obj)
             
-           
+         
+            
+            Payment.objects.create(user=user,  payment_status="completed", transaction_id=transaction_id, booking=booking_obj)
             booking_obj.booking_status = "booked"
             booking_obj.save()
+            
             message=f"Thank you ! Your seat has been booked on bus {booking_obj.schedule.bus.bus_number}. Have a safe journey !"
             Notification.objects.create(type="booking",user=request.user,title="Booking",message=message)
 
@@ -234,6 +238,7 @@ class UserPayment(APIView):
             
             
         except Exception as e:
+            print(e)
             return Response({'success':False,'error':str(e)},status=400)
 
 

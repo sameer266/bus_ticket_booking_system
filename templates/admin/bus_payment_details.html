@@ -34,7 +34,7 @@
                 </h1>
             </div>
 
-
+{% comment %} 
             {% if user.is_superuser %}
             <!-- Commission Rate Card -->
             <div class="card border-0 shadow-sm mb-4">
@@ -72,7 +72,7 @@
                     </div>
                 </div>
             </div>
-            {%endif %}
+            {%endif %} {% endcomment %}
             
            
             <!-- Summary Cards (Total Earnings, Net Received, Total Commission) -->
@@ -152,7 +152,7 @@
                                     <th>Bus Number</th>
                                     <th>Bus Type</th>
                                     <th>Total Earnings</th>
-                                    <th>Commission ({{ commission_rate }}%)</th>
+                                    <th>Commission</th>
                                     <th>Net Earnings</th>
                                     <th>Trips</th>
                                     <th>Action</th>

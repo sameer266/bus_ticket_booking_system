@@ -71,8 +71,10 @@ urlpatterns = [
     path('api/routes_all_buses/<int:id>/', views.RoutesBusList.as_view()),
 
     # ================== Vehicle Types and Reservations ==================
+    path('api/vechicle/source/',views.VehicleListSource.as_view()),
     path('api/vechicle_types/', views.VechicleTypeList.as_view()),
-    path('api/vechicle_list/type/<id>/', views.VechicleReservationList.as_view()),  # List all vehicles of one type
+    path('api/vechicle_list/type/<id>/', views.VechicleReservationList.as_view()),  
+    
     path('api/vechicle_detail/<int:id>/', views.VehicleOneDetails.as_view()),
     path('api/vechicle_reservation_create/', views.VechicleReeservationBookingApiView.as_view()),
 
@@ -84,6 +86,9 @@ urlpatterns = [
 
     # ================== Bus Layout ==================
     path('api/admin_buslayout/<int:id>/', views.BusLayoutApiView.as_view()),
+    
+    # ============ Notification =============
+    path('api/user_notification/',views.UserNotificationApiView.as_view()),
 ]
 
 # ================== Static Files in Debug Mode ==================

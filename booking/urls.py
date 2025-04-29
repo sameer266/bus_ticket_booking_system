@@ -28,10 +28,10 @@ urlpatterns = [
   path('edit-staff/<int:staff_id>/', views.edit_staff, name='edit_staff'),
   path('delete-staff/<int:staff_id>/', views.delete_staff, name='delete_staff'),
 
-  # ======== Vehicle Reservation Management ==========
-  path('reservations/', views.vehicle_reservation, name='vehicle_reservation'),
-  path('reservations/<int:id>/', views.edit_vehicle_reservation, name='vehicle_reservation_edit'),
-  path('vehicle_reservation_delete/<int:id>/',views.delete_vehicle_reservation,name="delete_vehicle_reservation"),
+  # ======== Vehicle Management ==========
+  path('vehicle/', views.vehicle_list, name='vehicle_reservation'),
+  path('vehicle/edit/<int:id>/', views.edit_vehicle, name='vehicle_reservation_edit'),
+  path('vehicle/delete/<int:id>/',views.delete_vehicle,name="delete_vehicle_reservation"),
 
   # ======== Vehicle Type Management ==========
   path('vehicle-type-management/', views.vechicle_type_list, name='vehicle_type_list'),
@@ -68,7 +68,8 @@ urlpatterns = [
 
   # ======== Booking Management ==========
   path('booking-management/', views.booking_management, name='booking_list'),
-  path('reservation/update-status/<int:id>/', views.reservationBooking_update_status, name='update_status_reservation'),
+  path('booking-reservation/update/<int:id>/', views.reservationBooking_update, name="update_reservation"),
+  path('booking-resevation/delete/<int:id>/',views.delete_vehicle_reservation_booking,name="delete_reservation"),
 
   # ======== Report Analysis ==========
   path('reports/', views.report_analysis_view, name='report_analysis'),

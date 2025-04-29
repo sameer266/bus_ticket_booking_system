@@ -11,7 +11,7 @@
                         <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Back</span>
                     </a>
                     <h1 class="h2 mb-0 fw-bold">
-                        <i class="bi bi-list-check me-2 text-primary"></i>Vehicle Types
+                        <i class="bi bi-car-front me-2 text-primary"></i>Vehicle Types
                     </h1>
                 </div>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTypeModal">
@@ -23,7 +23,7 @@
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-white d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center py-3 gap-2">
                     <h5 class="mb-0 fw-bold text-primary">
-                        <i class="bi bi-list-check me-2"></i>Types List
+                        <i class="bi bi-list-ul me-2"></i>Types List
                     </h5>
                     <div class="input-group input-group-sm w-100 w-md-auto">
                         <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
@@ -32,19 +32,18 @@
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-hover align-middle mb-0" id="typesTable">
                             <thead class="table-light">
                                 <tr>
                                     <th class="ps-3">Type Name</th>
                                     <th class="text-center d-none d-md-table-cell">Image</th>
                                     <th class="text-center d-none d-md-table-cell">Associated Vehicles</th>
-                                    
                                     <th class="text-end pe-3">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for vehicle_type in vehicle_types %}
-                                <tr>
+                                <tr data-type-id="{{ vehicle_type.id }}">
                                     <td class="ps-3">
                                         <div class="d-flex align-items-center">
                                             <div class="rounded bg-light d-flex align-items-center justify-content-center me-3 d-md-none" style="width: 40px; height: 40px;">
@@ -67,41 +66,29 @@
                                     <td class="text-center d-none d-md-table-cell">
                                         <div class="d-flex align-items-center justify-content-center gap-4">
                                             <span class="badge bg-primary rounded-pill">{{ vehicle_type.vehicle_count }}</span>
-                                            <a href={% url 'vehicle_type_vehicles' vehicle_type.id %}  class="text-primary" title="View vehicles">
-                                                <i class="bi bi-eye-fill fs-4"></i>
+                                            <a href="{% url 'vehicle_type_vehicles' vehicle_type.id %}" class="text-primary" title="View vehicles">
+                                                <i class="bi bi-eye-fill fs-5"></i>
                                             </a>
                                         </div>
                                     </td>
-
                                     <td class="text-end pe-3">
-                                        <!-- Desktop actions -->
-                                        <div class="btn-group btn-group-sm d-none d-md-inline-flex">
-                                            <a href="{% url 'edit_vehicle_type' vehicle_type.id %}" class="btn btn-outline-primary" title="Edit">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a href="{% url 'edit_vehicle_type' vehicle_type.id %}" class="btn btn-sm btn-outline-primary" title="Edit">
                                                 <i class="bi bi-pencil-square"></i>
+                                                <span class="d-none d-lg-inline ms-1">Edit</span>
                                             </a>
-                                            <button class="btn btn-outline-danger delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}" title="Delete">
+                                            <button class="btn btn-sm btn-outline-danger delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}" title="Delete">
                                                 <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                        
-                                        <!-- Mobile actions -->
-                                        <div class="d-md-none">
-                                            <a href="{% url 'edit_vehicle_type' vehicle_type.id %}" class="btn btn-outline-primary btn-sm me-1" title="Edit">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <button class="btn btn-outline-danger btn-sm delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}" title="Delete">
-                                                <i class="bi bi-trash"></i>
+                                                <span class="d-none d-lg-inline ms-1">Delete</span>
                                             </button>
                                         </div>
                                     </td>
-                                       
                                 </tr>
-                                
                                 {% empty %}
                                 <tr>
                                     <td colspan="4" class="text-center py-5">
                                         <div class="py-4">
-                                            <i class="bi bi-list-check display-5 text-muted d-block mb-3"></i>
+                                            <i class="bi bi-car-front display-5 text-muted d-block mb-3"></i>
                                             <h5 class="text-muted">No vehicle types found</h5>
                                             <p class="text-muted">Add your first vehicle type to get started</p>
                                             <button class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addTypeModal">
@@ -130,7 +117,7 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="POST" enctype="multipart/form-data" action="{% url 'vehicle_type_list' %}">
+            <form method="POST" enctype="multipart/form-data" action="{% url 'vehicle_type_list' %}" id="addTypeForm">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
@@ -191,71 +178,70 @@
     </div>
 </div>
 
-{% block extra_js %}
-<script>
-
-    // Add this to your existing 'DOMContentLoaded' event handler
-document.querySelectorAll('.delete-type-btn').forEach(button => {
-    button.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        // Get the reservation ID and name
-        const row = this.closest('tr');
-        const reservationId = row.dataset.reservationId;
-        const reservationName = row.querySelector('h6').textContent;
-        
-        // Update the delete confirmation modal
-        document.getElementById('deleteReservationName').textContent = reservationName;
-        document.getElementById('deleteReservationForm').action = this.href;
-        
-        // Show the delete confirmation modal
-        const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-        deleteConfirmModal.show();
-    });
-});
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Search functionality
-        const searchInput = document.getElementById('searchTypes');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const rows = document.querySelectorAll('tbody tr');
-                
-                rows.forEach(row => {
-                    const typeName = row.querySelector('td:first-child')?.textContent?.toLowerCase() || '';
-                    row.style.display = typeName.includes(searchTerm) ? '' : 'none';
-                });
-            });
-        }
-        
-        // Delete modal setup
-        const deleteModal = document.getElementById('deleteTypeModal');
-        if (deleteModal) {
-            deleteModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const typeId = button.getAttribute('data-type-id');
-                const typeName = button.getAttribute('data-type-name');
-                
-                document.getElementById('deleteTypeName').textContent = typeName;
-                document.getElementById('deleteTypeForm').action = `/vehicle-types/${typeId}/delete/`;
-                
-                // Reset the confirmation checkbox
-                const confirmCheckbox = document.getElementById('confirmDelete');
-                const deleteSubmitBtn = document.getElementById('deleteSubmitBtn');
-                confirmCheckbox.checked = false;
-                deleteSubmitBtn.disabled = true;
-            });
-        }
-        
-        // Enable delete button only when checkbox is checked
-        const confirmCheckbox = document.getElementById('confirmDelete');
-        if (confirmCheckbox) {
-            confirmCheckbox.addEventListener('change', function() {
-                document.getElementById('deleteSubmitBtn').disabled = !this.checked;
-            });
-        }
-    });
-</script>
 {% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Search functionality
+    $('#searchTypes').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        $('#typesTable tbody tr').each(function() {
+            const typeName = $(this).find('td:first').text().toLowerCase();
+            $(this).toggle(typeName.includes(searchTerm));
+        });
+    });
+
+    // Delete modal setup
+    $('#deleteTypeModal').on('show.bs.modal', function(event) {
+        const button = $(event.relatedTarget);
+        const typeId = button.data('type-id');
+        const typeName = button.data('type-name');
+        
+        $('#deleteTypeName').text(typeName);
+        $('#deleteTypeForm').attr('action', `/vehicle-types/${typeId}/delete/`);
+        
+        // Reset confirmation checkbox
+        $('#confirmDelete').prop('checked', false);
+        $('#deleteSubmitBtn').prop('disabled', true);
+    });
+
+    // Enable delete button when checkbox is checked
+    $('#confirmDelete').change(function() {
+        $('#deleteSubmitBtn').prop('disabled', !$(this).is(':checked'));
+    });
+
+    // Form validation for add type
+    $('#addTypeForm').submit(function(e) {
+        const typeName = $('#typeName').val().trim();
+        if (!typeName) {
+            e.preventDefault();
+            $('#typeName').addClass('is-invalid');
+            return false;
+        }
+        return true;
+    });
+
+    // Clear validation on input
+    $('#typeName').on('input', function() {
+        if ($(this).val().trim()) {
+            $(this).removeClass('is-invalid');
+        }
+    });
+
+    // Responsive adjustments
+    function handleResponsive() {
+        if ($(window).width() < 768) {
+            $('.table-responsive').addClass('table-sm');
+        } else {
+            $('.table-responsive').removeClass('table-sm');
+        }
+    }
+
+    // Run on load and resize
+    handleResponsive();
+    $(window).resize(handleResponsive);
+});
+</script>
 {% endblock %}

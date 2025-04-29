@@ -8,12 +8,12 @@ from datetime import datetime
 from django.contrib import messages
 
 from custom_user.models import CustomUser,UserOtp
-from route.models import Route,Schedule,CustomerReview
-from bus.models import Bus,BusReservation,BusLayout,VechicleType,SeatLayoutBooking
+from route.models import Route,Schedule,CustomerReview,Notification
+from bus.models import Bus,BusReservation,VechicleType,SeatLayoutBooking
 from booking.models import Booking,BusReservationBooking
 from django.shortcuts import get_object_or_404
 from custom_user.serializers import CustomUserSerializer
-from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusLayoutSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleUserReservationBookingSerializer,UserBookingSerilaizer,BookingSerializer,SeatLayoutBookingSerializer
+from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleUserReservationBookingSerializer,UserBookingSerilaizer,BookingSerializer,SeatLayoutBookingSerializer,NotificationSerializer
 
 
 
@@ -490,6 +490,9 @@ class PopularRoutes(APIView):
             return Response({"success": False, "error": str(e)}, status=400)
 
 
+
+    
+        
 # ====== All Reviews =============
 class AllReveiews(APIView):
     def get(self,request):
@@ -527,6 +530,40 @@ class RoutesBusList(APIView):
 # =====================
 # Vechicle Type 
 # =====================
+
+class VehicleListSource(APIView):
+    def get(self,request):
+        try:
+            source = request.query_params.get('source')
+            print(source)
+            if source:
+                vechicles = BusReservation.objects.filter(source=source)
+                data_list=[]
+                for vechicle in vechicles:
+                    data={
+                        "id":vechicle.id,
+                        "name":vechicle.name,
+                        "type":vechicle.type.name,
+                        "vechicle_number":vechicle.vechicle_number,
+                        "vechicle_model":vechicle.vechicle_model,
+                        "image":vechicle.image.url,
+                        "color":vechicle.color,
+                        "driver":vechicle.driver.full_name,
+                        "staff":vechicle.staff.full_name,
+                        "total_seats":vechicle.total_seats,
+                        "price":vechicle.price,
+                        "source":vechicle.source,
+                    }
+                    data_list.append(data)
+                
+                return Response({'success':True,'data':data_list}, status=200)
+            
+          
+            
+        except Exception as e:
+            return Response({'success':False,'error':str(e)}, status=400)
+        
+        
 class VechicleTypeList(APIView):
     def get(self,request):
         try:
@@ -576,7 +613,7 @@ class VechicleReservationList(APIView):
             if not bus_reservations.exists():
                 return Response({"success": False, "error": "No bus reservations found"}, status=404)
 
-            # Always return a list, even if there's only one reservation
+
             data_list = []
             for bus_reservation in bus_reservations:
                 data = {
@@ -590,7 +627,8 @@ class VechicleReservationList(APIView):
                     "driver": bus_reservation.driver.full_name if bus_reservation.driver else None,
                     "staff": bus_reservation.staff.full_name if bus_reservation.staff else None,
                     "total_seats": bus_reservation.total_seats,
-                    "price": bus_reservation.price
+                    "price": bus_reservation.price,
+                    "source":bus_reservation.source
                 }
                 data_list.append(data)
 
@@ -599,7 +637,8 @@ class VechicleReservationList(APIView):
         except Exception as e:
             return Response({'success': False, "error": str(e)}, status=400)
 
-    
+
+
 # ======= Bus Reservation Booking ===========
 class  VechicleReeservationBookingApiView(APIView):
     authentication_classes=[JWTAuthentication]
@@ -673,6 +712,8 @@ class SeatBookingAPiView(APIView):
 
 # ========= Bus Layout =========
 class BusLayoutApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
     def get(self, request, *args, **kwargs):
         try:
             schedule_id = kwargs.get('id')
@@ -689,3 +730,19 @@ class BusLayoutApiView(APIView):
             return Response({"success": False, "error": "Bus layout not found"}, status=404)
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
+        
+    # =========== Notification ==========
+    
+class UserNotificationApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request):
+        user=request.user
+        notification=Notification.objects.filter(user=user).order_by('-created_at')
+        serializer=NotificationSerializer(notification,many=True)
+        return Response({'success':True,'data':serializer.data},status=200)
+    
+    
+    
+    

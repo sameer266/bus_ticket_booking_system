@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from custom_user.models import CustomUser, UserOtp,System,TransportationCompany
 from bus.models import Bus, BusAdmin, Driver, Staff, TicketCounter, BusReservation, BusLayout, VechicleType,SeatLayoutBooking
-from booking.models import Booking, Payment, Commission, Rate,BusReservationBooking
+from booking.models import Booking, Payment, Commission, BusReservationBooking
 from route.models import Route, Schedule, Trip, CustomerReview,Notification
 
 # ========================= Custom User =========================
@@ -79,7 +79,7 @@ admin.site.register(VechicleType, VechicleTypeAdmin)
 
 # ========================= Bus Reservation =========================
 class BusReservationAdmin(admin.ModelAdmin):
-    list_display = ('id','name','type','image','vechicle_number', 'vechicle_model','color','driver', 'staff', 'total_seats','price')
+    list_display = ('id','name','type','image','vechicle_number', 'vechicle_model','color','driver', 'staff', 'total_seats','price','source')
     search_fields = ('vechicle_number', 'user__email', 'driver__full_name', 'staff__full_name')
 
 
@@ -88,7 +88,7 @@ admin.site.register(BusReservation, BusReservationAdmin)
 
 # =================== Bus Reservation Booking ===================
 class BusReservationBookingAdmin(admin.ModelAdmin):
-    list_display=('id','user','bus_reserve','status','source','destination','start_date','date','created_at')
+    list_display=('id','user','bus_reserve','status','source','destination','start_date','end_date','date','agreed_price','created_at')
 
 admin.site.register(BusReservationBooking,BusReservationBookingAdmin)
     
@@ -120,7 +120,7 @@ admin.site.register(Route, RouteAdmin)
 
 # ========================= Schedule =========================
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ('bus', 'route','available_seats', 'departure_time', 'arrival_time', 'date', 'price')
+    list_display = ('id','bus', 'route','available_seats', 'departure_time', 'arrival_time', 'date', 'price')
     search_fields = ('bus__bus_number', 'route__source', 'route__destination')
     list_filter = ('route', 'departure_time', 'date')
     ordering = ('date',)
@@ -137,23 +137,17 @@ admin.site.register(Trip, TripAdmin)
 
 # ========================= Payment =========================
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ( 'user', 'payment_status','payment_method','rate','commission_deducted', 'created_at')
+    list_display = ( 'user', 'payment_status','payment_method','commission_deducted', 'created_at')
     search_fields = ('user__email', 'schedule__bus__bus_number', 'schedule__route__source', 'schedule__route__destination')
     list_filter = ('created_at',)
 
 admin.site.register(Payment, PaymentAdmin)
 
-# ========================= Rate =========================
-class RateAdmin(admin.ModelAdmin):
-    list_display = ('rate',)
-    search_fields = ('rate',)
-    list_filter = ('rate',)
 
-admin.site.register(Rate, RateAdmin)
 
 # ========================= Commission =========================
 class CommissionAdmin(admin.ModelAdmin):
-    list_display = ('bus', 'bus_reserve', 'commission_type', 'total_earnings', 'total_commission')
+    list_display = ('bus', 'bus_reserve', 'commission_type','rate', 'total_earnings', 'total_commission')
     search_fields = ('bus__bus_number', 'bus_reserve__vechicle_number')
     list_filter = ('commission_type',)
 

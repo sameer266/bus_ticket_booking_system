@@ -15,6 +15,7 @@ class SystemSerializer(serializers.ModelSerializer):
         fields='__all__'
 
 
+
 class KhaltiPaymentSerializer(serializers.Serializer):
     return_url = serializers.URLField(required=True)
     website_url = serializers.URLField(required=True)
