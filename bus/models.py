@@ -6,7 +6,7 @@ from route.models import Schedule
 
 # Importing related models
 from custom_user.models import CustomUser,TransportationCompany
-from route.models import Route, Trip
+
 
 
 # ========= Ticket Counter Model ===========
@@ -166,6 +166,7 @@ class SeatLayoutBooking(models.Model):
             found = False
             for row in self.layout_data:
                 for seat in row:
+                   
                     if isinstance(seat, dict) and seat["seat"] == seat_key:
                         if seat["status"] == "booked":
                             seat["status"] = "available"
@@ -189,6 +190,8 @@ class SeatLayoutBooking(models.Model):
         for seat_key in seat_keys:
             found = False
             for row in self.layout_data:
+                print(seat_key)
+                
                 for seat in row:
                     if isinstance(seat, dict) and seat["seat"] == seat_key:
                         if seat["status"] == "available":

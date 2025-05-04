@@ -78,20 +78,21 @@ urlpatterns = [
   path('settings/', views.system_settings_view, name='system_settings'),
 
   # ======== Payment Management ==========
-  path('bus-payment/', views.bus_payment_details, name='bus_payments_details'),
+  path('bus-bookings-payment/', views.bus_payment_details, name='bus_payments_details'),
+  path('bus-earning-details/<int:bus_id>/', views.bus_earning_details, name='bus_earnings'),
+  
+  
+  
   path('reservation-payment/', views.reservation_payment_details, name='reservation_payment_details'),
-  path('reservation_vehicle_details/<int:id>/',views.vehicle_details_payment,name="vehicle_details_payment"),
+  path('vehicle-earnings-details/<int:vehicle_id>/',views.vehicle_reservation_earings_details,name="vehicle_earning_details"),
+  path('reservation-details/<int:id>/',views.vehicle_details_payment,name="vehicle_details_payment"),
   
   
   # ================ Udpate Rate ===============
-  path('update-seat/commission-rate/', views.update_seat_commission_rate, name='update_seat_commission_rate'),
-  path('update-reservation/commission-rate/',views.update_reservation_commission_rate,name="update_reservation_commission_rate"),
 
 
 
-  # ======== Bus Earnings ==========
-  path('bus-earning-details/<int:bus_id>/', views.bus_earning_details, name='bus_earnings'),
-  
+
   # ========== trips details =========
   path('all-trips/',views.all_trips,name="all_trips"),
 

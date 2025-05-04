@@ -1,5 +1,5 @@
 {% extends 'components/base.html' %}
-{% block title %}Edit Reservation | Go Sewa{% endblock %}
+{% block title %}Edit Booking Reservation | Go Sewa{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -163,6 +163,11 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.15);
     }
     
+    /* Date picker styling */
+    .form-control[type="date"] {
+        appearance: none;
+    }
+    
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .reservation-form-container {
@@ -204,63 +209,28 @@
 {% endblock %}
 
 {% block content %}
-<div class="reservation-form-container">
+<div class="reservation-form-container" style="margin-top:90px">
     <!-- Floating back button for mobile -->
-    <a href="{% url 'vehicle_reservation' %}" class="floating-back">
+    <a href="{% url 'booking_list' %}" class="floating-back">
         <i class="bi bi-arrow-left"></i>
     </a>
     
     <div class="card form-card">
         <div class="form-header">
-            <h1><i class="bi bi-pencil-square"></i>Edit Reservation</h1>
+            <h1><i class="bi bi-pencil-square"></i> Edit Booking Reservation</h1>
         </div>
         <div class="card-body form-body">
-            <form method="POST" action="{% url 'vehicle_reservation_edit' reservation.id %}" class="needs-validation" novalidate>
+            <form method="POST" action="{% url 'update_reservation' reservation.id %}" class="needs-validation" novalidate>
                 {% csrf_token %}
                 
                 <!-- Vehicle Information Section -->
                 <h4 class="section-header"><i class="bi bi-car-front"></i>Vehicle Information</h4>
                 <div class="row g-3">
                     <div class="col-md-6 form-group">
-                        <label for="name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" value="{{ reservation.name }}" required>
-                        <div class="invalid-feedback">Please enter a name.</div>
-                    </div>
-
-                    <div class="col-md-6 form-group">
-                        <label for="type" class="form-label">Vehicle Type</label>
-                        <select class="form-select" id="type" name="type" required>
-                            <option value="" disabled>Select vehicle type</option>
-                            {% for vehicle_type in vechicle_types %}
-                                <option value="{{ vehicle_type.name }}" {% if vehicle_type.name == reservation.type.name %}selected{% endif %}>
-                                    {{ vehicle_type.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                        <div class="invalid-feedback">Please select a vehicle type.</div>
-                    </div>
-
-                    <div class="col-md-6 form-group">
-                        <label for="vehicle_number" class="form-label">Vehicle Number</label>
-                        <input type="text" class="form-control" id="vehicle_number" name="vehicle_number" value="{{ reservation.vechicle_number }}" required>
-                        <div class="invalid-feedback">Please enter a vehicle number.</div>
-                    </div>
-
-                    <div class="col-md-6 form-group">
-                        <label for="vehicle_model" class="form-label">Vehicle Model</label>
-                        <input type="text" class="form-control" id="vehicle_model" name="vehicle_model" value="{{ reservation.vechicle_model }}" required>
-                        <div class="invalid-feedback">Please enter a vehicle model.</div>
-                    </div>
-
-                    <div class="col-md-6 form-group">
-                        <label for="color" class="form-label">Color</label>
-                        <input type="text" class="form-control" id="color" name="color" value="{{ reservation.color }}">
-                    </div>
-                    
-                    <div class="col-md-6 form-group">
-                        <label for="total_seats" class="form-label">Total Seats</label>
-                        <input type="number" class="form-control" id="total_seats" name="total_seats" value="{{ reservation.total_seats }}" min="1" required>
-                        <div class="invalid-feedback">Please enter a valid number of seats.</div>
+                        <label for="vechicle_number" class="form-label">Vehicle Number</label>
+                        <input type="text" class="form-control" id="vehicle_number" name="vechicle_number" value="{{ reservation.bus_reserve.vechicle_number }}" required>
+                        
+                        <div class="invalid-feedback">Please select a vehicle.</div>
                     </div>
                 </div>
                 
@@ -274,9 +244,50 @@
                     </div>
                     
                     <div class="col-md-6 form-group">
-                        <label for="price" class="form-label">Price (NRP)</label>
-                        <input type="number" class="form-control" id="price" name="price" value="{{ reservation.price }}" step="0.01" required>
+                        <label for="destination" class="form-label">Destination</label>
+                        <input type="text" class="form-control" id="destination" name="destination" value="{{ reservation.destination }}" required>
+                        <div class="invalid-feedback">Please enter a destination location.</div>
+                    </div>
+
+                    <div class="col-md-6 form-group">
+                        <label for="agreed_price" class="form-label">Actual Price (NRP)</label>
+                        <input type="number" class="form-control" id="agreed_price" name="agreed_price" value="{{ reservation.bus_reserve.price }}"  readonly >
+
+                    </div>
+
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="agreed_price" class="form-label">Agreed Price (NRP)</label>
+                        <input type="number" class="form-control" id="agreed_price" name="agreed_price" value="{{ reservation.agreed_price }}"  required>
                         <div class="invalid-feedback">Please enter a valid price.</div>
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="date" class="form-label">Booking Duration </label>
+                        <input type="text" class="form-control" id="date" name="date" value="{{ reservation.date }} " required>
+                        <div class="invalid-feedback">Please enter Duration in Days.</div>
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ reservation.start_date|date:'Y-m-d' }}" required>
+                        <div class="invalid-feedback">Please select a start date.</div>
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ reservation.end_date|date:'Y-m-d' }}" required>
+                        <div class="invalid-feedback">Please select an end date.</div>
+                    </div>
+                    
+                    <div class="col-md-6 form-group">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="pending" {% if reservation.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="booked" {% if reservation.status == 'booked' %}selected{% endif %}>Booked</option>
+
+                        </select>
+                        <div class="invalid-feedback">Please select a status.</div>
                     </div>
                 </div>
                 
@@ -285,32 +296,34 @@
                 <div class="row g-3">
                     <div class="col-md-6 form-group">
                         <label for="driver_id" class="form-label">Driver</label>
-                        <select class="form-select" id="driver_id" name="driver_id">
-                            <option value="">None</option>
-                            {% for driver in unassigned_drivers %}
-                                <option value="{{ driver.id }}" {% if driver.id == reservation.driver.id %}selected{% endif %}>
-                                    {{ driver.full_name }}
+                        <select class="form-select" id="driver_id" name="driver_id" required>
+                            <option value="">Select Driver</option>
+                            {% for d in driver %}
+                                <option value="{{ d.id }}" {% if d.id == reservation.bus_reserve.driver.id %}selected{% endif %}>
+                                    {{ d.full_name }}
                                 </option>
                             {% endfor %}
                         </select>
+                        <div class="invalid-feedback">Please select a driver.</div>
                     </div>
 
                     <div class="col-md-6 form-group">
                         <label for="staff_id" class="form-label">Staff</label>
-                        <select class="form-select" id="staff_id" name="staff_id">
-                            <option value="">None</option>
-                            {% for staff in unassigned_staff %}
-                                <option value="{{ staff.id }}" {% if staff.id == reservation.staff.id %}selected{% endif %}>
-                                    {{ staff.full_name }}
+                        <select class="form-select" id="staff_id" name="staff_id" required>
+                            <option value="">Select Staff</option>
+                            {% for s in staff %}
+                                <option value="{{ s.id }}" {% if s.id == reservation.bus_reserve.staff.id %}selected{% endif %}>
+                                    {{ s.full_name }}
                                 </option>
                             {% endfor %}
                         </select>
+                        <div class="invalid-feedback">Please select a staff member.</div>
                     </div>
                 </div>
 
                 <!-- Action Buttons -->
                 <div class="action-buttons">
-                    <a href="{% url 'vehicle_reservation' %}" class="btn btn-back">
+                    <a href="{% url 'booking_list' %}" class="btn btn-back">
                         <i class="bi bi-arrow-left me-2"></i>Back to List
                     </a>
                     <button type="submit" class="btn btn-submit">
@@ -325,29 +338,32 @@
 
 {% block extra_js %}
 <script>
-    (function () {
-        'use strict';
-        var forms = document.querySelectorAll('.needs-validation');
-        
-        Array.prototype.slice.call(forms).forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    
-                    // Scroll to the first invalid field
-                    var invalidFields = form.querySelectorAll(':invalid');
-                    if (invalidFields.length > 0) {
-                        invalidFields[0].scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'center'
-                        });
+    $(document).ready(function() {
+        // Form validation
+        (function () {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        
+                        // Scroll to the first invalid field
+                        var invalidFields = form.querySelectorAll(':invalid');
+                        if (invalidFields.length > 0) {
+                            invalidFields[0].scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'center'
+                            });
+                        }
                     }
-                }
-                
-                form.classList.add('was-validated');
-            }, false);
-        });
+                    
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
         
         // Add real-time validation
         document.querySelectorAll('.needs-validation input, .needs-validation select').forEach(function(input) {
@@ -359,6 +375,20 @@
                 }
             });
         });
-    })();
+        
+        // Date validation - ensure end date is after start date
+        $('#start_date, #end_date').on('change', function() {
+            const startDate = new Date($('#start_date').val());
+            const endDate = new Date($('#end_date').val());
+            
+            if (startDate && endDate && endDate < startDate) {
+                $('#end_date').addClass('is-invalid');
+                $('#end_date').next('.invalid-feedback').text('End date must be after start date');
+            } else {
+                $('#end_date').removeClass('is-invalid');
+                $('#end_date').next('.invalid-feedback').text('Please select an end date.');
+            }
+        });
+    });
 </script>
 {% endblock %}

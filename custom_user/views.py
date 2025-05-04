@@ -157,13 +157,13 @@ class UserBookingPaymentView(APIView):
                  
                     schedule=schedule_obj
                 )
-                print("Bookinh-------")
+         
                 
                 # Khalti Payment Integration
                 payload = json.dumps({
                     "return_url": "https://example.com/payment-success",
                     "website_url": "https://example.com",
-                    "amount": 1000,
+                    "amount": int(total_price)*100,
                     "booking_id": str(uuid.uuid4()), 
                     "purchase_order_id":booking_obj.id,
                     "purchase_order_name": "Bus Ticket Booking",
@@ -221,7 +221,7 @@ class UserPayment(APIView):
             booking_id=request.data.get('booking_id')
             transaction_id = request.data.get('transaction_id')
             try:
-                booking_obj = Booking.objects.get(id=booking_id)
+                booking_obj= Booking.objects.get(id=booking_id)
             except Booking.DoesNotExist:
                 return Response({'success': False, 'error': 'Booking not found'}, status=400)
             

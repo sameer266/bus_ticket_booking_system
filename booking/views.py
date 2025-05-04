@@ -629,6 +629,13 @@ def edit_bus(request, bus_id):
             if 'bus_image' in request.FILES:
                 bus.bus_image = request.FILES['bus_image']
             
+            
+            if 'commission_rate' in request.POST:
+                print("------------")
+                commission=get_object_or_404(Commission,bus=bus)
+                commission.rate=request.POST.get('commission_rate')
+                commission.save()
+                
             # Validate before saving
             bus.full_clean()
             bus.save()
@@ -666,6 +673,8 @@ def edit_bus(request, bus_id):
 def get_bus(request, bus_id):
     bus = get_object_or_404(Bus, id=bus_id)
     try:
+        commission=Commission.objects.get(bus=bus)
+        rate=commission.rate
         layout = BusLayout.objects.get(bus=bus)
         layout_data = {
             'rows': layout.rows,
@@ -682,7 +691,8 @@ def get_bus(request, bus_id):
         'bus_id': bus.id,
         'bus_number': bus.bus_number,
         'bus_type': bus.bus_type,
-    
+        'rate':rate,
+        'bus_image':bus.bus_image.url if bus.bus_image else '',
         'total_seats': bus.total_seats,
         'driver': bus.driver.id if bus.driver else None,
         'staff': bus.staff.id if bus.staff else None,
@@ -986,6 +996,7 @@ def vehicleType_vehicle_list(request, id):
 def route_list_and_add(request):
     if request.method == 'POST':
         source = request.POST.get('source')
+        image=request.FILES.get('image')
         destination = request.POST.get('destination')
         distance = request.POST.get('distance')
         estimated_time = request.POST.get('estimated_time')
@@ -995,12 +1006,14 @@ def route_list_and_add(request):
                 source=source,
                 destination=destination,
                 distance=distance,
-                estimated_time=estimated_time
+                estimated_time=estimated_time,
+                image=image
+                
             )
             
             Route.objects.create(
                 source=destination, destination=source,distance=distance,
-                estimated_time=estimated_time
+                estimated_time=estimated_time,image=image
             )
             return redirect('route_list_add') 
     routes = Route.objects.all()
@@ -1012,9 +1025,11 @@ def edit_route(request, id):
     route = get_object_or_404(Route, id=id)
 
     if request.method == 'POST':
+        print(request.POST)
         route.source = request.POST.get('source')
         route.destination = request.POST.get('destination')
         route.distance = request.POST.get('distance')
+        route.image=request.FILES.get('image')
         route.estimated_time = request.POST.get('estimated_time')
         route.save()
         return redirect('route_list_add')
@@ -1057,7 +1072,7 @@ class BusDetails(APIView):
             return Response({"success":True,'data':serializer.data}, status=200)
         except Bus.DoesNotExist:
             return Response({"error": "Bus not found"}, status=status.HTTP_404_NOT_FOUND)
-
+            
 
 
 # ========= Schedule list ===========
@@ -1338,10 +1353,12 @@ def booking_management(request):
 
 
 def reservationBooking_update(request, id):
+    
     user=request.user
     reservation=BusReservationBooking.objects.get(id=id)
     transportation_company=getattr(user,'transportation_company',None)
     if request.method == "POST":
+        print(request.POST)
         try:
             print("POST Data:", request.POST)
 
@@ -1539,8 +1556,12 @@ def bus_payment_details(request):
         total_commission = bus_payments.aggregate(total=Sum('total_commission'))['total'] or 0
         net_earning = total_earning - total_commission
         total_trips = Schedule.objects.filter(status="finished", bus=bus).count()
+        commission=bus.commission.filter(commission_type='bus').first()
+   
+        rate=commission.rate if commission else 0
         bus_earnings.append({
             'bus': bus,
+            'rate':rate,
             'bus_number': bus.bus_number,
             'bus_type': bus.bus_type,
             'total_earning': total_earning,
@@ -1624,7 +1645,10 @@ def bus_earning_details(request, bus_id):
 
         earnings_list = []
         for payment in payments:
-            commission_rate=payment.rate.rate
+            schedule=payment.booking.schedule
+            commission_obj=Commission.objects.get(schedule=schedule)
+            
+            commission_rate=commission_obj.rate
             commission = (payment.booking.schedule.price * commission_rate) / 100
             net_earning = payment.booking.schedule.price - commission
 
@@ -1640,6 +1664,8 @@ def bus_earning_details(request, bus_id):
                 'net_earning': net_earning,
                 'payment_date': payment.created_at,
                 'transaction_id': transaction_id,
+                'booking_id':payment.booking.id
+                
             })
 
         context = {
@@ -1654,19 +1680,75 @@ def bus_earning_details(request, bus_id):
 
 
 
+# ======= vehicle reservation =========
 @login_required
 def reservation_payment_details(request):
     user = request.user
     user_company = getattr(user, 'transportation_company', None)
- 
 
-    reservations = BusReservation.objects.all()
+    reservations = BusReservationBooking.objects.all()
     if user_company:
-        reservations = reservations.filter(transportation_company=user_company)
+        reservations = reservations.filter(bus_reserve__transportation_company=user_company)
+    
+    total_earning = 0
+    total_commission = 0
+    commission = Commission.objects.filter(bus_reserve__in=[r.bus_reserve for r in reservations])
 
-    pass
+    
+    for item in commission:
+        item.total_trips=item.bus_reserve.reservation_booking.all().count()
+        item.net_earning = item.total_earnings - item.total_commission
+        total_earning += item.total_earnings
+        total_commission += item.total_commission
+
+    net_received = total_earning - total_commission
+
+    paginator = Paginator(commission, 8)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    vehicle_types = VechicleType.objects.all()
+
+    context = {
+        'reservation_bookings': page_obj,
+        'total_earning': total_earning,
+        'total_commission': total_commission,
+        'net_received': net_received,
+        'page_obj': page_obj,
+        'vehicle_types': vehicle_types,
+    }
 
     return render(request, 'admin/reservation_payment_details.html', context)
+
+
+from django.utils.dateparse import parse_date
+@login_required
+def vehicle_reservation_earings_details(request, vehicle_id):
+   
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    reservations = BusReservationBooking.objects.filter(bus_reserve__id=vehicle_id)
+    if start_date and end_date:
+        try:
+            start_date_parsed = parse_date(start_date)
+            end_date_parsed = parse_date(end_date)
+            if start_date_parsed and end_date_parsed:
+                reservations = reservations.filter(
+                    start_date__gte=start_date_parsed,
+                    start_date__lte=end_date_parsed
+                )
+        except ValueError:
+            pass
+    vehicle_obj=BusReservation.objects.get(id=vehicle_id)
+    return render(request, 'admin/vehicle_reservation_earnings.html', {
+        'reservation': reservations,
+        'vehicle_number':vehicle_obj.vechicle_number,
+        'vehicle_type':vehicle_obj.type.name,
+        
+        
+        
+    })
 
 
 # ========= Vehicle Details of payments =============
@@ -1681,50 +1763,6 @@ def vehicle_details_payment(request,id):
     
 
 
-# ======  update  Saet booking rate =========
-@login_required
-def update_seat_commission_rate(request):
-    if request.method == 'POST' and request.user.role=="admin":
-        try:
-            new_rate = float(request.POST.get('commission_rate', 0))
-            if 0 <= new_rate <= 100:
-                rate = Rate.objects.filter(rate_type="seat_booking").first()
-                if rate:
-                    rate.rate = new_rate
-                    rate.save()
-                    messages.success(request, f"Commission rate updated to {new_rate}%")
-                else:
-                    Rate.objects.create(rate_type="seat_booking", rate=new_rate)
-                    messages.success(request, f"New commission rate created: {new_rate}%")
-            else:
-                messages.error(request, "Commission rate must be between 0% and 100%")
-        except ValueError:
-            messages.error(request, "Invalid commission rate value")
-    
-    return redirect('bus_payments_details')
-
-
-# ========== Update Vehicle Reservation commsiion rate ============
-@login_required
-def update_reservation_commission_rate(request):
-    if request.method == 'POST' and request.user.role=="admin":
-        try:
-            new_rate = float(request.POST.get('commission_rate', 0))
-            if 0 <= new_rate <= 100:
-                rate = Rate.objects.filter(rate_type="reservation").first()
-                if rate:
-                    rate.rate = new_rate
-                    rate.save()
-                    messages.success(request, f"Commission rate updated to {new_rate}%")
-                else:
-                    Rate.objects.create(rate_type="reservation", rate=new_rate)
-                    messages.success(request, f"New commission rate created: {new_rate}%")
-            else:
-                messages.error(request, "Commission rate must be between 0% and 100%")
-        except ValueError:
-            messages.error(request, "Invalid commission rate value")
-    
-    return redirect('reservation_payment_details')
 
 
 

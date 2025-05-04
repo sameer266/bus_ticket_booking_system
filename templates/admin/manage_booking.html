@@ -132,19 +132,9 @@
                                                 <td>{{ bus_booking.user.full_name }} <span class="text-muted d-block small">{{bus_booking.user.phone}}</span></td>
                                                 <td>{{ bus_booking.bus_reserve.vechicle_number }}</td>
                                                 <td>
-                                                          
-                                                    {% if bus_booking.status == "booked" %}
-                                                    Booked
-                                                    {% elif bus_booking.status == "pending"%}
-                                                    Pending
-                                                    {% elif bus_booking.status == 'cancelled' %}
-                                                    Cancelled
-                                                    {% endif %}
-
-                                                     
-                                                    
-                                                        
-                                                    
+                                                           <span class="badge {% if bus_booking.status == 'booked' %}bg-success{% elif booking.booking_status == 'pending' %}bg-warning{% elif booking.booking_status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                        {{ bus_booking.status }}
+                                                    </span>        
                                                 </td>
                                                 <td>
                                                     <span class="d-block">From: {{ bus_booking.source }}</span>

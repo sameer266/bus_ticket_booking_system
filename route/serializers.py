@@ -32,7 +32,11 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Schedule
-        fields = '__all__'
+        fields=['bus','route','departure_time','arrival_time','date','price','available_seats','status']
+        
+        
+      
+
 
 # Serializer for Trip model
 class TripSerializer(serializers.ModelSerializer):
@@ -153,7 +157,7 @@ class VechicleUserReservationBookingSerializer(serializers.ModelSerializer):
 # Serializer for Booking model
 class BookingSerializer(serializers.ModelSerializer):
     schedule = ScheduleSerializer()
-    user = CustomUserReviewSerializer()
+
 
     class Meta:
         model = Booking

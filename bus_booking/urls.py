@@ -89,6 +89,7 @@ urlpatterns = [
     
     # ============ Notification =============
     path('api/user_notification/',views.UserNotificationApiView.as_view()),
+    
 ]
 
 # ================== Static Files in Debug Mode ==================

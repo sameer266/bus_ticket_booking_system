@@ -322,9 +322,12 @@ class SendOtp(APIView):
                 UserOtp.send_sms(phone,otp_number)
             except Exception as e:
                 return Response({'success':False,'error':str(e)},status=400)
-            
-            
-            UserOtp.objects.create(otp=otp_number,phone=phone,temp_name=full_name)
+     
+            user,created=UserOtp.objects.get_or_create(phone=phone,temp_name=full_name)
+            if user:
+                user.otp=otp_number
+                user.save()
+                
             return Response({'success':True,'otp':otp_number,'phone':phone,'message':"Otp is valid for 5 minutes only"},status=200)
       
         except Exception as e:
@@ -688,6 +691,7 @@ class UserSeatBookingListApiView(APIView):
     def get(self, request):
         try:
                 user = request.user
+                user=CustomUser.objects.get()
                 bookings_seat = Booking.objects.filter(user=user).order_by('-booked_at')
                 serializer_seat = UserBookingSerilaizer(bookings_seat, many=True)
                 return Response({'success':True,'data':serializer_seat.data},status=200)
@@ -702,7 +706,7 @@ class SeatBookingAPiView(APIView):
     
     def get(self,request):
         try:
-            booking=Booking.objects.all().order_by('-booked_at')
+            booking=Booking.objects.filter(user=request.user).order_by('-booked_at')
             serializer=BookingSerializer(booking,many=True)
             return Response({'success':True,'data':serializer.data},status=200)
             

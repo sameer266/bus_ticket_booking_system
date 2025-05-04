@@ -17,7 +17,7 @@
                     </a>
                 </div>
                 <div class="card-body p-4">
-                    <form method="POST" id="editRouteForm" novalidate>
+                    <form method="POST" enctype='multipart/form-data' id="editRouteForm" novalidate>
                         {% csrf_token %}
                         <div class="row g-4">
                             <!-- Source -->
@@ -43,6 +43,21 @@
                                 </div>
                                 <small class="text-muted">Enter distance in kilometers</small>
                                 <div class="invalid-feedback">Please enter a valid distance.</div>
+                            </div>
+
+                            <!-- Image -->
+                            <div class="col-12">
+                                <label for="route_image" class="form-label fw-bold">Route Image</label>
+                                <div class="input-group">
+                                    <span class="input-group-text rounded-start-pill"><i class="bi bi-image"></i></span>
+                                    <input type="file" class="form-control rounded-end-pill" id="route_image" name="image" accept="image/*">
+                                </div>
+                                <small class="text-muted">Upload an image of the route (optional)</small>
+                                {% if route.image %}
+                                <div class="mt-2">
+                                    <img src="{{ route.image.url }}" alt="Current route image" class="img-thumbnail" style="max-height: 200px;">
+                                </div>
+                                {% endif %}
                             </div>
 
                             <!-- Estimated Time -->

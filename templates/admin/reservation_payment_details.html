@@ -26,45 +26,6 @@
 
         
 
-      {% if user.is_superuser %}
-            <!-- Commission Rate Card -->
-
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-body p-2">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <h5 class="fw-bold mb-1">Current Commission Rate</h5>
-                            <p class="text-muted mb-md-0">Vehicle Reservation</p>
-                        </div>
-                        <div class="col-md-4">
-                            <div id="currentRateDisplay" class="d-flex align-items-center">
-                                <h3 class="mb-0 fw-bold text-indigo">{{ commission_rate }}%</h3>
-                                <button id="editRateBtn" class="btn btn-sm btn-link ms-2">
-                                    <i class="bi bi-pencil-square"></i>
-                                </button>
-                            </div>
-                            <div id="rateEditForm" class="d-none">
-                                <form method="post" action="{% url 'update_reservation_commission_rate' %}" class="d-flex align-items-center">
-                                    {% csrf_token %}
-                                    <div class="input-group">
-                                        <input type="number" name="commission_rate" min="0" max="100" step="0.01" 
-                                               value="{{ commission_rate }}" class="form-control" required>
-                                        <span class="input-group-text">%</span>
-                                    </div>
-                                    <button type="submit" class="btn btn-sm btn-primary ms-2">Save</button>
-                                    <button type="button" id="cancelEditBtn" class="btn btn-sm btn-outline-secondary ms-2">Cancel</button>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <div class="icon-circle bg-indigo-soft rounded-circle p-3 d-inline-block">
-                                <i class="bi bi-percent fs-4 text-indigo"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
             
 
         <!-- Summary Cards -->
@@ -123,11 +84,11 @@
                     <i class="bi bi-bus-front text-primary me-2"></i> Vehicle Reservations
                 </h5>
                 <div class="table-actions d-flex gap-3 flex-wrap">
-                    <input type="date" class="form-control" id="dateFilter" placeholder="Filter by Date">
+                   
                     <select class="form-select" id="vehicleFilter">
                         <option value="">All Vehicle Types</option>
-                        {% for booking in reservation_bookings %}
-                            <option value="{{ booking.bus_reserve.type }}">{{ booking.bus_reserve.type }}</option>
+                        {% for type in vehicle_types %}
+                            <option value="{{ type.id}}">{{ type.name }}</option>
                         {% endfor %}
                     </select>
                     <div class="input-group search-group">
@@ -137,41 +98,43 @@
                 </div>
             </div>
             <div class="card-body">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
+                    <h5 class="card-title mb-0">Each Vehicle Earnings Summary</h5>
+                    
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover" id="reservationsTable">
                         <thead>
                             <tr>
-                                <th>User</th>
+                                <th>Vehicle Number</th>
                                 <th>Vehicle Type</th>
-                                <th>Route</th>
-                                <th>Start Date</th>
-                                <th>Price</th>
+                                <th>Total Earnings</th>
+                                <th>Rate</th>
+
+                                <th>Net Earnings</th>
+                                <th>Trips </th>
                                 <th>Actions</th>
                             </tr>
-                        </thead>
+                        </thead> 
                         <tbody>
-                            {% for booking in reservation_bookings %}
-                            <tr data-date="{{ booking.start_date|date:'Y-m-d' }}" data-vehicle="{{ booking.bus_reserve.type }}">
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar me-2 bg-gradient-blue">
-                                            {{ booking.user.full_name|slice:":1"|upper }}
-                                        </div>
-                                        {{ booking.user.full_name|default:"N/A" }}
-                                    </div>
-                                </td>
-                                <td>{{ booking.bus_reserve.type }}</td>
-                                <td>{{ booking.source }} - {{ booking.destination }}</td>
-                                <td>{{ booking.start_date }}</td>
-                                <td class="fw-bold text-primary">NRP {{ booking.bus_reserve.price|floatformat:2 }}</td>
-                                <td>
-                                    <a href={% url 'vehicle_details_payment' booking.id %} class="btn btn-icon btn-outline-primary" title="View Details">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                   
-                                </td>
-                            </tr>
-                            {% empty %}
+                            {% for vehicle in reservation_bookings %}
+<tr data-date="{{ vehicle.start_date|date:'Y-m-d' }}" data-vehicle="{{ vehicle.bus_reserve.type.id }}">
+    <td>
+       {{vehicle.bus_reserve.vechicle_number}}
+    </td>
+    <td>{{ vehicle.bus_reserve.type }}</td>
+    <td>{{ vehicle.total_earnings}}</td>
+    <td>{{ vehicle.rate }}</td>
+    <td class="fw-bold text-primary">NRP {{ vehicle.net_earning|floatformat:2 }}</td>
+    <td class="fw-bold text-primary">{{ vehicle.total_trips }}</td>
+    <td>
+        <a href={% url 'vehicle_earning_details' vehicle.bus_reserve.id %} class="btn btn-icon btn-outline-primary" title="View Details">
+            <i class="bi bi-eye"></i>
+        </a>
+    </td>
+</tr>
+{% empty %}
+                            
                             <tr>
                                 <td colspan="6" class="text-center py-4">
                                     <div class="empty-state">
@@ -297,67 +260,154 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const reservationSearch = document.getElementById('reservationSearch');
-    const dateFilter = document.getElementById('dateFilter');
-    const vehicleFilter = document.getElementById('vehicleFilter');
-    const tableRows = document.querySelectorAll('#reservationsTable tbody tr:not(.empty-state)');
-    const editRateBtn = document.getElementById('editRateBtn');
-    const cancelEditBtn = document.getElementById('cancelEditBtn');
-    const currentRateDisplay = document.getElementById('currentRateDisplay');
-    const rateEditForm = document.getElementById('rateEditForm');
-
-    if (editRateBtn && rateEditForm) {
-        editRateBtn.addEventListener('click', function() {
-            currentRateDisplay.classList.add('d-none');
-            rateEditForm.classList.remove('d-none');
-        });
-
-        if (cancelEditBtn) {
-            cancelEditBtn.addEventListener('click', function() {
-                currentRateDisplay.classList.remove('d-none');
-                rateEditForm.classList.add('d-none');
+    $(document).ready(function() {
+        // Cache jQuery selectors for better performance
+        const $reservationSearch = $('#reservationSearch');
+        const $dateFilter = $('#dateFilter');
+        const $vehicleFilter = $('#vehicleFilter');
+        const $tableRows = $('#reservationsTable tbody tr:not(.empty-state)');
+        const $editRateBtn = $('#editRateBtn');
+        const $cancelEditBtn = $('#cancelEditBtn');
+        const $currentRateDisplay = $('#currentRateDisplay');
+        const $rateEditForm = $('#rateEditForm');
+        
+        // Set up a custom event for resetting filters
+        const $resetFilters = $('#resetFilters'); // Add this button to your HTML if needed
+        
+        // Debug current vehicle filter values
+        console.log("Available vehicle types:", getAvailableVehicleTypes());
+        
+        function getAvailableVehicleTypes() {
+            const types = [];
+            $('#vehicleFilter option').each(function() {
+                types.push({
+                    value: $(this).val(),
+                    text: $(this).text()
+                });
+            });
+            return types;
+        }
+    
+        // Handle edit rate form toggle if elements exist
+        if ($editRateBtn.length && $rateEditForm.length) {
+            $editRateBtn.on('click', function() {
+                $currentRateDisplay.addClass('d-none');
+                $rateEditForm.removeClass('d-none');
+            });
+    
+            if ($cancelEditBtn.length) {
+                $cancelEditBtn.on('click', function() {
+                    $currentRateDisplay.removeClass('d-none');
+                    $rateEditForm.addClass('d-none');
+                });
+            }
+        }
+    
+        // Function to filter table rows
+        function filterTable() {
+            const searchTerm = $reservationSearch.val().toLowerCase();
+            const selectedDate = $dateFilter.val();
+            const selectedVehicle = $vehicleFilter.val();
+            
+            console.log("Filtering with:", {
+                searchTerm: searchTerm,
+                selectedDate: selectedDate,
+                selectedVehicle: selectedVehicle
+            });
+    
+            $tableRows.each(function() {
+                const $row = $(this);
+                const rowText = $row.text().toLowerCase();
+                const rowDate = $row.attr('data-date'); // Using attr instead of data
+                const rowVehicle = $row.attr('data-vehicle'); // Using attr instead of data
+                
+                console.log("Row data:", {
+                    vehicle: rowVehicle,
+                    date: rowDate,
+                    text: rowText.substring(0, 20) + "..." // Log a preview of the text
+                });
+    
+                const matchesSearch = rowText.includes(searchTerm);
+                const matchesDate = !selectedDate || rowDate === selectedDate;
+                const matchesVehicle = !selectedVehicle || selectedVehicle === "" || 
+                                      String(rowVehicle).toLowerCase() === String(selectedVehicle).toLowerCase();
+    
+                const shouldShow = matchesSearch && matchesDate && matchesVehicle;
+                console.log("Should show row:", shouldShow);
+                
+                $row.toggle(shouldShow);
             });
         }
-    }
-
-
-    function filterTable() {
-        const searchTerm = reservationSearch.value.toLowerCase();
-        const selectedDate = dateFilter.value;
-        const selectedVehicle = vehicleFilter.value;
-
-        tableRows.forEach(row => {
-            const rowText = row.textContent.toLowerCase();
-            const rowDate = row.getAttribute('data-date');
-            const rowVehicle = row.getAttribute('data-vehicle');
-
-            const matchesSearch = rowText.includes(searchTerm);
-            const matchesDate = !selectedDate || rowDate === selectedDate;
-            const matchesVehicle = !selectedVehicle || rowVehicle === selectedVehicle;
-
-            row.style.display = (matchesSearch && matchesDate && matchesVehicle) ? '' : 'none';
-        });
-    }
-
-    // Event listeners for filters
-    reservationSearch.addEventListener('input', filterTable);
-    dateFilter.addEventListener('change', filterTable);
-    vehicleFilter.addEventListener('change', filterTable);
-
-    // Remove duplicate vehicle options
-    const vehicleOptions = new Set();
-    vehicleFilter.querySelectorAll('option').forEach(option => {
-        if (option.value && !vehicleOptions.has(option.value)) {
-            vehicleOptions.add(option.value);
-        } else if (option.value && option.value !== '') {
-            option.remove();
+    
+        // Add debounce to search for better performance
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    func.apply(context, args);
+                }, wait);
+            };
         }
+    
+        // Apply debounced search to text input
+        const debouncedSearch = debounce(filterTable, 300);
+        $reservationSearch.on('input', debouncedSearch);
+        
+        // Immediate filtering for select and date inputs
+        $dateFilter.on('change', filterTable);
+        $vehicleFilter.on('change', filterTable);
+    
+        // Remove duplicate vehicle options
+        const vehicleOptions = new Set();
+        $vehicleFilter.find('option').each(function() {
+            const $option = $(this);
+            const val = $option.val();
+            
+            if (val && !vehicleOptions.has(val)) {
+                vehicleOptions.add(val);
+            } else if (val && val !== '') {
+                $option.remove();
+            }
+        });
+    
+        // Initialize DataTables for more advanced features (optional)
+        // Uncomment if you want to use DataTables library
+        /*
+        $('#reservationsTable').DataTable({
+            paging: false, // Since you have custom pagination
+            searching: false, // Using custom search
+            info: false,
+            responsive: true
+        });
+        */
+    
+        // Reset filters functionality
+        if ($resetFilters && $resetFilters.length) {
+            $resetFilters.on('click', function() {
+                $reservationSearch.val('');
+                $dateFilter.val('');
+                $vehicleFilter.val(''); // Select "All Vehicle Types"
+                filterTable();
+            });
+        }
+    
+        // Enhance vehicle type dropdown with select2 for better UX (optional)
+        // Uncomment if you have select2 library included
+        /*
+        $vehicleFilter.select2({
+            placeholder: "All Vehicle Types",
+            allowClear: true
+        });
+        */
+    
+        // Initial filter application
+        filterTable();
+        
+        // Log to ensure script is loaded
+        console.log("Vehicle filter script loaded successfully");
     });
-
-    // Initial filter application
-    filterTable();
-});
 </script>
 {% endblock %}
 {% endblock %}

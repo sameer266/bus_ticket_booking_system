@@ -191,7 +191,7 @@
       </ul>
     </div>
 
-    {% if user.is_superuser %}
+    {% if user.role == "admin" %}
     <div class="sidebar-footer">
       <a href={% url 'system_settings' %} class="settings-link nav-link {% if request.path == '/settings/' %}active{% endif %}">
         <i class="bi bi-gear"></i>
