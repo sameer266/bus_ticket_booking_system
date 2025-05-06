@@ -4,9 +4,7 @@
 
 {% block content %}
 <div class="profile-container">
-    <div class="sidebar" id="sidebar">
-        {% include 'components/sidebar.html' %}
-    </div>
+
 
     <main class="main-content">
         <button class="menu-toggle btn btn-primary">
@@ -119,7 +117,7 @@
     }
 
     .profile-container {
-        margin-top: 60px;
+       
         display: flex;
         min-height: 100vh;
       
@@ -284,119 +282,11 @@
         margin-top: 2rem;
     }
 
-    /* Buttons */
-    .button-group {
-        display: flex;
-        gap: 1rem;
-    }
+  
 
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        border: none;
-        cursor: pointer;
-    }
+ 
 
-    .btn-primary {
-        background-color: var(--primary);
-        color: white;
-        flex: 1;
-    }
 
-    .btn-primary:hover {
-        background-color: var(--primary-dark);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-secondary {
-        background-color: var(--secondary);
-        color: var(--dark);
-        flex: 1;
-    }
-
-    .btn-secondary:hover {
-        background-color: var(--primary-light);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-outline {
-        background-color: transparent;
-        border: 1px solid var(--border);
-        color: var(--text);
-        flex: 1;
-    }
-
-    .btn-outline:hover {
-        background-color: var(--light);
-        border-color: var(--primary);
-        color: var(--primary);
-    }
-
-    /* Messages */
-    .messages {
-        margin-bottom: 2rem;
-    }
-
-    .alert {
-        padding: 1rem;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: var(--primary-bg);
-        color: var(--primary);
-        margin-bottom: 1rem;
-    }
-
-    .btn-close {
-        background: none;
-        border: none;
-        color: var(--primary);
-        cursor: pointer;
-        font-size: 1.25rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 992px) {
-        .sidebar {
-            position: fixed;
-            left: -280px;
-            top: 0;
-            height: 100%;
-            z-index: 1000;
-            transition: left 0.3s ease;
-            width: 280px;
-        }
-
-        .sidebar.active {
-            left: 0;
-        }
-
-        .menu-toggle {
-            display: flex;
-        }
-
-        .profile-card {
-            padding: 1.5rem;
-        }
-
-        .button-group {
-            flex-direction: column;
-        }
-
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-    }
 
     @media (max-width: 576px) {
         .main-content {
@@ -413,21 +303,6 @@
         }
     }
 
-    /* Update the sidebar styles to match the green theme */
-    .sidebar {
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-        background-color: white;
-        transition: all 0.3s;
-    }
-
-    #sidebar-wrapper {
-        min-height: 100vh;
-        width: 280px;
-        transition: margin 0.25s ease-out;
-        background-color: white;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
-        z-index: 1;
-    }
 </style>
 
 <script>
@@ -448,18 +323,11 @@
     // Sidebar toggle for mobile
     document.addEventListener('DOMContentLoaded', function() {
         const menuToggle = document.querySelector('.menu-toggle');
-        const sidebar = document.getElementById('sidebar');
+     
         
-        menuToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-        });
+      
 
-        // Close sidebar when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-                sidebar.classList.remove('active');
-            }
-        });
+    
     });
 </script>
 {% endblock %}

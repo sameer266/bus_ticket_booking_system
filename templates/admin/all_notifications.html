@@ -3,12 +3,9 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row g-0">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
-            {% include 'components/sidebar.html' %}
-        </div>
+        
         <!-- Main Content -->
-        <main class="mt-5 col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content ">
+        <main class=" col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content ">
             <!-- Message --> 
             {% if messages %}
                 {% for message in messages %}
@@ -335,45 +332,6 @@
 {% block extra_js %}
 <script>
 
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add sidebar toggle button to the DOM if it doesn't exist
-        if (!document.getElementById('sidebarToggle')) {
-            const toggleBtn = document.createElement('div');
-            toggleBtn.id = 'sidebarToggle';
-            toggleBtn.className = 'sidebar-toggle';
-            toggleBtn.innerHTML = '<i class="bi bi-list"></i>';
-            document.body.appendChild(toggleBtn);
-        }
-        
-        const sidebarToggle = document.getElementById('sidebarToggle');
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
-        
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('active');
-            mainContent.classList.toggle('shifted');
-        });
-        
-        // Close sidebar when clicking outside on small screens
-        document.addEventListener('click', function(event) {
-            const isMobile = window.innerWidth < 992;
-            if (isMobile && !sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
-                sidebar.classList.remove('active');
-                mainContent.classList.remove('shifted');
-            }
-        });
-        
-        // Handle window resize
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 992) {
-                sidebar.classList.remove('active');
-                mainContent.classList.remove('shifted');
-            }
-        });
-    });
-
-    
 document.addEventListener('DOMContentLoaded', function() {
     // Search functionality for system notifications
     document.getElementById('searchSystemNotifications').addEventListener('input', function() {

@@ -11,18 +11,7 @@
         --green-hover: #3AAA64;
     }
 
-    .reservation-form-container {
-        max-width: 700px;
-        margin: 2rem auto;
-        padding: 0 15px;
-    }
-    
-    .form-header {
-        background: var(--primary-green);
-        color: white;
-        border-radius: 10px 10px 0 0;
-        padding: 1.25rem;
-    }
+
     
     .form-header h1 {
         font-size: 1.5rem;
@@ -168,48 +157,18 @@
         appearance: none;
     }
     
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .reservation-form-container {
-            padding: 0 10px;
-            margin: 1rem auto;
-        }
-        
-        .form-body {
-            padding: 1.25rem;
-        }
-        
-        .action-buttons {
-            flex-direction: column-reverse;
-        }
-        
-        .btn-submit, .btn-back {
-            width: 100%;
-        }
-        
-        .floating-back {
-            display: flex;
-        }
+
+    @media(min-width:992px){
+    .reservation-form-container{
+        margin-left:250px;
+        width:calc(100% - 250px);
     }
-    
-    @media (max-width: 576px) {
-        .form-header {
-            padding: 1rem;
-        }
-        
-        .form-header h1 {
-            font-size: 1.3rem;
-        }
-        
-        .section-header {
-            font-size: 1rem;
-        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="reservation-form-container" style="margin-top:90px">
+<div class="reservation-form-container mt-4" >
     <!-- Floating back button for mobile -->
     <a href="{% url 'booking_list' %}" class="floating-back">
         <i class="bi bi-arrow-left"></i>

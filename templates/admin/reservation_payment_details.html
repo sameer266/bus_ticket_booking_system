@@ -6,13 +6,9 @@
 
 {% block content %}
 <div class="dashboard-container">
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebarMenu">
-        {% include 'components/sidebar.html' %}
-    </div>
-
+  
     <!-- Main Content -->
-    <main class="dashboard-content" style="margin-top: 80px;">
+    <main class="dashboard-content" >
 
           <!-- Mesage --> 
           {% if messages %}
@@ -27,6 +23,12 @@
         
 
             
+ <!-- Header -->
+ <div class="d-flex justify-content-between flex-wrap align-items-center mb-4 pb-2 border-bottom">
+    <h1 class="h3 fw-bold text-primary mb-3 mb-md-0">
+        <i class="bi bi-credit-card-2-front me-2"></i>Vehicle Payments & Commissions
+    </h1>
+</div>
 
         <!-- Summary Cards -->
         <div class="row">
@@ -185,15 +187,7 @@
 
 {% block extra_css %}
 <style>
-    .dashboard-container {
-        display: flex;
-        min-height: 100vh;
-    }
-    .sidebar {
-        width: 250px;
-        flex-shrink: 0;
-        transition: transform 0.3s ease-in-out;
-    }
+    
     .dashboard-content {
         flex-grow: 1;
         padding: 20px;

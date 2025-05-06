@@ -1,39 +1,110 @@
 {% extends 'components/base.html' %}
 {% block title %}Edit Transportation Company | Go Sewa{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Responsive adjustments */
+    .main-content {
+        padding: 1rem;
+    }
+    
+    @media (min-width: 768px) {
+        .main-content {
+            padding: 2rem;
+        }
+    }
+    
+    @media (min-width: 992px) {
+        .main-content {
+            margin-left: 150px !important;
+         
+            padding: 2.5rem;
+            width: calc(100% - 200px);
+        }
+    }
+    
+    /* Card hover effect only on larger screens */
+    @media (min-width: 992px) {
+        .hover-card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px);
+        }
+    }
+    
+    /* Form styling improvements */
+    .form-label {
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .section-heading {
+        position: relative;
+        padding-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .current-image-container {
+        display: inline-block;
+        padding: 0.25rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Image preview responsive sizing */
+    .img-preview {
+        max-width: 100px;
+        height: auto;
+    }
+    
+    @media (max-width: 576px) {
+        .page-header-title {
+            font-size: 1.5rem;
+        }
+        
+        .back-button span {
+            display: none;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4 " style="margin-top:60px">
+<div class="container-fluid py-3 py-md-4 main-content">
     <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-0" style="color: #2c3e50;">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4">
+        <div class="mb-2 mb-md-0">
+            <h2 class="fw-bold page-header-title" style="color: #2c3e50;">
                 <i class="bi bi-pencil-square me-2"></i>Edit Transportation Company
             </h2>
-          
         </div>
-        <a href="{% url 'transportation_company_list' %}" class="btn btn-outline-secondary rounded-pill">
-            <i class="bi bi-arrow-left me-1"></i> Back to Companies
+        <a href="{% url 'transportation_company_list' %}" class="btn btn-outline-secondary rounded-pill back-button">
+            <i class="bi bi-arrow-left me-1"></i> <span>Back to Companies</span>
         </a>
     </div>
 
     <!-- Edit Form Card -->
-    <div class="card border-0 shadow-lg rounded-3 overflow-hidden">
+    <div class="card border-0 shadow hover-card rounded-3 overflow-hidden">
         <div class="card-header bg-primary text-white py-3">
             <h5 class="mb-0">
                 <i class="bi bi-building me-2"></i>Update Company Details
             </h5>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body">
             <form method="POST" class="needs-validation" novalidate enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 <!-- Company Information Section -->
                 <div class="mb-4">
-                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2 section-heading">
                         <i class="bi bi-info-circle me-1"></i>Company Information
                     </h6>
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <label for="companyName" class="form-label fw-semibold">Company Name</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-building text-primary"></i></span>
@@ -44,7 +115,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <label for="vatNumber" class="form-label fw-semibold">VAT Number</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-file-earmark-text text-primary"></i></span>
@@ -55,7 +126,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="country" class="form-label fw-semibold">Country</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-globe text-primary"></i></span>
@@ -66,7 +137,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="locationName" class="form-label fw-semibold">Location</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-geo-alt text-primary"></i></span>
@@ -82,11 +153,11 @@
 
                 <!-- Banking Information Section -->
                 <div class="mb-4">
-                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2 section-heading">
                         <i class="bi bi-bank me-1"></i>Banking Information
                     </h6>
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="bankName" class="form-label fw-semibold">Bank Name</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-building text-primary"></i></span>
@@ -97,7 +168,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="accountName" class="form-label fw-semibold">Account Name</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-person text-primary"></i></span>
@@ -108,7 +179,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="accountNumber" class="form-label fw-semibold">Account Number</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-credit-card text-primary"></i></span>
@@ -119,13 +190,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="qrImage" class="form-label fw-semibold">QR Code Image</label>
                             <input type="file" id="qrImage" name="qr_image" class="form-control" accept="image/*">
                             {% if transportation_company.qr_image %}
-                            <div class="mt-2">
-                                <small class="text-muted">Current Image:</small><br>
-                                <img src="{{ transportation_company.qr_image.url }}" alt="Current QR Code" style="max-width: 100px; height: auto;">
+                            <div class="current-image-container">
+                                <small class="text-muted d-block mb-1">Current Image:</small>
+                                <img src="{{ transportation_company.qr_image.url }}" alt="Current QR Code" class="img-preview">
                             </div>
                             {% endif %}
                         </div>
@@ -134,11 +205,11 @@
 
                 <!-- Admin Information Section -->
                 <div class="mb-4">
-                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2 section-heading">
                         <i class="bi bi-person-gear me-1"></i>Admin Information
                     </h6>
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="fullName" class="form-label fw-semibold">Full Name</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-person text-primary"></i></span>
@@ -149,7 +220,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="email" class="form-label fw-semibold">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-envelope text-primary"></i></span>
@@ -160,7 +231,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="phone" class="form-label fw-semibold">Phone</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-telephone text-primary"></i></span>
@@ -171,7 +242,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-sm-6">
                             <label for="gender" class="form-label fw-semibold">Gender</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-gender-ambiguous text-primary"></i></span>
@@ -186,11 +257,11 @@
                 </div>
 
                 <!-- Form Actions -->
-                <div class="d-flex justify-content-between mt-4">
-                    <button type="reset" class="btn btn-outline-secondary rounded-pill px-4">
+                <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mt-4">
+                    <button type="reset" class="btn btn-outline-secondary rounded-pill px-4 order-2 order-sm-1">
                         <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
                     </button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 order-1 order-sm-2">
                         <i class="bi bi-check-circle me-1"></i> Update Company
                     </button>
                 </div>
@@ -218,5 +289,35 @@
             }, false)
         })
 })();
+
+// Responsive file input styling
+document.addEventListener('DOMContentLoaded', function() {
+    // Add responsive file input preview
+    const qrInput = document.getElementById('qrImage');
+    if (qrInput) {
+        qrInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    // Create preview container if it doesn't exist
+                    let previewContainer = document.querySelector('.file-preview');
+                    if (!previewContainer) {
+                        previewContainer = document.createElement('div');
+                        previewContainer.className = 'file-preview current-image-container mt-2';
+                        qrInput.parentNode.appendChild(previewContainer);
+                    }
+                    
+                    // Update preview
+                    previewContainer.innerHTML = `
+                        <small class="text-muted d-block mb-1">New Image:</small>
+                        <img src="${event.target.result}" alt="QR Code Preview" class="img-preview">
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

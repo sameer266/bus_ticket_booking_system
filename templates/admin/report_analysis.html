@@ -7,13 +7,10 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row g-0">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
-            {% include 'components/sidebar.html' %}
-        </div>
+      
 
         <!-- Main Content -->
-        <div class="col-md-9 col-lg-10 ms-md-auto px-md-4 report-container " style="margin-top:80px">
+        <div class="col-md-9 col-lg-10 ms-md-auto px-md-4 report-container mt-4 " >
             <!-- Header -->
             <header class="report-header">
                 <div class="container-fluid">
@@ -165,10 +162,7 @@
     }
 
     @media (max-width: 767.98px) {
-        .sidebar {
-            position: static;
-            height: auto;
-        }
+       
         .report-container {
             margin-left: 0 !important;
             padding: 1rem !important;

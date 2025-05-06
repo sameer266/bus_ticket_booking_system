@@ -1,7 +1,7 @@
 {% extends 'components/base.html' %}
 
 {% block content %}
-<div class="container py-4" style="margin-top:80px !important">
+<div class="container py-4" >
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="fw-bold text-primary mb-0">
@@ -502,6 +502,15 @@
             height: 35px;
             font-size: 10px;
         }
+    }
+
+    @media (min-width: 752px){
+        .main-content{
+            margin-left:250px;
+            width:calc(100% - 250px )
+        }
+
+
     }
 </style>
 {% endblock %}

@@ -1,7 +1,7 @@
 {% extends 'components/base.html' %}
 {% block title %}Bus & Vehicle List | Sub-Admin Dashboard{% endblock %}
 {% block content %}
-<div id="sub-admin-page-content" class="bg-light min-vh-100 " style="margin-top:80px;">
+<div id="sub-admin-page-content" class="bg-light">
     <div class="container-fluid py-4">
         <div class="row justify-content-center">
             <div class="col-xl-11 col-lg-12 col-md-12">
@@ -24,7 +24,7 @@
                             <i class="bi bi-calendar-check me-1"></i>Total Schedules: {{ bus_schedule_count }}
                         </span>
                         <span class="sub-admin-stat-badge">
-                            <i class="bi bi-truck me-1"></i>Total Vehicles: {{ vehicle_count }}
+                            <i class="bi bi-truck me-1 " style="width:10px !important"></i>Total Vehicles: {{ vehicle_count }}
                         </span>
                     </div>
                 </div>
@@ -48,13 +48,18 @@
                     <div class="tab-pane fade show active" id="buses" role="tabpanel" aria-labelledby="buses-tab">
                         <!-- Bus List Table -->
                         <div class="card sub-admin-card mb-4">
-                            <div class="card-header sub-admin-card-header d-flex justify-content-between align-items-center">
+                            <div class="card-header sub-admin-card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                                 <h6 class="m-0">
                                     <i class="bi bi-list-ul me-2"></i>All Buses
                                 </h6>
-                                <div class="input-group input-group-sm w-auto">
-                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                                    <input type="text" class="form-control border-start-0 ps-0" id="searchBus" placeholder="Search buses..." style="max-width: 200px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control border-start-0 ps-0" id="searchBus" placeholder="Search buses..." style="max-width: 200px;">
+                                    </div>
+                                    <a href="{% url 'create_bus' %}" class="btn sub-admin-btn-add btn-sm">
+                                        <i class="bi bi-plus-circle me-1"></i>Add Bus
+                                    </a>
                                 </div>
                             </div>
                             <div class="card-body p-0">
@@ -69,13 +74,11 @@
                                                 <th>Capacity</th>
                                                 <th>Driver</th>
                                                 <th>Staff</th>
-
-                                              
                                                 <th>Status</th>
-                                                <th>Actions</th>
+                                                {% comment %} <th>Actions</th> {% endcomment %}
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody id="busTableBody">
                                             {% for bus in buses %}
                                             <tr class="bus-row">
                                                 <td>{{ bus.id }}</td>
@@ -93,15 +96,14 @@
                                                     {% if bus.driver %}
                                                         {{ bus.driver.full_name }} 
                                                     {% else %}
-                                                        <span class="sub-admin-badge-none">No Driver Assigned</span>
+                                                        <span class="sub-admin-badge-none">No Driver</span>
                                                     {% endif %}
-                                                   
                                                 </td>
                                                 <td>
                                                     {% if bus.staff %}
                                                         {{ bus.staff.full_name}}
                                                     {% else %}
-                                                        <span class="sub-admin-badge-none">No Staff Assigned</span>
+                                                        <span class="sub-admin-badge-none">No Staff</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>
@@ -111,20 +113,22 @@
                                                         <span class="badge bg-danger">Inactive</span>
                                                     {% endif %}
                                                 </td>
-                                                <td>
+                                                {% comment %} <td>
                                                     <div class="sub-admin-actions">
-                                                        <a href="{% url 'edit_bus' bus.id %}" class="btn sub-admin-btn-edit btn-sm" title="Edit Bus">
+                                                        <a href="javascript:void(0);" class="btn sub-admin-btn-edit btn-sm edit-bus" 
+                                                           data-bus-id="{{ bus.id }}" data-bus-name="{{ bus.bus_number }}" title="Edit Bus">
                                                             <i class="bi bi-pencil"></i>
                                                         </a>
-                                                        <a href="{% url 'delete_bus' bus.id %}" class="btn sub-admin-btn-delete btn-sm delete-bus" data-bus-name="{{ bus.bus_number }}" title="Delete Bus">
+                                                        <a href="javascript:void(0);" class="btn sub-admin-btn-delete btn-sm delete-bus" 
+                                                           data-bus-id="{{ bus.id }}" data-bus-name="{{ bus.bus_number }}" title="Delete Bus">
                                                             <i class="bi bi-trash"></i>
                                                         </a>
                                                     </div>
-                                                </td>
-                                            </tr>
+                                                </td> {% endcomment %}
+                                                                                        </tr>
                                             {% empty %}
-                                            <tr>
-                                                <td colspan="7" class="sub-admin-empty">
+                                            <tr id="emptyBusRow">
+                                                <td colspan="9" class="sub-admin-empty">
                                                     <div class="sub-admin-empty-state">
                                                         <i class="bi bi-bus-front"></i>
                                                         <p>No buses found</p>
@@ -144,19 +148,19 @@
                                     <ul class="pagination justify-content-center flex-wrap">
                                         {% if buses.has_previous %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?bus_page={{ buses.previous_page_number }}" aria-label="Previous">
+                                                <a class="page-link" href="?bus_page={{ buses.previous_page_number }}{% if vehicles_page %}&vehicle_page={{ vehicles_page }}{% endif %}" aria-label="Previous">
                                                     <span aria-hidden="true">«</span>
                                                 </a>
                                             </li>
                                         {% endif %}
                                         {% for num in buses.paginator.page_range %}
                                             <li class="page-item {% if buses.number == num %}active{% endif %}">
-                                                <a class="page-link" href="?bus_page={{ num }}">{{ num }}</a>
+                                                <a class="page-link" href="?bus_page={{ num }}{% if vehicles_page %}&vehicle_page={{ vehicles_page }}{% endif %}">{{ num }}</a>
                                             </li>
                                         {% endfor %}
                                         {% if buses.has_next %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?bus_page={{ buses.next_page_number }}" aria-label="Next">
+                                                <a class="page-link" href="?bus_page={{ buses.next_page_number }}{% if vehicles_page %}&vehicle_page={{ vehicles_page }}{% endif %}" aria-label="Next">
                                                     <span aria-hidden="true">»</span>
                                                 </a>
                                             </li>
@@ -172,13 +176,18 @@
                     <div class="tab-pane fade" id="vehicles" role="tabpanel" aria-labelledby="vehicles-tab">
                         <!-- Vehicles List Table -->
                         <div class="card sub-admin-card mb-4">
-                            <div class="card-header sub-admin-card-header d-flex justify-content-between align-items-center">
+                            <div class="card-header sub-admin-card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                                 <h6 class="m-0">
                                     <i class="bi bi-list-ul me-2"></i>All Vehicles
                                 </h6>
-                                <div class="input-group input-group-sm w-auto">
-                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                                    <input type="text" class="form-control border-start-0 ps-0" id="searchVehicle" placeholder="Search vehicles..." style="max-width: 200px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control border-start-0 ps-0" id="searchVehicle" placeholder="Search vehicles..." style="max-width: 200px;">
+                                    </div>
+                                    <a href="{% url 'vehicle_reservation' %}" class="btn sub-admin-btn-add btn-sm">
+                                        <i class="bi bi-plus-circle me-1"></i>Add Vehicle
+                                    </a>
                                 </div>
                             </div>
                             <div class="card-body p-0">
@@ -199,7 +208,7 @@
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
+                                        <tbody id="vehicleTableBody">
                                             {% for vehicle in vehicles %}
                                             <tr class="vehicle-row">
                                                 <td>{{ vehicle.id }}</td>
@@ -221,25 +230,22 @@
                                                         <span class="sub-admin-badge-none">No Document</span>
                                                     {% endif %}
                                                 </td>
-
                                                 <td>
                                                     {% if vehicle.driver %}
                                                         {{ vehicle.driver.full_name }} 
                                                     {% else %}
-                                                        <span class="sub-admin-badge-none">No Driver Assigned</span>
+                                                        <span class="sub-admin-badge-none">No Driver</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>
                                                     {% if vehicle.staff %}
                                                         {{ vehicle.staff.full_name}}
                                                     {% else %}
-                                                        <span class="sub-admin-badge-none">No Staff Assigned</span>
+                                                        <span class="sub-admin-badge-none">No Staff</span>
                                                     {% endif %}
                                                 </td>
-
                                                 <td>{{ vehicle.total_seats }} seats</td>
-
-                                                <td>Rs {{ vehicle.price }} </td>
+                                                <td>Rs {{ vehicle.price }}</td>
                                                 <td>
                                                     {% if vehicle.is_active %}
                                                         <span class="badge bg-success">Active</span>
@@ -249,22 +255,26 @@
                                                 </td>
                                                 <td>
                                                     <div class="sub-admin-actions">
-                                                        <a href="{% url 'vehicle_reservation_edit' vehicle.id %}" class="btn sub-admin-btn-edit btn-sm" title="Edit Vehicle">
+                                                        <a href="{% url 'vehicle_reservation_edit' vehicle.id %}" class="btn sub-admin-btn-edit btn-sm edit-vehicle" 
+                                                           data-vehicle-id="{{ vehicle.id }}" data-vehicle-name="{{ vehicle.vechicle_number }}" title="Edit Vehicle">
                                                             <i class="bi bi-pencil"></i>
                                                         </a>
-                                                        <a href="{% url 'delete_vehicle_reservation' vehicle.id %}" class="btn sub-admin-btn-delete btn-sm delete-vehicle" data-vehicle-name="{{ vehicle.vehicle_number }}" title="Delete Vehicle">
+                                                        <a href="{% url 'delete_vehicle_reservation' vehicle.id %}" class="btn sub-admin-btn-delete btn-sm delete-vehicle" 
+                                                           data-vehicle-id="{{ vehicle.id }}" data-vehicle-name="{{ vehicle.vechicle_number }}" title="Delete Vehicle">
                                                             <i class="bi bi-trash"></i>
                                                         </a>
                                                     </div>
                                                 </td>
                                             </tr>
                                             {% empty %}
-                                            <tr>
-                                                <td colspan="6" class="sub-admin-empty">
+                                            <tr id="emptyVehicleRow">
+                                                <td colspan="11" class="sub-admin-empty">
                                                     <div class="sub-admin-empty-state">
                                                         <i class="bi bi-truck"></i>
                                                         <p>No vehicles found</p>
-                                                        
+                                                        <a href="{% url 'vehicle_reservation' %}" class="btn sub-admin-btn-add">
+                                                            <i class="bi bi-plus-circle me-2"></i>Add Your First Vehicle
+                                                        </a>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -278,19 +288,19 @@
                                     <ul class="pagination justify-content-center flex-wrap">
                                         {% if vehicles.has_previous %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?vehicle_page={{ vehicles.previous_page_number }}" aria-label="Previous">
+                                                <a class="page-link" href="?vehicle_page={{ vehicles.previous_page_number }}{% if bus_page %}&bus_page={{ bus_page }}{% endif %}" aria-label="Previous">
                                                     <span aria-hidden="true">«</span>
                                                 </a>
                                             </li>
                                         {% endif %}
                                         {% for num in vehicles.paginator.page_range %}
                                             <li class="page-item {% if vehicles.number == num %}active{% endif %}">
-                                                <a class="page-link" href="?vehicle_page={{ num }}">{{ num }}</a>
+                                                <a class="page-link" href="?vehicle_page={{ num }}{% if bus_page %}&bus_page={{ bus_page }}{% endif %}">{{ num }}</a>
                                             </li>
                                         {% endfor %}
                                         {% if vehicles.has_next %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?vehicle_page={{ vehicles.next_page_number }}" aria-label="Next">
+                                                <a class="page-link" href="?vehicle_page={{ vehicles.next_page_number }}{% if bus_page %}&bus_page={{ bus_page }}{% endif %}" aria-label="Next">
                                                     <span aria-hidden="true">»</span>
                                                 </a>
                                             </li>
@@ -306,301 +316,312 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="deleteConfirmMessage">
+                <!-- Content will be injected dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editModalLabel">Edit Item</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="editModalSpinner" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading item data...</p>
+                </div>
+                <div id="editModalContent" style="display: none;">
+                    <form id="editForm" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="row">
+                            <!-- Bus/Vehicle Number -->
+                            <div class="col-md-6 mb-3">
+                                <label for="editBusNumber" class="form-label">Bus/Vehicle Number</label>
+                                <input type="text" class="form-control" id="editBusNumber" name="bus_number" required>
+                            </div>
+                            
+                            <!-- Type -->
+                            <div class="col-md-6 mb-3">
+                                <label for="editBusType" class="form-label">Type</label>
+                                <select class="form-select" id="editBusType" name="bus_type" required>
+                                    <option value="">Select Type</option>
+                                    <option value="AC">AC</option>
+                                    <option value="Non-AC">Non-AC</option>
+                                    <option value="Sleeper">Sleeper</option>
+                                    <option value="Seater">Seater</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Total Seats -->
+                            <div class="col-md-6 mb-3">
+                                <label for="editTotalSeats" class="form-label">Total Seats</label>
+                                <input type="number" class="form-control" id="editTotalSeats" name="total_seats" required>
+                            </div>
+                            
+                            <!-- Driver -->
+                            <div class="col-md-6 mb-3">
+                                <label for="editDriver" class="form-label">Driver</label>
+                                <select class="form-select" id="editDriver" name="driver">
+                                    <option value="">No Driver</option>
+                                    {% for driver in drivers %}
+                                        <option value="{{ driver.id }}">{{ driver.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Staff -->
+                            <div class="col-md-6 mb-3">
+                                <label for="editStaff" class="form-label">Staff</label>
+                                <select class="form-select" id="editStaff" name="staff">
+                                    <option value="">No Staff</option>
+                                    {% for staff in staff_members %}
+                                        <option value="{{ staff.id }}">{{ staff.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Price (for vehicles) -->
+                            <div class="col-md-6 mb-3" id="priceFieldContainer" style="display: none;">
+                                <label for="editPrice" class="form-label">Price</label>
+                                <input type="number" class="form-control" id="editPrice" name="price" step="0.01">
+                            </div>
+                            
+                            <!-- Image -->
+                            <div class="col-md-6 mb-3">
+                                <label for="editImage" class="form-label">Image</label>
+                                <input type="file" class="form-control" id="editImage" name="image" accept="image/*">
+                            </div>
+                            
+                            <!-- Status -->
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="editIsActive" name="is_active" checked>
+                                    <label class="form-check-label" for="editIsActive">Active</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Loading Spinner Modal -->
+<div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 id="loadingModalLabel">Processing your request...</h5>
+                <p class="text-muted mb-0">Please wait a moment</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast for notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong class="me-auto" id="toastTitle">Notification</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+            Action completed successfully
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
 <style>
-/* Scoped CSS for sub-admin bus list */
-.sub-admin-container {
-    --sa-primary: #007bff;
-    --sa-primary-light: #e7f1ff;
-    --sa-primary-dark: #0056b3;
-    --sa-success: #28a745;
-    --sa-danger: #dc3545;
-    --sa-secondary: #6c757d;
-}
-/* General styles */
-.sub-admin-title {
-    color: var(--sa-primary);
-    font-weight: 600;
-}
-.sub-admin-card {
-    border: none;
-    border-radius: 0.75rem;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    overflow: hidden;
-}
-.sub-admin-card-header {
-    background: linear-gradient(90deg, var(--sa-primary), var(--sa-primary-dark));
-    color: white;
-    border-radius: 0.75rem 0.75rem 0 0;
-    padding: 1rem;
-}
-.sub-admin-table th {
-    color: var(--sa-primary);
-    font-weight: 600;
-    padding: 1rem;
-    white-space: nowrap;
-}
-.sub-admin-table td {
-    vertical-align: middle;
-    padding: 1rem;
-    white-space: nowrap;
-}
-/* Status badges */
-.sub-admin-badge-active {
-    background-color: var(--sa-success);
-    color: white;
-    padding: 0.375rem 0.75rem;
-}
-.sub-admin-badge-inactive {
-    background-color: var(--sa-danger);
-    color: white;
-    padding: 0.375rem 0.75rem;
-}
-.sub-admin-badge-none {
-    background-color: var(--sa-primary-light);
-    color: var(--sa-primary);
-    padding: 0.375rem 0.75rem;
-}
-/* Schedule count */
-.sub-admin-schedule-count {
-    background-color: var(--sa-primary-light);
-    color: var(--sa-primary);
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-}
-/* Action buttons */
-.sub-admin-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-.sub-admin-btn-edit {
-    color: var(--sa-primary);
-    border: 1px solid var(--sa-primary);
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-}
-.sub-admin-btn-delete {
-    color: var(--sa-danger);
-    border: 1px solid var(--sa-danger);
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-}
-.sub-admin-btn-add {
-    background-color: var(--sa-primary);
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-}
-.sub-admin-btn-back {
-    background-color: var(--sa-primary-light);
-    color: var(--sa-primary);
-    border: 1px solid var(--sa-primary);
-    padding: 0.5rem;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.sub-admin-btn-add:hover, .sub-admin-btn-edit:hover, .sub-admin-btn-back:hover {
-    background-color: var(--sa-primary);
-    color: white;
-}
-.sub-admin-btn-delete:hover {
-    background-color: var(--sa-danger);
-    color: white;
-}
-/* Stats */
-.sub-admin-stat-badge {
-    background-color: var(--sa-primary-light);
-    color: var(--sa-primary);
-    padding: 0.5rem 1rem;
-    border-radius: 1rem;
-    font-size: 0.9rem;
-}
-/* Empty state */
-.sub-admin-empty-state {
-    text-align: center;
-    padding: 3rem 1rem;
-}
-.sub-admin-empty-state i {
-    font-size: 4rem;
-    color: var(--sa-secondary);
-    margin-bottom: 1rem;
-}
-.sub-admin-empty-state p {
-    color: var(--sa-secondary);
-    margin-bottom: 1.5rem;
-    font-size: 1.1rem;
-}
-/* Pagination */
-.sub-admin-pagination .page-link {
-    color: var(--sa-primary);
-    border-radius: 0.375rem;
-    margin: 0 0.25rem;
-}
-.sub-admin-pagination .page-item.active .page-link {
-    background-color: var(--sa-primary);
-    border-color: var(--sa-primary);
-    color: white;
-}
-/* Tab styling */
-#transportationTabs .nav-link {
-    color: var(--sa-secondary);
-    border: none;
-    border-bottom: 3px solid transparent;
-    padding: 0.75rem 1.5rem;
-    font-weight: 500;
-}
-#transportationTabs .nav-link.active {
-    color: var(--sa-primary);
-    border-bottom-color: var(--sa-primary);
-    background-color: transparent;
-}
-#transportationTabs .nav-link:hover:not(.active) {
-    border-bottom-color: var(--sa-secondary);
-}
-/* Responsive Design */
-@media (max-width: 991.98px) {
-    #sub-admin-page-content {
-        margin-top: 20px;
-    }
-    .sub-admin-table {
-        font-size: 0.9rem;
-    }
-}
+/* Responsive styling */
 @media (max-width: 767.98px) {
-    .sub-admin-table {
-        display: block;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    .sub-admin-stat-badge {
-        font-size: 0.85rem;
-        padding: 0.4rem 0.8rem;
-    }
     .sub-admin-title {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
     }
-    .sub-admin-actions {
-        flex-direction: column;
-        gap: 0.25rem;
+    
+    .sub-admin-stat-badge {
+        font-size: 0.8rem;
     }
-    .sub-admin-card-header {
-        flex-direction: column;
-        gap: 0.75rem;
-        align-items: flex-start;
-    }
-    .sub-admin-card-header .input-group {
-        width: 100%;
-        max-width: none;
-    }
-}
-@media (max-width: 575.98px) {
-    .sub-admin-table td, .sub-admin-table th {
-        padding: 0.75rem 0.5rem;
-    }
-    .sub-admin-btn-edit, .sub-admin-btn-delete {
-        padding: 0.25rem 0.5rem;
+    
+    .table-responsive {
         font-size: 0.875rem;
     }
-    .sub-admin-empty-state i {
-        font-size: 3rem;
-    }
-    .sub-admin-empty-state p {
-        font-size: 1rem;
-    }
-    .sub-admin-btn-back {
-        width: 36px;
-        height: 36px;
-        padding: 0.375rem;
+    
+    .sub-admin-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
     }
 }
-/* Hover effects */
-.sub-admin-table tr:hover {
-    background-color: var(--sa-primary-light);
-    transition: background-color 0.2s ease;
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+    .sub-admin-card-header {
+        padding: 0.75rem 1rem;
+    }
 }
-.sub-admin-card:hover {
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    transition: box-shadow 0.2s ease;
+
+@media (min-width: 992px) {
+    .main-content {
+       margin-left: 150px !important;
+       width: calc(100% - 150px);
+    }
+}
+
+/* Table mobile optimizations */
+@media (max-width: 575.98px) {
+    .table-responsive table {
+        min-width: 800px;
+    }
+}
+
+/* General improvements */
+.sub-admin-card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.sub-admin-btn-back:hover,
+.sub-admin-btn-edit:hover,
+.sub-admin-btn-delete:hover,
+.sub-admin-btn-add:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+    transition: all 0.2s;
+}
+
+.sub-admin-empty-state {
+    padding: 3rem 1rem;
+}
+
+.sub-admin-empty-state i {
+    font-size: 1rem;
+    color: #ccc;
+    margin-bottom: 1rem;
+}
+
+.nav-tabs .nav-link.active {
+    font-weight: 500;
+}
+
+/* Toast styling */
+.toast {
+    background: white;
+    border-left: 4px solid #0d6efd;
+}
+
+.toast.error {
+    border-left-color: #dc3545;
+}
+
+.toast.success {
+    border-left-color: #198754;
 }
 </style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Search functionality for buses
-        const searchBus = document.getElementById('searchBus');
-        if (searchBus) {
-            searchBus.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const rows = document.querySelectorAll('.bus-row');
-                rows.forEach(row => {
-                    const busName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                    const busType = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                    const isVisible = busName.includes(searchTerm) || busType.includes(searchTerm);
-                    row.style.display = isVisible ? '' : 'none';
-                });
-            });
+// Edit functionality for buses
+$(document).on('click', '.edit-bus', function(e) {
+    e.preventDefault();
+    const busId = $(this).data('bus-id');
+    const busName = $(this).data('bus-name');
+    
+    // Reset and prepare the modal
+    $('#editModalLabel').text('Edit Bus: ' + busName);
+    $('#editModalContent').hide();
+    $('#editModalSpinner').show();
+    $('#priceFieldContainer').hide();
+    
+    // Show the modal
+    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+    
+    // Load bus data via AJAX
+    $.ajax({
+        url: '/edit-bus/' + busId + '/',  // Update this URL to match your API endpoint
+        method: 'GET',
+        success: function(response) {
+            // Fill form with bus data
+            $('#editForm').attr('action', '/buses/' + busId + '/update/');  // Update this URL
+            $('#editBusNumber').val(response.bus_number);
+            $('#editBusType').val(response.bus_type);
+            $('#editTotalSeats').val(response.total_seats);
+            $('#editDriver').val(response.driver?.id || '');
+            $('#editStaff').val(response.staff?.id || '');
+            $('#editIsActive').prop('checked', response.is_active);
+            
+            // Show form, hide spinner
+            $('#editModalSpinner').hide();
+            $('#editModalContent').show();
+        },
+        error: function(xhr) {
+            // Handle error
+            $('#editModalSpinner').hide();
+            $('#editModalContent').html(`
+                <div class="alert alert-danger">
+                    Failed to load bus data. Please try again.
+                    ${xhr.responseJSON?.detail || ''}
+                </div>
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            `);
+            $('#editModalContent').show();
         }
-
-        // Search functionality for vehicles
-        const searchVehicle = document.getElementById('searchVehicle');
-        if (searchVehicle) {
-            searchVehicle.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                const rows = document.querySelectorAll('.vehicle-row');
-                rows.forEach(row => {
-                    const vehicleName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                    const vehicleType = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                    const isVisible = vehicleName.includes(searchTerm) || vehicleType.includes(searchTerm);
-                    row.style.display = isVisible ? '' : 'none';
-                });
-            });
-        }
-
-        // Delete confirmation for buses
-        document.querySelectorAll('.delete-bus').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const busName = this.getAttribute('data-bus-name');
-                const confirmDelete = confirm(`Are you sure you want to delete the bus "${busName}"? This action cannot be undone.`);
-                if (confirmDelete) {
-                    window.location.href = this.href;
-                }
-            });
-        });
-
-        // Delete confirmation for vehicles
-        document.querySelectorAll('.delete-vehicle').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const vehicleName = this.getAttribute('data-vehicle-name');
-                const confirmDelete = confirm(`Are you sure you want to delete the vehicle "${vehicleName}"? This action cannot be undone.`);
-                if (confirmDelete) {
-                    window.location.href = this.href;
-                }
-            });
-        });
-
-        // Maintain tab state after page refresh
-        const hash = window.location.hash;
-        if (hash) {
-            const tab = document.querySelector(`[data-bs-target="${hash}"]`);
-            if (tab) {
-                const bsTab = new bootstrap.Tab(tab);
-                bsTab.show();
-            }
-        }
-
-        // Enable Bootstrap tooltips
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
     });
+});
+
+// Edit functionality for vehicles
+$(document).on('click', '.edit-vehicle', function(e) {
+    e.preventDefault();
+    const vehicleId = $(this).data('vehicle-id');
+    const vehicleName = $(this).data('vehicle-name');
+    
+    // Reset and prepare the modal
+    $('#editModalLabel').text('Edit Vehicle: ' + vehicleName);
+    $('#editModalContent').hide();
+    $('#editModalSpinner').show();
+    $('#priceFieldContainer').show();
+    
+    // Show the modal
+    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    editModal.show();
+    
+   
+});
 </script>
-{% endblock %}
 {% endblock %}

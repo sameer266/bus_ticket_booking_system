@@ -131,11 +131,18 @@ class VechicleUserReservationBookingSerializer(serializers.ModelSerializer):
     type_name = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
     vechicle_number = serializers.SerializerMethodField()
-
+    price=serializers.SerializerMethodField()
+    
     class Meta:
         model = BusReservationBooking
         fields = '__all__'
 
+    
+    def get_price(self,obj):
+        if obj.bus_reserve and obj.bus_reserve.price:
+            return  obj.bus_reserve.price
+        return None
+    
     def get_type_name(self, obj):
         """Extracts 'type.name' from BusReservation"""
         return getattr(obj.bus_reserve.type, "name", None) if obj.bus_reserve else None

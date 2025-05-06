@@ -4,7 +4,7 @@
 {% block title %}Vehicle Earnings Details | Go Sewa{% endblock %}
 
 {% block content %}
-<div class="dashboard-container" style="margin:80px !important">
+<div class="dashboard-container" >
     <main class="dashboard-content px-3 px-md-4 py-4">
         <div class="container-fluid">
             <!-- Header -->
@@ -165,29 +165,13 @@
 
 {% block extra_css %}
 <style>
-    .dashboard-container {
-        display: flex;
-        min-height: 100vh;
-    }
-    .dashboard-content {
-        flex-grow: 1;
-        padding: 20px;
-    }
-    .text-success { color: #28a745; }
-    .text-blue { color: #007bff; }
-    .empty-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto;
-    }
-    .bg-light-blue { background-color: #e6f0ff; }
-    .empty-state {
-        text-align: center;
-        padding: 20px;
+   
+    @media (min-width: 768px) {
+        .dashboard-container {
+          margin-left: 180px;
+          width: calc(100% - 180px);
+
+        }
     }
 </style>
 {% endblock %}

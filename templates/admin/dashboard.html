@@ -1,11 +1,9 @@
 {% extends 'components/base.html' %}
 {% block content %}
-<div class="admin-wrapper">
+
   
     
-    <div class="admin-sidebar" id="adminSidebar">
-        {% include 'components/sidebar.html'%}
-    </div>
+    
     
     <div class="admin-main-content" id="mainContent">
         <div class="admin-container py-4">
@@ -190,91 +188,20 @@
                 </div>
             </div>
         </div>
-    </div>
+  
 </div>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const sidebar = document.getElementById('adminSidebar');
-    const mainContent = document.getElementById('mainContent');
-    
-    sidebarToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('admin-sidebar-active');
-        mainContent.classList.toggle('admin-main-shifted');
-    });
-    
-    // Close sidebar when clicking outside on small screens
-    document.addEventListener('click', function(event) {
-        const isMobile = window.innerWidth < 992;
-        if (isMobile && !sidebar.contains(event.target) && !sidebarToggle.contains(event.target)) {
-            sidebar.classList.remove('admin-sidebar-active');
-            mainContent.classList.remove('admin-main-shifted');
-        }
-    });
-    
-    // Handle window resize
-    window.addEventListener('resize', function() {
-        if (window.innerWidth >= 992) {
-            sidebar.classList.remove('admin-sidebar-active');
-            mainContent.classList.remove('admin-main-shifted');
-        }
-    });
-});
-</script>
-{% endblock %}
+
 
 {% block extra_css %}
 <style>
-/* Namespace all styles with 'admin-' prefix to avoid conflicts */
-.admin-wrapper {
-    display: flex;
-    width: 100%;
-    min-height: 100vh;
-    position: relative;
-}
 
-/* Sidebar Toggle Button */
-.admin-sidebar-toggle {
-    display: none;
-    position: fixed;
-    top: 1rem;
-    left: 1rem;
-    z-index: 1040;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background-color: #4e73df;
-    color: white;
-    text-align: center;
-    line-height: 40px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    box-shadow: 0 0.15rem 1.75rem rgba(0, 0, 0, 0.15);
-    transition: all 0.3s ease;
-}
 
-.admin-sidebar-toggle:hover {
-    background-color: #2e59d9;
-}
-
-/* Sidebar Container */
-.admin-sidebar {
-    width: 250px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    z-index: 1030;
-    background-color: #4e73df; /* Adjust to match your sidebar color */
-    transition: all 0.3s ease;
-}
 
 .admin-main-content {
     flex: 1;
-    padding-top: 70px;
+    
     margin-left: 250px;
     transition: margin-left 0.3s ease;
 }
@@ -519,7 +446,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     .admin-main-content {
         margin-left: 0;
-        padding-top: 60px;
+     
     }
     
     .admin-main-shifted {
@@ -552,7 +479,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     .admin-title {
         font-size: 1.5rem;
-        margin-top: 1rem;
+       
     }
     
     .admin-table th,

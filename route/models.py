@@ -98,7 +98,7 @@ class Schedule(models.Model):
     arrival_time = models.DateTimeField(null=True, blank=True, help_text="Expected arrival time")
     date = models.DateTimeField(null=True, blank=True, help_text="Date and time of the journey (Y-M-D H:M:S)", editable=False)
     price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Ticket price")
-    available_seats = models.PositiveIntegerField(null=True, blank=True, help_text="Number of available seats")
+    available_seats = models.PositiveIntegerField(default=0, help_text="Number of available seats")
     status=models.CharField(max_length=20,null=True,blank=True)
 
     def save(self, *args, **kwargs):

@@ -1,14 +1,14 @@
+
+
+
 {% extends 'components/base.html' %}
 {% block title %}Manage Buses | Go Sewa{% endblock %}
 {% block content %}
 <div class="container-fluid">
     <div class="row g-0">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
-            {% include 'components/sidebar.html' %}
-        </div>
+       
         <!-- Main Content -->
-        <main class="mt-5 col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content ">
+        <main class=" col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content ">
 
 
             <!-- Mesage --> 
@@ -116,9 +116,13 @@
                                             <button class="btn btn-sm btn-outline-warning edit-bus-btn" data-bus-id="{{ bus.id }}" title="Edit Bus">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
-                                            <a  href={% url 'delete_bus'  bus.id %} class="btn btn-sm btn-outline-danger delete-bus-btn" title="Delete Bus">
+                                           
+                                            <button class="btn btn-sm btn-outline-danger delete-bus-btn" data-bus-id="{{ bus.id }}" data-bus-number="{{ bus.bus_number }}" title="Delete Bus">
                                                 <i class="bi bi-trash"></i>
-                                            </a>
+                                            </button>
+
+
+
                                         </div>
                                     </td>
                                 </tr>
@@ -156,7 +160,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form method="POST" enctype="multipart/form-data" action="{% url 'create_bus' %}" >
+                <form method="POST" enctype="multipart/form-data" action="{% url 'create_bus' %}" id="addBusForm">
                     {% csrf_token %}
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -173,18 +177,12 @@
                             </select>
                         </div>
 
-                      
-
-                        <div class="col-md-6">
-                            <label class="form-label">Total Seats*</label>
-                            <input type="number" class="form-control" name="total_seats" id="totalSeatsInput" value="35" min="1" required readonly>
-                        </div>
-
+                 
 
                     {% if user.role == 'admin' %}
                         <div class="col-md-6">
-                            <label class="form-label">Counter </label>
-                            <select class="form-select" name="transportation" id="driverSelect">
+                            <label class="form-label">Counter* </label>
+                            <select class="form-select" name="transportation" id="driverSelect" required>
                                 <option value="">-- Select Counter --</option>
                                 {% for transportation in transportation_company %}
                                 <option value="{{ transportation.id }}">{{ transportation.company_name }}</option>
@@ -195,8 +193,8 @@
 
 
                         <div class="col-md-6">
-                            <label class="form-label">Driver</label>
-                            <select class="form-select" name="driver" id="driverSelect">
+                            <label class="form-label">Driver*</label>
+                            <select class="form-select" name="driver" id="driverSelect" required>
                                 <option value="">-- Select Driver --</option>
                                 {% for driver in all_drivers %}
                                 <option value="{{ driver.id }}">{{ driver.full_name }}</option>
@@ -204,8 +202,8 @@
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Staff</label>
-                            <select class="form-select" name="staff" id="staffSelect">
+                            <label class="form-label">Staff*</label>
+                            <select class="form-select" name="staff" id="staffSelect" required>
                                 <option value="">-- Select Staff --</option>
                                 {% for staff in all_staff %}
                                 <option value="{{ staff.id }}">{{ staff.full_name }}</option>
@@ -308,16 +306,14 @@
                     <input type="hidden" name="layout" id="layoutData">
                     <input type="hidden" name="add_bus" value="1">
 
-
+                    <div class="mt-4 text-end">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit"  class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary">
                             <i class="bi bi-plus-circle me-1"></i> Add Bus
                         </button>
-                
-
+                    </div>
                 </form>
             </div>
-            
         </div>
     </div>
 </div>
@@ -357,7 +353,7 @@
                         {% if user.role == 'admin' %}
                         <div class="col-md-6">
                             <label class="form-label">Counter </label>
-                            <select class="form-select" name="transportation" id="driverSelect">
+                            <select class="form-select" name="transportation" id="edit_transportation">
                                 <option value="">-- Select Counter --</option>
                                 {% for transportation in transportation_company %}
                                 <option value="{{ transportation.id }}">{{ transportation.company_name }}</option>
@@ -520,23 +516,13 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+
 
 {% block extra_css %}
 <style>
-    /* Previous CSS styles remain the same */
-    .sidebar {
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        background-color: #fff;
-        transition: all 0.3s;
-    }
-    #sidebar-wrapper {
-        min-height: 100vh;
-        width: 250px;
-        transition: margin 0.25s ease-out;
-        background-color: white;
-        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
-        z-index: 1;
-    }
+  
 
     /* Action Buttons */
 .action-btn {
@@ -589,63 +575,53 @@
     }
 </style>
 {% endblock %}
+
 {% block extra_js %}
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Bootstrap initialization (unchanged)
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
+$(document).ready(function() {
+    // Bootstrap initialization
+    $('[data-bs-toggle="tooltip"]').tooltip();
     
-    const addBusModalElement = document.getElementById('addBusModal');
-    const editBusModalElement = document.getElementById('editBusModal');
-    const deleteConfirmModalElement = document.getElementById('deleteConfirmModal');
+    const addBusModal = new bootstrap.Modal($('#addBusModal')[0], { backdrop: true });
+    const editBusModal = new bootstrap.Modal($('#editBusModal')[0], { backdrop: true });
+    const deleteConfirmModal = new bootstrap.Modal($('#deleteConfirmModal')[0], { backdrop: true });
     
-    const addBusModal = new bootstrap.Modal(addBusModalElement, { backdrop: true });
-    const editBusModal = new bootstrap.Modal(editBusModalElement, { backdrop: true });
-    const deleteConfirmModal = new bootstrap.Modal(deleteConfirmModalElement, { backdrop: true });
-    
-    [addBusModalElement, editBusModalElement, deleteConfirmModalElement].forEach(modal => {
-        modal.addEventListener('hidden.bs.modal', function () {
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
+    // Clean up modals when hidden
+    $('#addBusModal, #editBusModal, #deleteConfirmModal').on('hidden.bs.modal', function () {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css({
+            'overflow': '',
+            'padding-right': ''
         });
     });
 
     // Grid layout function
     function updateGridLayout(containerId, columns, aisleAfter) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
+        const $container = $('#' + containerId);
+        if ($container.length === 0) return;
+        
         let gridTemplateColumns = '';
         for (let i = 0; i < columns; i++) {
             gridTemplateColumns += (i === aisleAfter ? '0.5fr ' : '1fr ');
         }
-        container.style.gridTemplateColumns = gridTemplateColumns.trim();
+        $container.css('gridTemplateColumns', gridTemplateColumns.trim());
     }
 
     // Show Add Bus Modal
-    ['addBusBtn', 'mobileAddBusBtn', 'emptyAddBusBtn'].forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) {
-            btn.addEventListener('click', e => {
-                e.preventDefault();
-                addBusModal.show();
-                initializeSeatLayout();
-            });
-        }
+    $('#addBusBtn, #mobileAddBusBtn, #emptyAddBusBtn').on('click', function(e) {
+        e.preventDefault();
+        addBusModal.show();
+        initializeSeatLayout();
     });
 
     // Core layout generation function
     function generateSeatLayout(containerId, rows, columns, aisleAfter, includeBackRow, backRowSeats, existingLayout = null) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
+        const $container = $('#' + containerId);
+        if ($container.length === 0) return;
 
-        container.innerHTML = '';
+        $container.empty();
         updateGridLayout(containerId, columns, aisleAfter);
         
         let layout = [];
@@ -656,22 +632,25 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = [];
             for (let c = 0; c < columns; c++) {
                 if (c === aisleAfter) {
-                    const aisle = document.createElement('div');
-                    aisle.className = 'seat-item aisle';
-                    aisle.textContent = ' ';
-                    container.appendChild(aisle);
+                    const $aisle = $('<div>', {
+                        class: 'seat-item aisle',
+                        text: ' '
+                    });
+                    $container.append($aisle);
                     row.push({ seat: 'AISLE', status: 'aisle' });
                     continue;
                 }
 
                 const effectiveCol = c > aisleAfter ? c - 1 : c;
                 const seatNumber = `${String.fromCharCode(65 + effectiveCol)}${r + 1}`;
-                const seat = document.createElement('div');
-                seat.className = 'seat-item';
-                seat.textContent = seatNumber;
-                seat.dataset.seat = seatNumber;
-                seat.dataset.row = r;
-                seat.dataset.col = effectiveCol;
+                
+                const $seat = $('<div>', {
+                    class: 'seat-item',
+                    text: seatNumber,
+                    'data-seat': seatNumber,
+                    'data-row': r,
+                    'data-col': effectiveCol
+                });
 
                 // Default to unselected (unavailable) for new layout, selected (available) for edit
                 let isSelected = existingLayout ? false : true;
@@ -680,24 +659,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (rowData && rowData[c] && rowData[c].status === 'available') {
                         isSelected = true;
                     } else if (rowData && rowData[c] && rowData[c].status === 'booked') {
-                        seat.classList.add('booked');
+                        $seat.addClass('booked');
                         isSelected = false; // Booked seats can't be changed here
                     }
                 }
 
                 if (isSelected) {
-                    seat.classList.add('selected');
+                    $seat.addClass('selected');
                 }
 
                 // Make seats selectable unless booked
-                if (!seat.classList.contains('booked')) {
-                    seat.addEventListener('click', () => {
-                        seat.classList.toggle('selected');
+                if (!$seat.hasClass('booked')) {
+                    $seat.on('click', function() {
+                        $(this).toggleClass('selected');
                         updateLayoutData(containerId === 'seatLayoutContainer');
                     });
                 }
 
-                container.appendChild(seat);
+                $container.append($seat);
                 row.push({ seat: seatNumber, status: isSelected ? 'available' : 'unavailable' });
                 if (isSelected) totalSeats++;
             }
@@ -706,26 +685,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Back row
         if (includeBackRow) {
-            const backRowLabel = document.createElement('div');
-            backRowLabel.className = 'w-100 text-center mt-3 mb-2';
-            backRowLabel.textContent = 'Back Row';
-            backRowLabel.style.gridColumn = '1 / -1';
-            container.appendChild(backRowLabel);
+            const $backRowLabel = $('<div>', {
+                class: 'w-100 text-center mt-3 mb-2',
+                text: 'Back Row',
+                css: {
+                    'grid-column': '1 / -1'
+                }
+            });
+            $container.append($backRowLabel);
 
-            const backRowContainer = document.createElement('div');
-            backRowContainer.className = 'd-flex justify-content-center w-100';
-            backRowContainer.style.gridColumn = '1 / -1';
-            container.appendChild(backRowContainer);
+            const $backRowContainer = $('<div>', {
+                class: 'd-flex justify-content-center w-100',
+                css: {
+                    'grid-column': '1 / -1'
+                }
+            });
+            $container.append($backRowContainer);
 
             const backRow = [];
             for (let c = 0; c < backRowSeats; c++) {
                 const seatNumber = `${String.fromCharCode(65 + c)}${rows + 1}`;
-                const seat = document.createElement('div');
-                seat.className = 'seat-item mx-1';
-                seat.textContent = seatNumber;
-                seat.dataset.seat = seatNumber;
-                seat.dataset.row = rows;
-                seat.dataset.col = c;
+                
+                const $seat = $('<div>', {
+                    class: 'seat-item mx-1',
+                    text: seatNumber,
+                    'data-seat': seatNumber,
+                    'data-row': rows,
+                    'data-col': c
+                });
 
                 let isSelected = existingLayout ? false : true;
                 if (existingLayout && existingLayout.layout) {
@@ -733,23 +720,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (backRowData && backRowData[c] && backRowData[c].status === 'available') {
                         isSelected = true;
                     } else if (backRowData && backRowData[c] && backRowData[c].status === 'booked') {
-                        seat.classList.add('booked');
+                        $seat.addClass('booked');
                         isSelected = false;
                     }
                 }
 
                 if (isSelected) {
-                    seat.classList.add('selected');
+                    $seat.addClass('selected');
                 }
 
-                if (!seat.classList.contains('booked')) {
-                    seat.addEventListener('click', () => {
-                        seat.classList.toggle('selected');
+                if (!$seat.hasClass('booked')) {
+                    $seat.on('click', function() {
+                        $(this).toggleClass('selected');
                         updateLayoutData(containerId === 'seatLayoutContainer');
                     });
                 }
 
-                backRowContainer.appendChild(seat);
+                $backRowContainer.append($seat);
                 backRow.push({ seat: seatNumber, status: isSelected ? 'available' : 'unavailable' });
                 if (isSelected) totalSeats++;
             }
@@ -763,20 +750,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update layout data
     function updateLayoutData(isAddModal = true) {
         const prefix = isAddModal ? '' : 'edit_';
-        const rows = parseInt(document.getElementById(`${prefix}rowsInput`).value) || 6;
-        const columns = parseInt(document.getElementById(`${prefix}columnsInput`).value) || 5;
-        const aisleAfter = parseInt(document.getElementById(`${prefix}aisleAfterInput`).value) || 2;
-        const includeBackRow = document.getElementById(`${prefix}includeBackRow`).checked;
-        const backRowSeats = parseInt(document.getElementById(`${prefix}backRowSeatsInput`).value) || 5;
+        const rows = parseInt($('#' + prefix + 'rowsInput').val()) || 6;
+        const columns = parseInt($('#' + prefix + 'columnsInput').val()) || 5;
+        const aisleAfter = parseInt($('#' + prefix + 'aisleAfterInput').val()) || 2;
+        const includeBackRow = $('#' + prefix + 'includeBackRow').prop('checked');
+        const backRowSeats = parseInt($('#' + prefix + 'backRowSeatsInput').val()) || 5;
         const containerId = isAddModal ? 'seatLayoutContainer' : 'edit_seatLayoutContainer';
 
-        const seats = document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle)');
+        const $seats = $('#' + containerId).find('.seat-item:not(.aisle)');
         let layout = [];
         let totalSeats = 0;
 
         for (let r = 0; r < (includeBackRow ? rows + 1 : rows); r++) {
             const row = [];
-            const rowSeats = Array.from(seats).filter(seat => parseInt(seat.dataset.row) === r);
+            const rowSeats = $seats.filter(function() {
+                return parseInt($(this).data('row')) === r;
+            });
             
             if (r < rows) {
                 for (let c = 0; c < columns; c++) {
@@ -786,20 +775,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     const effectiveCol = c > aisleAfter ? c - 1 : c;
                     const seatNumber = `${String.fromCharCode(65 + effectiveCol)}${r + 1}`;
-                    const seat = rowSeats.find(s => s.dataset.seat === seatNumber);
-                    const isSelected = seat?.classList.contains('selected') || false;
-                    const isBooked = seat?.classList.contains('booked') || false;
+                    
+                    const $seat = rowSeats.filter(function() {
+                        return $(this).data('seat') === seatNumber;
+                    });
+                    
+                    const isSelected = $seat.hasClass('selected') || false;
+                    const isBooked = $seat.hasClass('booked') || false;
                     const status = isBooked ? 'booked' : (isSelected ? 'available' : 'unavailable');
+                    
                     row.push({ seat: seatNumber, status: status });
                     if (status === 'available') totalSeats++;
                 }
             } else if (includeBackRow) {
                 for (let c = 0; c < backRowSeats; c++) {
                     const seatNumber = `${String.fromCharCode(65 + c)}${r + 1}`;
-                    const seat = rowSeats.find(s => s.dataset.seat === seatNumber);
-                    const isSelected = seat?.classList.contains('selected') || false;
-                    const isBooked = seat?.classList.contains('booked') || false;
+                    
+                    const $seat = rowSeats.filter(function() {
+                        return $(this).data('seat') === seatNumber;
+                    });
+                    
+                    const isSelected = $seat.hasClass('selected') || false;
+                    const isBooked = $seat.hasClass('booked') || false;
                     const status = isBooked ? 'booked' : (isSelected ? 'available' : 'unavailable');
+                    
                     row.push({ seat: seatNumber, status: status });
                     if (status === 'available') totalSeats++;
                 }
@@ -808,187 +807,274 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const layoutData = {
-            rows, columns, aisleAfterColumn: aisleAfter,
-            includeBackRow, backRowSeats, layout, totalSeats: totalSeats
+            rows, 
+            columns, 
+            aisleAfterColumn: aisleAfter,
+            includeBackRow, 
+            backRowSeats, 
+            layout, 
+            totalSeats: totalSeats
         };
 
-        document.getElementById(`${prefix}layoutData`).value = JSON.stringify(layoutData);
-        document.getElementById(`${prefix}total_seats`).value = totalSeats;
-        document.getElementById(`${prefix}selectedSeatsCount`).textContent = totalSeats;
+        $('#' + prefix + 'layoutData').val(JSON.stringify(layoutData));
+        $('#' + prefix + 'total_seats').val(totalSeats);
+        $('#' + prefix + 'selectedSeatsCount').text(totalSeats);
     }
     
-
     // Helper function to update seat count
     function updateSeatCount(containerId, count) {
         const prefix = containerId === 'seatLayoutContainer' ? '' : 'edit_';
-        document.getElementById(`${prefix}selectedSeatsCount`).textContent = count;
-        document.getElementById(`${prefix}total_seats`).value = count;
+        $('#' + prefix + 'selectedSeatsCount').text(count);
+        $('#' + prefix + 'total_seats').val(count);
     }
 
     // Initialization functions
     function initializeSeatLayout() {
-        const rows = parseInt(document.getElementById('rowsInput').value) || 6;
-        const columns = parseInt(document.getElementById('columnsInput').value) || 5;
-        const aisleAfter = parseInt(document.getElementById('aisleAfterInput').value) || 2;
-        const includeBackRow = document.getElementById('includeBackRow').checked;
-        const backRowSeats = parseInt(document.getElementById('backRowSeatsInput').value) || 5;
+        const rows = parseInt($('#rowsInput').val()) || 6;
+        const columns = parseInt($('#columnsInput').val()) || 5;
+        const aisleAfter = parseInt($('#aisleAfterInput').val()) || 2;
+        const includeBackRow = $('#includeBackRow').prop('checked');
+        const backRowSeats = parseInt($('#backRowSeatsInput').val()) || 5;
+        
         generateSeatLayout('seatLayoutContainer', rows, columns, aisleAfter, includeBackRow, backRowSeats);
         updateLayoutData(true);
     }
 
     function initializeEditSeatLayout(layoutData = null) {
-        const rows = parseInt(document.getElementById('edit_rowsInput').value) || 6;
-        const columns = parseInt(document.getElementById('edit_columnsInput').value) || 5;
-        const aisleAfter = parseInt(document.getElementById('edit_aisleAfterInput').value) || 2;
-        const includeBackRow = document.getElementById('edit_includeBackRow').checked;
-        const backRowSeats = parseInt(document.getElementById('edit_backRowSeatsInput').value) || 5;
+        const rows = parseInt($('#edit_rowsInput').val()) || 6;
+        const columns = parseInt($('#edit_columnsInput').val()) || 5;
+        const aisleAfter = parseInt($('#edit_aisleAfterInput').val()) || 2;
+        const includeBackRow = $('#edit_includeBackRow').prop('checked');
+        const backRowSeats = parseInt($('#edit_backRowSeatsInput').val()) || 5;
+        
         generateSeatLayout('edit_seatLayoutContainer', rows, columns, aisleAfter, includeBackRow, backRowSeats, layoutData);
         updateLayoutData(false);
     }
 
     // Event listeners for real-time updates
     function setupRealtimeListeners(prefix = '') {
-        const inputs = ['rowsInput', 'columnsInput', 'aisleAfterInput', 'backRowSeatsInput', 'includeBackRow'];
-        inputs.forEach(id => {
-            const element = document.getElementById(`${prefix}${id}`);
-            if (element) {
-                element.addEventListener('change', () => {
-                    if (prefix === 'edit_') {
-                        initializeEditSeatLayout();
-                    } else {
-                        initializeSeatLayout();
-                    }
-                });
+        const inputs = ['rowsInput', 'columnsInput', 'aisleAfterInput', 'backRowSeatsInput'];
+        
+        // Set up change listeners for numeric inputs
+        $.each(inputs, function(index, id) {
+            $('#' + prefix + id).on('change', function() {
+                if (prefix === 'edit_') {
+                    initializeEditSeatLayout();
+                } else {
+                    initializeSeatLayout();
+                }
+            });
+        });
+        
+        // Set up change listener for checkbox
+        $('#' + prefix + 'includeBackRow').on('change', function() {
+            // Show/hide back row seats input based on checkbox state
+            $('#' + prefix + 'backRowSeatsContainer').toggle($(this).prop('checked'));
+            
+            if (prefix === 'edit_') {
+                initializeEditSeatLayout();
+            } else {
+                initializeSeatLayout();
             }
         });
 
-        const generateBtn = document.getElementById(`${prefix}generateLayoutBtn`);
-        const selectAllBtn = document.getElementById(`${prefix}selectAllSeatsBtn`);
-        const deselectAllBtn = document.getElementById(`${prefix}deselectAllSeatsBtn`);
         const containerId = prefix === '' ? 'seatLayoutContainer' : 'edit_seatLayoutContainer';
 
-        if (generateBtn) {
-            generateBtn.addEventListener('click', () => {
-                prefix === 'edit_' ? initializeEditSeatLayout() : initializeSeatLayout();
-            });
-        }
+        // Select all seats button
+        $('#' + prefix + 'selectAllSeatsBtn').on('click', function() {
+            $('#' + containerId).find('.seat-item:not(.aisle):not(.booked)').addClass('selected');
+            updateLayoutData(prefix === '');
+        });
 
-        if (selectAllBtn) {
-            selectAllBtn.style.display = 'inline-block';
-            selectAllBtn.addEventListener('click', () => {
-                document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle):not(.booked)')
-                    .forEach(seat => seat.classList.add('selected'));
-                updateLayoutData(prefix === '');
-            });
-        }
-
-        if (deselectAllBtn) {
-            deselectAllBtn.style.display = 'inline-block';
-            deselectAllBtn.addEventListener('click', () => {
-                document.getElementById(containerId).querySelectorAll('.seat-item:not(.aisle):not(.booked)')
-                    .forEach(seat => seat.classList.remove('selected'));
-                updateLayoutData(prefix === '');
-            });
-        }
+        // Deselect all seats button
+        $('#' + prefix + 'deselectAllSeatsBtn').on('click', function() {
+            $('#' + containerId).find('.seat-item:not(.aisle):not(.booked)').removeClass('selected');
+            updateLayoutData(prefix === '');
+        });
     }
 
+    // Setup listeners for both add and edit modals
     setupRealtimeListeners('');
     setupRealtimeListeners('edit_');
 
     // Edit Bus Handling
-    document.querySelectorAll('.edit-bus-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const busId = this.dataset.busId;
-            document.getElementById('editBusForm').action = `/edit-bus/${busId}/edit/`;
-            document.getElementById('edit_bus_id').value = busId;
-            
-            fetch(`/get_bus/${busId}/`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('edit_bus_number').value = data.bus_number;
-                    document.getElementById('edit_bus_type').value = data.bus_type;
-                    document.getElementById('edit_driver').value = data.driver || '';
-                    document.getElementById('edit_staff').value = data.staff || '';
-         
-                    document.getElementById('edit_commission').value = data.rate || 0 ;
-
-                    document.getElementById('edit_isActive').checked = data.is_active;
-
-                    
-                    document.querySelectorAll('#edit_features_container .form-check-input')
-                        .forEach(checkbox => checkbox.checked = data.features.includes(checkbox.value));
-                    
-                    const layout = JSON.parse(data.layout || '{}');
-                    document.getElementById('edit_rowsInput').value = layout.rows || 6;
-                    document.getElementById('edit_columnsInput').value = layout.columns || 5;
-                    document.getElementById('edit_aisleAfterInput').value = layout.aisleAfterColumn || 2;
-                    document.getElementById('edit_includeBackRow').checked = layout.includeBackRow !== false;
-                    document.getElementById('edit_backRowSeatsInput').value = layout.backRowSeats || 5;
-                    document.getElementById('edit_backRowSeatsContainer').style.display = 
-                        layout.includeBackRow !== false ? 'block' : 'none';
-                    
-                        
-                    initializeEditSeatLayout(layout);
-                    editBusModal.show();
-                })
-                .catch(error => console.error('Error:', error));
+    $('.edit-bus-btn').on('click', function() {
+        const busId = $(this).data('bus-id');
+        $('#editBusForm').attr('action', `/edit-bus/${busId}/edit/`);
+        $('#edit_bus_id').val(busId);
+        
+        $.ajax({
+            url: `/get_bus/${busId}/`,
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                $('#edit_bus_number').val(data.bus_number);
+                $('#edit_bus_type').val(data.bus_type);
+                $('#edit_driver').val(data.driver || '');
+                $('#edit_staff').val(data.staff || '');
+                $('#edit_isActive').prop('checked', data.is_active);
+                
+                if ($('#edit_commission').length) {
+                    $('#edit_commission').val(data.rate || 0);
+                }
+                
+                if ($('#edit_transportation').length && data.transportation_company) {
+                    $('#edit_transportation').val(data.transportation_company);
+                }
+                
+                // Set features checkboxes
+                $('#edit_features_container .form-check-input').each(function() {
+                    $(this).prop('checked', data.features.includes($(this).val()));
+                });
+                
+                // Set layout configuration
+                const layout = JSON.parse(data.layout || '{}');
+                $('#edit_rowsInput').val(layout.rows || 6);
+                $('#edit_columnsInput').val(layout.columns || 5);
+                $('#edit_aisleAfterInput').val(layout.aisleAfterColumn || 2);
+                $('#edit_includeBackRow').prop('checked', layout.includeBackRow !== false);
+                $('#edit_backRowSeatsInput').val(layout.backRowSeats || 5);
+                $('#edit_backRowSeatsContainer').toggle(layout.includeBackRow !== false);
+                
+                // Show bus image if available
+                if (data.bus_image) {
+                    $('#current_image_preview').html(`
+                        <img src="${data.bus_image}" alt="Current Bus Image" class="img-thumbnail" style="max-height: 100px">
+                        <div class="small text-muted mt-1">Current image</div>
+                    `);
+                } else {
+                    $('#current_image_preview').empty();
+                }
+                
+                initializeEditSeatLayout(layout);
+                editBusModal.show();
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching bus data:', error);
+                alert('Failed to load bus data. Please try again.');
+            }
         });
     });
 
     // Form submission
-    document.getElementById('editBusForm').addEventListener('submit', function(e) {
+    $('#editBusForm').on('submit', function(e) {
         e.preventDefault();
         updateLayoutData(false);
+        
         const formData = new FormData(this);
         
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                editBusModal.hide();
-                window.location.href = data.redirect;
-            } else {
-                alert(data.error);
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            success: function(data) {
+                if (data.success) {
+                    editBusModal.hide();
+                    window.location.href = data.redirect;
+                } 
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating bus:', error);
+                alert('Failed to update bus. Please try again.');
             }
-        })
-        .catch(error => console.error('Error:', error));
+        });
     });
 
-    document.getElementById('addBusForm').addEventListener('submit', function(e) {
+    // Add Bus Form submission
+    $('#addBusForm').on('submit', function(e) {
         e.preventDefault();
         updateLayoutData(true);
+        
         const formData = new FormData(this);
         
-       
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(data) {
+                if (data.success) {
+                    addBusModal.hide();
+                    window.location.href = data.redirect || window.location.href;
+                } 
+            },
+            error: function(xhr, status, error) {
+                console.error('Error adding bus:', error);
+                alert('Failed to add bus. Please try again.');
+            }
+        });
     });
 
     // Delete handling
-    document.querySelectorAll('.delete-bus-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const busId = this.dataset.busId;
-            const busNumber = this.closest('tr').querySelector('h6').textContent;
-            document.getElementById('deleteBusNumber').textContent = busNumber;
-            document.getElementById('deleteBusForm').action = `/delete_bus/${busId}/`;
-            deleteConfirmModal.show();
+$('.delete-bus-btn').on('click', function(e) {
+    e.preventDefault();
+    
+    const busId = $(this).data('bus-id');
+    const busNumber = $(this).data('bus-number');
+    
+    $('#deleteBusNumber').text(busNumber);
+    $('#deleteBusForm').attr('action', `/delete_bus/${busId}/`);
+    
+    // Show the confirmation modal
+    deleteConfirmModal.show();
+});
+
+    // Delete Bus Form submission
+    $('#deleteBusForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: $(this).serialize(),
+            success: function(data) {
+                if (data.success) {
+                    deleteConfirmModal.hide();
+                    window.location.href = data.redirect || window.location.href;
+                } 
+            },
+            error: function(xhr, status, error) {
+                console.error('Error deleting bus:', error);
+                alert('Failed to delete bus. Please try again.');
+            }
         });
     });
 
-    // Search
-    document.getElementById('searchBuses').addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        document.querySelectorAll('tbody tr').forEach(row => {
-            const busNumber = row.querySelector('h6')?.textContent.toLowerCase() || '';
-            row.style.display = busNumber.includes(searchTerm) ? '' : 'none';
+    // Search functionality
+    $('#searchBuses').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        
+        $('tbody tr').each(function() {
+            const busNumber = $(this).find('h6').text().toLowerCase() || '';
+            const busCounter = $(this).find('td:nth-child(2)').text().toLowerCase() || '';
+            const busType = $(this).find('td:nth-child(3)').text().toLowerCase() || '';
+            
+            const matches = 
+                busNumber.includes(searchTerm) || 
+                busCounter.includes(searchTerm) || 
+                busType.includes(searchTerm);
+                
+            $(this).toggle(matches);
         });
     });
 
-    // Initial layout
+    // Toggle back row seats input based on checkbox
+    $('#includeBackRow').on('change', function() {
+        $('#backRowSeatsContainer').toggle($(this).prop('checked'));
+    });
+    
+    $('#edit_includeBackRow').on('change', function() {
+        $('#edit_backRowSeatsContainer').toggle($(this).prop('checked'));
+    });
+
+    // Initialize layout when page loads
     initializeSeatLayout();
 });
 </script>
-{% endblock %}
 {% endblock %}

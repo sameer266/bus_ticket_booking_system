@@ -3,12 +3,9 @@
 {% block content %}
 <div class="container-fluid">
     <div class="row g-0">
-        <!-- Sidebar -->
-        <div class="col-md-3 col-lg-2 d-md-block sidebar collapse" id="sidebarMenu">
-            {% include 'components/sidebar.html' %}
-        </div>
+    
         <!-- Main Content -->
-        <main class="mt-5 col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content">
+        <main class=" col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content">
 
             <!-- Messages --> 
             {% if messages %}
@@ -54,12 +51,7 @@
                         </div>
                         <div class="col-md-6 col-lg-3">
                             <label class="form-label">Source</label>
-                            <select class="form-select" id="sourceFilter">
-                                <option value="">All Sources</option>
-                                {% for i in source %}
-                                <option value="{{i}}">{{i}}</option>
-                                {% endfor %}
-                            </select>
+                            <input type="text" class="form-control" id="sourceFilter" placeholder="Enter source...">
                         </div>
                         <div class="col-md-6 col-lg-3">
                             <label class="form-label">Type</label>
@@ -348,13 +340,8 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Source*</label>
-                            <select class="form-select" name="source" required>
-                                <option value="">-- Select Source --</option>
-                                {% for src in source %}
-                                <option value="{{ src }}">{{ src }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="invalid-feedback">Please select a source.</div>
+                        
+                            <input type="text" class="form-control" id="sourceFilter" placeholder="Enter source...">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Total Seats*</label>
@@ -415,286 +402,242 @@
 </div>
 
 {% block extra_css %}
-<style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .sidebar {
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        background-color: #fff;
-        transition: all 0.3s;
-        border-right: 1px solid #dee2e6;
-    }
-    .main-content {
-        background-color: #f8f9fa;
-    }
-    
-    /* Classic UI Table Styles */
-    .classic-table {
-        border-collapse: collapse;
-    }
-    .classic-table thead th {
-        background-color: #f2f2f2;
-        border-bottom: 2px solid #dee2e6;
-        font-weight: 600;
-        color: #333;
-    }
-    .classic-table tbody tr {
-        border-bottom: 1px solid #e9ecef;
-    }
-    .table-hover tbody tr:hover {
-        background-color: rgba(13, 110, 253, 0.05);
-        transition: all 0.2s;
-    }
-    
-    /* Updated Color Badge */
-    .color-badge {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-weight: 500;
-        color: white;
-        text-shadow: 0 0 2px rgba(0,0,0,0.7);
-    }
-    
-    /* Color Preview in Form */
-    .color-preview {
-        width: 80px;
-        height: 24px;
-        border-radius: 4px;
-        border: 1px solid #dee2e6;
-    }
-    
-    .badge {
-        font-weight: 500;
-        padding: 0.35em 0.65em;
-    }
-    .avatar {
-        font-size: 1.2rem;
-    }
-    
-    /* Card Updates */
-    .card {
-        border-radius: 6px;
-        border: 1px solid #dee2e6;
-    }
-    .card-header {
-        border-bottom: 1px solid #dee2e6;
-    }
-    
-    /* Button Styles */
-    .btn {
-        border-radius: 4px;
-    }
-    .btn-primary {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-    }
-    .btn-primary:hover {
-        background-color: #0b5ed7;
-        border-color: #0a58ca;
-    }
-    
-    /* Form Styles */
-    .form-control, .form-select {
-        border-radius: 4px;
-        border: 1px solid #ced4da;
-    }
-    .form-control:focus, .form-select:focus {
-        border-color: #86b7fe;
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
-    
-    /* Dropdown Menu */
-    .dropdown-menu {
-        border-radius: 4px;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        border: 1px solid #dee2e6;
-    }
-    
-    @media (max-width: 767.98px) {
-        .table-container {
-            margin-left: 0;
-        }
-        .sidebar {
-            position: static;
-            height: auto;
-        }
-        .table td, .table th {
-            padding: 0.5rem;
-        }
-    }
-    @media (max-width: 1199.98px) {
-        .table td, .table th {
-            white-space: nowrap;
-        }
-    }
-    /* Color for status badges */
-    .badge.bg-active {
-        background-color: #19875420;
-        color: #198754;
-    }
-    .badge.bg-inactive {
-        background-color: #dc354520;
-        color: #dc3545;
-    }
-</style>
+
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-$(document).ready(function() {
-    // Initialize modals
-    const addReservationModal = new bootstrap.Modal('#addReservationModal');
-    const deleteConfirmModal = new bootstrap.Modal('#deleteConfirmModal');
-    
-    // Show Add Reservation Modal
-    $('#addReservationBtn, #emptyAddReservationBtn, #mobileAddReservationBtn').click(function(e) {
-        e.preventDefault();
-        addReservationModal.show();
-    });
-    
-    // Delete confirmation handling
-    $('.delete-reservation-btn').click(function(e) {
-        e.preventDefault();
-        const reservationName = $(this).closest('tr').find('h6').text();
-        $('#deleteReservationName').text(reservationName);
-        $('#deleteReservationForm').attr('action', $(this).attr('href'));
-        deleteConfirmModal.show();
-    });
-    
-    // Form validation
-    (function() {
-        'use strict';
-        var forms = document.querySelectorAll('.needs-validation');
-        Array.prototype.slice.call(forms).forEach(function(form) {
-            form.addEventListener('submit', function(event) {
-                if (!form.checkValidity()) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            }, false);
-        });
-    })();
-    
-    // Advanced filtering
-    $('#applyFilters').click(function() {
-        const searchTerm = $('#searchInput').val().toLowerCase();
-        const sourceFilter = $('#sourceFilter').val();
-        const typeFilter = $('#typeFilter').val();
-        const statusFilter = $('#statusFilter').val();
+    $(document).ready(function() {
+        // Modal instances
+        const addReservationModal = new bootstrap.Modal('#addReservationModal');
+        const deleteConfirmModal = new bootstrap.Modal('#deleteConfirmModal');
         
-        $('#reservationsTable tbody tr').each(function() {
-            const $row = $(this);
-            const name = $row.find('h6').text().toLowerCase();
-            const type = $row.data('type');
-            const source = $row.data('source');
-            const status = $row.data('status');
-            
-            const matchesSearch = searchTerm === '' || name.includes(searchTerm) || 
-                                $row.find('td:nth-child(3)').text().toLowerCase().includes(searchTerm);
-            const matchesSource = sourceFilter === '' || source === sourceFilter;
-            const matchesType = typeFilter === '' || type === typeFilter;
-            const matchesStatus = statusFilter === '' || status === statusFilter;
-            
-            if (matchesSearch && matchesSource && matchesType && matchesStatus) {
-                $row.show();
-            } else {
-                $row.hide();
+        // ============= MODAL HANDLING =============
+        
+        // Show Add Reservation Modal
+        $('#addReservationBtn, #emptyAddReservationBtn, #mobileAddReservationBtn').click(function(e) {
+            e.preventDefault();
+            addReservationModal.show();
+        });
+        
+        // Modal close handling with proper cleanup
+        $('.modal .btn-close, .modal .btn-outline-secondary').click(function() {
+            $(this).closest('.modal').modal('hide');
+            setTimeout(cleanupModals, 300);
+        });
+        
+        // Global modal hidden event for cleanup
+        $('.modal').on('hidden.bs.modal', function() {
+            cleanupModals();
+        });
+        
+        // Cleanup function to ensure modals fully close
+        function cleanupModals() {
+            $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+            $('body').css('padding-right', '');
+            $('.modal').removeClass('show');
+        }
+        
+        // ============= DELETE HANDLING =============
+        
+        // Delete confirmation handling
+        $('.delete-reservation-btn').click(function(e) {
+            e.preventDefault();
+            const reservationName = $(this).closest('tr').find('h6').text().trim();
+            $('#deleteReservationName').text(reservationName);
+            $('#deleteReservationForm').attr('action', $(this).attr('href'));
+            deleteConfirmModal.show();
+        });
+        
+        // ============= FORM VALIDATION =============
+        
+        // Form validation
+        (function() {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+        
+        // Show loading state when submitting forms
+        $('#addReservationForm, #deleteReservationForm').submit(function() {
+            if($(this).hasClass('was-validated') && this.checkValidity()) {
+                $(this).find('button[type="submit"]')
+                    .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...')
+                    .prop('disabled', true);
             }
         });
-    });
-    
-    // Reset filters
-    $('#resetFilters').click(function() {
-        $('#searchInput, #sourceFilter, #typeFilter, #statusFilter').val('');
-        $('#reservationsTable tbody tr').show();
-    });
-    
-    // Color picker integration
-    $('#colorPicker').change(function() {
-        const color = $(this).val();
-        $('#colorText').val(color);
-        $('#colorPreview').css('background-color', color);
-    });
-    
-    // Initialize color preview
-    $('#colorPicker').on('input', function() {
-        const color = $(this).val();
-        $('#colorPreview').css('background-color', color);
-    });
-    
-    $('#colorText').on('input', function() {
-        const color = $(this).val();
-        if (color.match(/^#[0-9A-F]{6}$/i) || color.match(/^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/i)) {
-            $('#colorPreview').css('background-color', color);
-            $('#colorPicker').val(color);
-        }
-    });
-
-    // Quick search on input change with debounce
-    let searchTimeout;
-    $('#searchInput').on('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            $('#applyFilters').click();
-        }, 300);
-    });
-
-    // Source and type filter change
-    $('#sourceFilter, #typeFilter, #statusFilter').change(function() {
-        $('#applyFilters').click();
-    });
-
-    // Make table rows clickable (except for action areas)
-    $('#reservationsTable tbody tr').click(function(e) {
-        if (!$(e.target).is('button, a, input, .dropdown, .dropdown *')) {
-            const reservationId = $(this).data('reservation-id');
-            if (reservationId) {
-                window.location.href = `/vehicle-reservation-detail/${reservationId}/`;
+        
+        // ============= FILTERING FUNCTIONALITY =============
+        
+        // Apply filters function
+        function applyFilters() {
+            const searchTerm = $('#searchInput').val().toLowerCase();
+            const sourceFilter = $('#sourceFilter').val().toLowerCase();
+            const typeFilter = $('#typeFilter').val();
+            const statusFilter = $('#statusFilter').val();
+            
+            $('#reservationsTable tbody tr').each(function() {
+                const $row = $(this);
+                // Skip placeholder row if it exists
+                if (!$row.data('reservation-id')) return;
+                
+                const name = $row.find('h6').text().toLowerCase();
+                const number = $row.find('td:nth-child(3)').text().toLowerCase();
+                const model = $row.find('td:nth-child(4)').text().toLowerCase();
+                const type = $row.data('type').toLowerCase();
+                const source = $row.data('source').toLowerCase();
+                const status = $row.data('status').toLowerCase();
+                
+                const matchesSearch = searchTerm === '' || 
+                    name.includes(searchTerm) || 
+                    number.includes(searchTerm) ||
+                    model.includes(searchTerm);
+                    
+                const matchesSource = sourceFilter === '' || source.includes(sourceFilter);
+                const matchesType = typeFilter === '' || type.toLowerCase() === typeFilter.toLowerCase();
+                const matchesStatus = statusFilter === '' || status === statusFilter;
+                
+                if (matchesSearch && matchesSource && matchesType && matchesStatus) {
+                    $row.show();
+                } else {
+                    $row.hide();
+                }
+            });
+            
+            // Show/hide empty state message
+            const visibleRows = $('#reservationsTable tbody tr:visible').length;
+            if (visibleRows === 0) {
+                if ($('#no-results-row').length === 0) {
+                    $('#reservationsTable tbody').append(`
+                        <tr id="no-results-row">
+                            <td colspan="11" class="text-center py-4">
+                                <i class="bi bi-search text-muted fs-1"></i>
+                                <p class="mt-2 text-muted">No matching vehicles found</p>
+                                <button class="btn btn-sm btn-outline-secondary" id="clearFiltersBtn">
+                                    Clear Filters
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                    $('#clearFiltersBtn').click(function() {
+                        resetFilters();
+                    });
+                }
+            } else {
+                $('#no-results-row').remove();
             }
         }
-    }).css('cursor', 'pointer');
-
-    // Responsive table adjustments
-    function adjustTableForMobile() {
-        if ($(window).width() < 768) {
-            $('.table-responsive').addClass('table-responsive-sm');
-        } else {
-            $('.table-responsive').removeClass('table-responsive-sm');
+        
+        // Reset filters function
+        function resetFilters() {
+            $('#searchInput, #sourceFilter').val('');
+            $('#typeFilter, #statusFilter').val('');
+            $('#reservationsTable tbody tr').show();
+            $('#no-results-row').remove();
         }
-    }
-
-    // Initialize color preview on modal show
-    $('#addReservationModal').on('shown.bs.modal', function() {
-        const initialColor = $('#colorText').val() || '#6c757d';
-        $('#colorPreview').css('background-color', initialColor);
+        
+        // Filter button click events
+        $('#applyFilters').click(function() {
+            applyFilters();
+        });
+        
+        $('#resetFilters').click(function() {
+            resetFilters();
+        });
+        
+        // Quick search with debounce
+        let searchTimeout;
+        $('#searchInput, #sourceFilter').on('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 300);
+        });
+        
+        // Direct filter on select change
+        $('#typeFilter, #statusFilter').change(function() {
+            applyFilters();
+        });
+        
+        // ============= COLOR PICKER =============
+        
+        // Color picker integration
+        function updateColorPreview(color) {
+            $('#colorPreview').css('background-color', color);
+        }
+        
+        $('#colorPicker').on('input change', function() {
+            const color = $(this).val();
+            $('#colorText').val(color);
+            updateColorPreview(color);
+        });
+        
+        $('#colorText').on('input', function() {
+            const color = $(this).val();
+            if (color.match(/^#[0-9A-F]{6}$/i) || 
+                color.match(/^[a-zA-Z]+$/) || 
+                color.match(/^rgb\(\d{1,3},\s*\d{1,3},\s*\d{1,3}\)$/i)) {
+                updateColorPreview(color);
+                if (color.startsWith('#')) {
+                    $('#colorPicker').val(color);
+                }
+            }
+        });
+        
+        // Initialize color preview on modal show
+        $('#addReservationModal').on('shown.bs.modal', function() {
+            const initialColor = $('#colorPicker').val() || '#6c757d';
+            updateColorPreview(initialColor);
+        });
+        
+        // ============= TABLE INTERACTIONS =============
+        
+        // Make table rows clickable (except for action buttons)
+        $('#reservationsTable tbody').on('click', 'tr', function(e) {
+            if (!$(e.target).closest('button, a, input, .dropdown').length) {
+                const reservationId = $(this).data('reservation-id');
+                if (reservationId) {
+                    window.location.href = `/vehicle-reservation-detail/${reservationId}/`;
+                }
+            }
+        }).find('tr[data-reservation-id]').css('cursor', 'pointer');
+        
+        // ============= RESPONSIVE ADJUSTMENTS =============
+        
+        // Responsive table adjustments
+        function adjustTableForMobile() {
+            if ($(window).width() < 768) {
+                $('.table-responsive').addClass('table-responsive-sm');
+            } else {
+                $('.table-responsive').removeClass('table-responsive-sm');
+            }
+        }
+        
+        $(window).resize(adjustTableForMobile);
+        adjustTableForMobile();
+        
+        // ============= INITIALIZE COMPONENTS =============
+        
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+        
+        // Initialize status badges
+        $('[data-status="active"]').find('.status-badge').addClass('bg-active');
+        $('[data-status="inactive"]').find('.status-badge').addClass('bg-inactive');
+    
+        // ============= SOURCE FIELD FIX =============
+    
+        // Fix duplicate ID on source fields
+        $('#addReservationModal [name="source"]').attr('id', 'sourceInput');
     });
-
-    // Initialize status badges
-    $('[data-status="active"]').find('.status-badge').addClass('bg-active');
-    $('[data-status="inactive"]').find('.status-badge').addClass('bg-inactive');
-
-    $(window).resize(adjustTableForMobile);
-    adjustTableForMobile();
-
-    // Export functionality
-    $('.dropdown-item').click(function(e) {
-        e.preventDefault();
-        const format = $(this).find('i').attr('class').split('-')[1];
-        alert(`Exporting to ${format.toUpperCase()} format would happen here`);
-    });
-
-    // Initialize tooltips
-    $('[data-bs-toggle="tooltip"]').tooltip();
-
-    // Show loading state when submitting forms
-    $('#addReservationForm, #deleteReservationForm').submit(function() {
-        $(this).find('button[type="submit"]').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...').prop('disabled', true);
-    });
-});
 </script>
 {% endblock %}
 {% endblock %}

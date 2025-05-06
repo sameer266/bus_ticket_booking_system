@@ -1,6 +1,6 @@
 {% extends 'components/base.html' %}
 {% block content %}
-<div class="container py-5" style="margin-top:80px !important">
+<div class="bus-list container- py-5 " >
     <!-- Header Section with improved design -->
     <div class="row mb-4">
         <div class="col-md-8">
@@ -228,168 +228,14 @@
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_css %}
 <style>
-    :root {
-        --primary-color: #4361ee;
-        --secondary-color: #3f37c9;
-        --success-color: #4cc9a4;
-        --info-color: #4895ef;
-        --warning-color: #f9c74f;
-        --danger-color: #f94144;
-        --light-color: #f8f9fa;
-        --dark-color: #212529;
-    }
-
-    body {
-        background-color: #f5f7ff;
-    }
-
-    .table th, .table td {
-        vertical-align: middle;
-        padding: 0.85rem 1rem;
-    }
-
-    .table tbody tr {
-        transition: all 0.2s ease;
-    }
-
-    .table tbody tr:hover {
-        background-color: rgba(67, 97, 238, 0.05);
-    }
-
-    .card {
-        border: none;
-        border-radius: 16px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
-    }
-
-    .card-header {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .badge {
-        font-weight: 500;
-        letter-spacing: 0.3px;
-    }
-
-    .rounded-pill {
-        border-radius: 50rem !important;
-    }
-
-    .rounded-4 {
-        border-radius: 1rem !important;
-    }
-
-    .btn {
-        font-weight: 500;
-        padding: 0.5rem 1.25rem;
-        transition: all 0.3s ease;
-    }
-
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-primary {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-
-    .btn-primary:hover, .btn-primary:focus {
-        background-color: var(--secondary-color);
-        border-color: var(--secondary-color);
-    }
-
-    .btn-outline-primary {
-        color: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-
-    .btn-outline-primary:hover {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-
-    .text-primary {
-        color: var(--primary-color) !important;
-    }
-
-    .bg-primary {
-        background-color: var(--primary-color) !important;
-    }
-
-    .icon-bg {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .bus-icon {
-        width: 42px;
-        height: 42px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .empty-state-icon {
-        transition: transform 0.3s ease;
-    }
-
-    .empty-state-icon:hover {
-        transform: scale(1.1);
-    }
-
-    .modal-content {
-        border: none;
-        box-shadow: 0 10px 50px rgba(0, 0, 0, 0.1);
-    }
-
-    .modal-header, .modal-footer {
-        border: none;
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .btn {
-            padding: 0.4rem 1rem;
-        }
-        
-        .badge {
-            font-size: 0.7rem;
-        }
-        
-        .card-body {
-            padding: 1rem;
+    @media (min-width: 768px) {
+        .bus-list {
+          margin-left:250px !important;
+          margin-right: 100px !important;
+          
         }
     }
-
-    /* Animation for bus rows */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .bus-row {
-        animation: fadeIn 0.3s ease forwards;
-    }
-    
-    .bus-row:nth-child(1) { animation-delay: 0.05s; }
-    .bus-row:nth-child(2) { animation-delay: 0.1s; }
-    .bus-row:nth-child(3) { animation-delay: 0.15s; }
-    .bus-row:nth-child(4) { animation-delay: 0.2s; }
-    .bus-row:nth-child(5) { animation-delay: 0.25s; }
 </style>
 {% endblock %}
 

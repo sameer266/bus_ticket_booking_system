@@ -4,7 +4,7 @@
 {% block title %}Bus Earning Details | Go Sewa{% endblock %}
 
 {% block content %}
-<div class="dashboard-container" style="margin:80px !important">
+<div class="dashboard-container" >
     <main class="dashboard-content px-3 px-md-4 py-4">
         <div class="container-fluid">
             <!-- Header -->
@@ -197,7 +197,22 @@
     </div>
 </div>
 
-{% block javascript %}
+{% endblock %}
+
+{% block extra_css %}
+
+<style>
+@media (min-width: 768px) {
+    .dashboard-container {
+        margin-left: 250px;
+    }
+}
+
+</style>
+
+{% endblock %}
+
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Date filter form validation
@@ -282,6 +297,5 @@
         });
     });
 </script>
-{% endblock %}
 
-{% endblock %}
+

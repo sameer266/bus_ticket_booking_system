@@ -1,359 +1,10 @@
 {% extends 'components/base.html' %}
 {% block title %}Transportation Companies | Go Sewa{% endblock %}
 
-{% block content %}
-<div class="d-flex" id="wrapper">
-    <!-- Sidebar -->
-    {% include 'components/sidebar.html' %}
-    
-    <!-- Page Content -->
-    <div id="page-content-wrapper" class="bg-light">
-        <div class="container-fluid py-4 " style="padding-right:20px; padding-left:20px">
-            <div class="row justify-content-center">
-                <div class="col-12" style="margin-right:60px !important; margin-left:-80px !important; width:90%">
-                    <!-- Page Header -->
-                    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between mb-4 px-3 px-sm-0">
-                        <h1 class="h3 mb-2 mb-sm-0 text-primary fw-bold">
-                            <i class="bi bi-building me-2"></i>Transportation Companies
-                        </h1>
-                        <button type="button" class="btn btn-primary shadow-sm mt-2 mt-sm-0" data-bs-toggle="modal" data-bs-target="#addCompanyModal">
-                            <i class="bi bi-plus-circle me-2"></i>Add Company
-                        </button>
-                    </div>
-
-                    <!-- Display Messages -->
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm mx-3 mx-sm-0">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <!-- Search bar -->
-                    <div class="input-group mb-3 mx-3 mx-sm-0">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0" id="searchCompany" placeholder="Search companies...">
-                    </div>
-
-                    <!-- Companies Card View (Mobile Only) -->
-                    <div class="d-md-none mb-4 px-3">
-                        {% for company in companies %}
-                        <div class="card shadow-sm mb-3 company-card">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h5 class="card-title mb-0 fw-bold text-primary">{{ company.company_name }}</h5>
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="bi bi-three-dots-vertical"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end shadow">
-                                            <li><a class="dropdown-item" href="{% url 'edit_transportation_company' company.id %}">
-                                                <i class="bi bi-pencil-square text-primary me-2"></i>Edit
-                                            </a></li>
-
-
-                                            <li><a class="dropdown-item delete-company" href="{% url 'delete_transportation_company' company.id %}" data-company-name="{{ company.company_name }}">
-                                                <i class="bi bi-trash text-danger me-2"></i>Delete
-                                            </a></li>
-
-                                            <li>
-                                                <a
-                                                href="{% url 'subadmin_bus_list' company.id %}"
-                                                class="btn  dropdown-item"
-                                                title="View Buses"
-                                            >
-                                                <i class="bi bi-bus-front"></i>
-                                            </a>
-                                            </li>
-
-
-                                        </ul>
-                                    </div>
-                                </div>
-                                <p class="card-text mb-1"><i class="bi bi-geo-alt-fill text-secondary me-1"></i> {{ company.location_name }}, {{ company.country }}</p>
-                                <div class="mb-2 mt-3 d-flex align-items-center">
-                                    <div class="avatar-circle bg-primary text-white me-2">
-                                        {{ company.user.full_name|slice:":1"|default:"?" }}
-                                    </div>
-                                    <div>
-                                        <div class="fw-medium">{{ company.user.full_name|default:"Not assigned" }}</div>
-                                        <div class="small text-muted">{{ company.user.email|default:"" }}</div>
-                                    </div>
-                                </div>
-                                {% if company.bank_name and company.account_number %}
-                                <div class="mt-2 small bank-info">
-                                    <i class="bi bi-bank text-secondary me-1"></i> {{ company.bank_name }}
-                                    <div class="text-muted">Acc: {{ company.account_number }}</div>
-                                </div>
-                                {% endif %}
-                                <div class="mt-3 d-flex gap-2">
-                                    <a href="{% url 'edit_transportation_company' company.id %}" class="btn btn-sm btn-outline-primary flex-fill">
-                                        <i class="bi bi-pencil-square me-1"></i>Edit
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="card shadow-sm">
-                            <div class="card-body text-center py-5">
-                                <div class="empty-state">
-                                    <i class="bi bi-building display-4 text-secondary"></i>
-                                    <p class="mt-3 text-secondary">No transportation companies found</p>
-                                    <button type="button" class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addCompanyModal">
-                                        <i class="bi bi-plus-circle me-2"></i>Add Your First Company
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <!-- Companies Table (Desktop/Tablet View) -->
-                    <div class="card shadow mb-4 border-0 rounded-3 d-none d-md-block">
-                        <div class="card-header py-3 bg-primary bg-gradient text-white d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold">
-                                <i class="bi bi-list-ul me-2"></i>All Transportation Companies
-                            </h6>
-                            <span class="badge bg-light text-primary">{{ companies|length }} Companies</span>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0" id="companiesTable">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="text-primary ps-3">ID</th>
-                                            <th class="text-primary">Company Name</th>
-                                            <th class="text-primary">Location</th>
-                                            <th class="text-primary">Sub-Admin</th>
-                                            <th class="text-primary">Bank Details</th>
-                                            <th class="text-primary">QR Image </th>
-                                            <th class="text-primary text-end pe-3">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for company in companies %}
-                                        <tr class="company-row">
-                                            <td class="ps-3">{{ company.id }}</td>
-                                            <td><span class="fw-medium">{{ company.company_name }}</span></td>
-                                            <td><i class="bi bi-geo-alt-fill text-secondary me-1 small"></i> {{ company.location_name }}, {{ company.country }}</td>
-                                            <td>
-                                                {% if company.user %}
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-circle bg-primary text-white me-2">
-                                                            {{ company.user.full_name|slice:":1" }}
-                                                        </div>
-                                                        <div>
-                                                            <div class="fw-medium">{{ company.user.full_name }}</div>
-                                                            <div class="small text-muted">{{ company.user.email }}</div>
-                                                        </div>
-                                                    </div>
-                                                {% else %}
-                                                    <span class="badge bg-light text-secondary">Not assigned</span>
-                                                {% endif %}
-                                            </td>
-
-
-                                            <td>
-                                                {% if company.bank_name and company.account_number %}
-                                                    <i class="bi bi-bank text-secondary me-1"></i> {{ company.bank_name }}
-                                                    <div class="small text-muted">Acc: {{ company.account_number }}</div>
-                                                {% else %}
-                                                    <span class="badge bg-light text-secondary">Not provided</span>
-                                                {% endif %}
-                                            </td>
-
-                                            <td>
-                                                {% if company.qr_image %}
-                                                    <img src="{{ company.qr_image.url }}" alt="QR Code" class="img-thumbnail" style="max-width: 80px; max-height: 80px;">
-                                                {% else %}
-                                                    <span class="badge bg-light text-secondary">Not provided</span>
-                                                {% endif %}
-                                            </td>
-
-                                            <td class="text-end pe-3">
-                                                <div class="btn-group">
-                                                    <a href="{% url 'edit_transportation_company' company.id %}" class="btn btn-sm btn-outline-primary" title="Edit">
-                                                        <i class="bi bi-pencil-square"></i>
-                                                    </a>
-                                                    <a href="{% url 'delete_transportation_company' company.id %}" class="btn btn-sm btn-outline-danger delete-company" title="Delete" data-company-name="{{ company.company_name }}">
-                                                        <i class="bi bi-trash"></i>
-                                                    </a>
-
-                                                        <a
-                                                        href="{% url 'subadmin_bus_list' company.id %}"
-                                                        class="btn btn-sm btn-outline-secondary"
-                                                        title="View Buses"
-                                                    >
-                                                        <i class="bi bi-bus-front"></i>
-                                                    </a>
-                                                   
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="6" class="text-center py-5">
-                                                <div class="empty-state">
-                                                    <i class="bi bi-building display-4 text-secondary"></i>
-                                                    <p class="mt-3 text-secondary">No transportation companies found</p>
-                                                    <button type="button" class="btn btn-sm btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addCompanyModal">
-                                                        <i class="bi bi-plus-circle me-2"></i>Add Your First Company
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Company Modal -->
-<div class="modal fade" id="addCompanyModal" tabindex="-1" aria-labelledby="addCompanyModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down modal-lg">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header bg-primary bg-gradient text-white">
-                <h5 class="modal-title" id="addCompanyModalLabel">
-                    <i class="bi bi-plus-circle me-2"></i>Add New Transportation Company
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form method="POST" id="companyForm" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    
-                    <div class="step-indicators mb-4">
-                        <div class="step active" data-step="1">
-                            <div class="step-number">1</div>
-                            <div class="step-title d-none d-sm-block">Company Details</div>
-                        </div>
-                        <div class="step-line"></div>
-                        <div class="step" data-step="2">
-                            <div class="step-number">2</div>
-                            <div class="step-title d-none d-sm-block">Sub-Admin</div>
-                        </div>
-                        <div class="step-line"></div>
-                        <div class="step" data-step="3">
-                            <div class="step-number">3</div>
-                            <div class="step-title d-none d-sm-block">Bank Details</div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-step" id="step1">
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="companyName" name="company_name" placeholder="Company Name" required>
-                            <label for="companyName">Company Name <span class="text-danger">*</span></label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="vatNumber" name="vat_number" placeholder="VAT Number">
-                            <label for="vatNumber">VAT Number</label>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <input type="text" class="form-control" id="country" name="country" placeholder="Country" required>
-                                    <label for="country">Country <span class="text-danger">*</span></label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <input type="text" class="form-control" id="locationName" name="location_name" placeholder="Location" required>
-                                    <label for="locationName">Location <span class="text-danger">*</span></label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-end gap-2 mt-4">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary next-step" data-step="1">
-                                Next <i class="bi bi-arrow-right ms-2"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-step d-none" id="step2">
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="fullName" name="full_name" placeholder="Full Name" required>
-                            <label for="fullName">Full Name <span class="text-danger">*</span></label>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <input type="email" class="form-control" id="email" name="email" placeholder="Email">
-                                    <label for="email">Email (Optional)</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-floating mb-3">
-                                    <input type="text" class="form-control" id="phone" name="phone" placeholder="Phone" required>
-                                    <label for="phone">Phone <span class="text-danger">*</span></label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <select class="form-select" id="gender" name="gender" required>
-                                <option value="" selected disabled>Select gender</option>
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                                <option value="other">Other</option>
-                            </select>
-                            <label for="gender">Gender <span class="text-danger">*</span></label>
-                        </div>
-                        <div class="d-flex justify-content-between gap-2 mt-4">
-                            <button type="button" class="btn btn-light prev-step" data-step="2">
-                                <i class="bi bi-arrow-left me-2"></i>Previous
-                            </button>
-                            <button type="button" class="btn btn-primary next-step" data-step="2">
-                                Next <i class="bi bi-arrow-right ms-2"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-step d-none" id="step3">
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="bankName" name="bank_name" placeholder="Bank Name">
-                            <label for="bankName">Bank Name</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="accountName" name="account_name" placeholder="Account Name">
-                            <label for="accountName">Account Name</label>
-                        </div>
-                        <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="accountNumber" name="account_number" placeholder="Account Number">
-                            <label for="accountNumber">Account Number</label>
-                        </div>
-                        <div class="mb-3">
-                            <label for="qrImage" class="form-label">QR Code Image (Optional)</label>
-                            <input type="file" class="form-control" id="qrImage" name="qr_image" accept="image/*">
-                        </div>
-                        <div class="form-text text-muted mb-3">
-                            <i class="bi bi-info-circle me-1"></i> Bank details are optional but recommended for smoother transactions.
-                        </div>
-                        <div class="d-flex justify-content-between gap-2 mt-4">
-                            <button type="button" class="btn btn-light prev-step" data-step="3">
-                                <i class="bi bi-arrow-left me-2"></i>Previous
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-2"></i>Save Company
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% block extra_css %}
 <style>
-/* Custom CSS for the improved bluish theme */
+
+    /* Custom CSS for the improved bluish theme */
 :root {
     --primary-color: #3a86ff;
     --primary-light: #e9f0ff;
@@ -363,220 +14,16 @@
     --gray-200: #e9ecef;
     --gray-300: #dee2e6;
     --gray-500: #adb5bd;
-    --danger: #dc3545;
-    --success: #28a745;
-    --warning: #ffc107;
+
 }
 
-.text-primary {
-    color: var(--primary-color) !important;
-}
-
-.bg-primary {
-    background-color: var(--primary-color) !important;
-}
-
-.bg-primary.bg-gradient {
-    background: var(--primary-gradient) !important;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    transition: all 0.2s ease;
-}
-
-.btn-primary:hover, .btn-primary:focus {
-    background-color: var(--primary-dark);
-    border-color: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.btn-outline-primary {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-    transition: all 0.2s ease;
-}
-
-.btn-outline-primary:hover {
-    background-color: var(--primary-color);
-    border-color: var(--primary-color);
-    transform: translateY(-1px);
-}
-
-/* Avatar circle for user display */
-.avatar-circle {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    text-transform: uppercase;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Empty state styling */
-.empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem;
-}
-
-.empty-state i {
-    opacity: 0.6;
-}
-
-/* Table hover effect */
-.table-hover tbody tr:hover {
-    background-color: var(--primary-light);
-    transition: background-color 0.15s ease-in-out;
-}
-
-/* Form focus states */
-.form-control:focus, .form-select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(58, 134, 255, 0.25);
-}
-
-/* Card hover effect */
-.card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    border: none;
-}
-
-.counter-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Improved table responsiveness */
-.table-responsive {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary-color) var(--gray-200);
-}
-
-.table-responsive::-webkit-scrollbar {
-    height: 8px;
-}
-
-.table-responsive::-webkit-scrollbar-track {
-    background: var(--gray-200);
-    border-radius: 4px;
-}
-
-.table-responsive::-webkit-scrollbar-thumb {
-    background-color: var(--primary-color);
-    border-radius: 4px;
-}
-
-.table th {
-    font-weight: 600;
-    border-top: none;
-}
-
-.table td, .table th {
-    padding: 0.75rem 1rem;
-    white-space: nowrap;
-}
-
-/* Modal improvements */
-.modal-content {
-    border-radius: 0.75rem;
-    overflow: hidden;
-}
-
-.modal-header {
-    border-bottom: none;
-}
-
-.modal-fullscreen-md-down {
-    padding: 0;
-}
-
-/* Dropdown improvements */
-.dropdown-menu {
-    border-radius: 0.5rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    border: none;
-    padding: 0.5rem;
-}
-
-.dropdown-item {
-    padding: 0.6rem 1rem;
-    border-radius: 0.375rem;
-    margin-bottom: 0.25rem;
-    transition: background-color 0.15s ease;
-}
-
-.dropdown-item:last-child {
-    margin-bottom: 0;
-}
-
-.dropdown-item:hover {
-    background-color: var(--primary-light);
-}
-
-.dropdown-item i {
-    width: 18px;
-    text-align: center;
-}
-
-/* Mobile improvements */
-@media (max-width: 767.98px) {
-    .avatar-circle {
-        width: 36px;
-        height: 36px;
-        font-size: 1rem;
-    }
-    
-    .card-header h6 {
-        font-size: 1rem;
-    }
-    
-    /* Make action buttons easier to tap */
-    .btn-sm {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-    }
-    
-    /* Improved dropdown menu for mobile */
-    .dropdown-item {
-        padding: 0.75rem 1rem;
-        font-size: 1rem;
-    }
-    
-    /* Better modal on mobile */
-    .modal-dialog {
-        margin: 0.5rem;
-    }
-    
-    .form-floating label {
-        font-size: 0.9rem;
-    }
-    
-    /* Horizontal scroll for tables on small screens */
-    .table-responsive {
-        width: 100%;
-        margin-bottom: 15px;
-        overflow-y: hidden;
-        -ms-overflow-style: -ms-autohiding-scrollbar;
-    }
-}
 
 /* Step indicators for form */
 .step-indicators {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin: 0 1rem 2rem;
+   
 }
 
 .step {
@@ -640,85 +87,6 @@
     transition: all 0.3s ease-in-out;
 }
 
-/* Ensure proper spacing on mobile */
-@media (max-width: 575.98px) {
-    .container-fluid {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
-    
-    .card-body {
-        padding: 1rem;
-    }
-    
-    .modal-body {
-        padding: 1rem;
-    }
-    
-    .step-title {
-        display: none;
-    }
-    
-    .step-number {
-        width: 30px;
-        height: 30px;
-        font-size: 0.875rem;
-    }
-}
-
-/* Input group styling */
-.input-group-text {
-    color: var(--gray-500);
-}
-
-/* Badge styling */
-.badge {
-    font-weight: 500;
-    padding: 0.35em 0.65em;
-}
-
-/* Alert improvements */
-.alert {
-    border-radius: 0.5rem;
-}
-
-/* Tooltip improvements */
-.tooltip {
-    font-size: 0.75rem;
-}
-
-.tooltip .tooltip-inner {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-}
-
-/* Responsive sidebar and content */
-#page-content-wrapper {
-    width: 100%;
-    transition: margin 0.3s ease;
-}
-
-@media (min-width: 992px) {
-    #page-content-wrapper {
-        margin-left: 250px;
-        margin-top: 90px;
-    }
-}
-
-@media (max-width: 991.98px) {
-    #page-content-wrapper {
-        margin-left: 0;
-        margin-top: 60px;
-    }
-    
-    .table-responsive {
-        font-size: 0.85rem;
-    }
-    
-    .btn-group .btn {
-        padding: 0.25rem 0.5rem;
-    }
-}
-
 /* iOS-specific fix */
 @supports (-webkit-touch-callout: none) {
     .form-floating > label {
@@ -762,131 +130,850 @@
 .counter-card:nth-child(5) {
     animation-delay: 0.4s;
 }
+
+
+@media (min-width: 992px) {
+    #page-content-wrapper {
+        margin-left: 250px !important;
+    }
+}
 </style>
 {% endblock %}
 
 
+
+
+{% block content %}
+<!-- Toast Container for Notifications -->
+<div class="toast-container"></div>
+
+<!-- Page Content -->
+<div id="page-content-wrapper" class="bg-light" >
+    <div class="container-fluid py-4" >
+        <div class="row justify-content-center">
+            <div class="col-12" >
+                <!-- Page Header -->
+                <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between mb-4 px-3 px-sm-0">
+                    <h1 class="h3 mb-2 mb-sm-0 text-primary fw-bold">
+                        <i class="bi bi-building me-2"></i>Transportation Companies
+                    </h1>
+                    <button type="button" class="btn btn-primary shadow-sm mt-2 mt-sm-0" id="addCompanyBtn">
+                        <i class="bi bi-plus-circle me-2"></i>Add Company
+                    </button>
+                </div>
+
+                <!-- Display Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm mx-3 mx-sm-0">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Enhanced Search Bar -->
+                <div class="search-wrapper mx-3 mx-sm-0">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="form-control shadow-sm" id="searchCompany" placeholder="Search companies by name, location, or admin...">
+                </div>
+
+                <!-- Stats Summary -->
+                <div class="row mt-3 mb-4 mx-3 mx-sm-0">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="card border-0 bg-white shadow-sm h-100">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="rounded-circle bg-primary bg-opacity-10 p-3 me-3">
+                                    <i class="bi bi-building text-primary fs-4"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Total Companies</h6>
+                                    <h3 class="mb-0 fw-bold">{{ companies|length }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="card border-0 bg-white shadow-sm h-100">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                                    <i class="bi bi-geo-alt text-success fs-4"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Active Locations</h6>
+                                    <h3 class="mb-0 fw-bold" id="uniqueLocations">-</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card border-0 bg-white shadow-sm h-100">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="rounded-circle bg-info bg-opacity-10 p-3 me-3">
+                                    <i class="bi bi-person text-info fs-4"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-1">Sub-Admins</h6>
+                                    <h3 class="mb-0 fw-bold" id="uniqueAdmins">-</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Options -->
+                <div class="d-flex flex-wrap gap-2 mb-4 mx-3 mx-sm-0">
+                    <button class="btn btn-sm btn-outline-primary active filter-btn" data-filter="all">
+                        <i class="bi bi-grid-3x3-gap me-1"></i>All
+                    </button>
+                   
+                </div>
+
+                <!-- No Results Message -->
+                <div id="noResults" class="card shadow-sm d-none mb-4 mx-3 mx-sm-0">
+                    <div class="card-body text-center py-5">
+                        <div class="empty-state">
+                            <i class="bi bi-search no-results-animation display-4 text-secondary"></i>
+                            <p class="mt-3 text-secondary">No companies match your search</p>
+                            <button id="clearSearchBtn" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="bi bi-x-circle me-2"></i>Clear Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Companies Card View (Mobile Only) -->
+                <div class="d-md-none mb-4 px-3" id="companiesCardView">
+                    {% for company in companies %}
+                    <div class="card shadow-sm mb-3 company-card fade-in" 
+                         data-id="{{ company.id }}" 
+                         data-has-admin="{% if company.user %}true{% else %}false{% endif %}" 
+                         data-has-bank="{% if company.bank_name and company.account_number %}true{% else %}false{% endif %}">
+                        <div class="card-body p-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0 fw-bold text-primary">{{ company.company_name }}</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'edit_transportation_company' company.id %}">
+                                                <i class="bi bi-pencil-square text-primary me-2"></i>Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item delete-company" href="#" data-id="{{ company.id }}" data-company-name="{{ company.company_name }}">
+                                                <i class="bi bi-trash text-danger me-2"></i>Delete
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{% url 'subadmin_bus_list' company.id %}" class="dropdown-item">
+                                                <i class="bi bi-bus-front text-success me-2"></i>View Buses
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <p class="card-text mb-1">
+                                <i class="bi bi-geo-alt-fill text-secondary me-1"></i> {{ company.location_name }}, {{ company.country }}
+                            </p>
+                            <div class="mb-2 mt-3 d-flex align-items-center">
+                                <div class="avatar-circle bg-primary text-white me-2">
+                                    {{ company.user.full_name|slice:":1"|default:"?" }}
+                                </div>
+                                <div>
+                                    <div class="fw-medium">{{ company.user.full_name|default:"Not assigned" }}</div>
+                                    <div class="small text-muted">{{ company.user.email|default:"" }}</div>
+                                </div>
+                            </div>
+                            {% if company.bank_name and company.account_number %}
+                            <div class="mt-2 small bank-info">
+                                <i class="bi bi-bank text-secondary me-1"></i> {{ company.bank_name }}
+                                <div class="text-muted">Acc: {{ company.account_number }}</div>
+                            </div>
+                            {% endif %}
+                            <div class="mt-3 d-flex gap-2">
+                                <a href="{% url 'edit_transportation_company' company.id %}" class="btn btn-sm btn-outline-primary flex-fill">
+                                    <i class="bi bi-pencil-square me-1"></i>Edit
+                                </a>
+                                <a href="{% url 'subadmin_bus_list' company.id %}" class="btn btn-sm btn-outline-success flex-fill">
+                                    <i class="bi bi-bus-front me-1"></i>Buses
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center py-5">
+                            <div class="empty-state">
+                                <i class="bi bi-building display-4 text-secondary"></i>
+                                <p class="mt-3 text-secondary">No transportation companies found</p>
+                                <button type="button" class="btn btn-sm btn-primary mt-2" id="addFirstCompanyBtn">
+                                    <i class="bi bi-plus-circle me-2"></i>Add Your First Company
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Companies Table (Desktop/Tablet View) -->
+                <div class="card shadow mb-4 border-0 rounded-3 d-none d-md-block">
+                    <div class="card-header py-3 bg-primary bg-gradient text-white d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="bi bi-list-ul me-2"></i>All Transportation Companies
+                        </h6>
+                        <span class="badge bg-light text-primary" id="companiesCount">{{ companies|length }} Companies</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="companiesTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="text-primary ps-3">
+                                            <i class="bi bi-hash me-1"></i>ID
+                                        </th>
+                                        <th class="text-primary sortable" data-sort="name">
+                                            <i class="bi bi-building me-1"></i>Company Name
+                                            <i class="bi bi-arrow-down-up sort-icon ms-1"></i>
+                                        </th>
+                                        <th class="text-primary sortable" data-sort="location">
+                                            <i class="bi bi-geo-alt me-1"></i>Location
+                                            <i class="bi bi-arrow-down-up sort-icon ms-1"></i>
+                                        </th>
+                                        <th class="text-primary">
+                                            <i class="bi bi-person me-1"></i>Sub-Admin
+                                        </th>
+                                        <th class="text-primary">
+                                            <i class="bi bi-bank me-1"></i>Bank Details
+                                        </th>
+                                        <th class="text-primary">
+                                            <i class="bi bi-qr-code me-1"></i>QR Image
+                                        </th>
+                                        <th class="text-primary text-end pe-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for company in companies %}
+                                    <tr class="company-row" 
+                                        data-id="{{ company.id }}" 
+                                        data-has-admin="{% if company.user %}true{% else %}false{% endif %}" 
+                                        data-has-bank="{% if company.bank_name and company.account_number %}true{% else %}false{% endif %}">
+                                        <td class="ps-3">{{ company.id }}</td>
+                                        <td><span class="fw-medium">{{ company.company_name }}</span></td>
+                                        <td>
+                                            <i class="bi bi-geo-alt-fill text-secondary me-1 small"></i> 
+                                            {{ company.location_name }}, {{ company.country }}
+                                        </td>
+                                        <td>
+                                            {% if company.user %}
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-circle bg-primary text-white me-2">
+                                                        {{ company.user.full_name|slice:":1" }}
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium">{{ company.user.full_name }}</div>
+                                                        <div class="small text-muted">{{ company.user.email }}</div>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <span class="badge bg-light text-secondary">Not assigned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if company.bank_name and company.account_number %}
+                                                <i class="bi bi-bank text-secondary me-1"></i> {{ company.bank_name }}
+                                                <div class="small text-muted">Acc: {{ company.account_number }}</div>
+                                            {% else %}
+                                                <span class="badge bg-light text-secondary">Not provided</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if company.qr_image %}
+                                                <img src="{{ company.qr_image.url }}" alt="QR Code" class="img-thumbnail qr-preview" style="max-width: 60px; max-height: 60px;" data-bs-toggle="modal" data-bs-target="#qrModal" data-qr-src="{{ company.qr_image.url }}">
+                                            {% else %}
+                                                <span class="badge bg-light text-secondary">Not provided</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <div class="btn-group">
+                                                <a href="{% url 'edit_transportation_company' company.id %}" class="btn btn-sm btn-outline-primary action-btn" data-bs-toggle="tooltip" title="Edit">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger action-btn delete-company" data-id="{{ company.id }}" data-company-name="{{ company.company_name }}" data-bs-toggle="tooltip" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                                <a href="{% url 'subadmin_bus_list' company.id %}" class="btn btn-sm btn-outline-success action-btn" data-bs-toggle="tooltip" title="View Buses">
+                                                    <i class="bi bi-bus-front"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center py-5">
+                                            <div class="empty-state">
+                                                <i class="bi bi-building display-4 text-secondary"></i>
+                                                <p class="mt-3 text-secondary">No transportation companies found</p>
+                                                <button type="button" class="btn btn-sm btn-primary mt-2" id="addFirstCompanyTableBtn">
+                                                    <i class="bi bi-plus-circle me-2"></i>Add Your First Company
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Company Modal -->
+<div class="modal fade" id="companyModal" tabindex="-1" aria-labelledby="companyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-md-down modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary bg-gradient text-white">
+                <h5 class="modal-title" id="companyModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i><span id="modalTitle">Add New Transportation Company</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="POST" id="companyForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="companyId" name="company_id" value="">
+                    
+                    <div class="step-indicators mb-4">
+                        <div class="step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-title d-none d-sm-block">Company Details</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-title d-none d-sm-block">Sub-Admin</div>
+                        </div>
+                        <div class="step-line"></div>
+                        <div class="step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-title d-none d-sm-block">Bank Details</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 1: Company Details -->
+                    <div class="form-step" id="step1">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="companyName" name="company_name" placeholder="Company Name" required>
+                            <label for="companyName">Company Name <span class="text-danger">*</span></label>
+                            <div class="invalid-feedback">Please enter a company name</div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="vatNumber" name="vat_number" placeholder="VAT Number">
+                            <label for="vatNumber">VAT Number  <span class="text-danger">*</span></label>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="country" name="country" required>
+                                        <option value="" selected disabled>Select a country</option>
+
+                                        <option value="Nepal" selected >Nepal</option>
+                                        <option value="Pakistan">Pakistan</option>
+                                        <option value="India">India</option>
+                                        <option value="Bangladesh">Bangladesh</option>
+                                        <option value="Bhutan">Bhutan</option>
+                                        <option value="Sri Lanka">Sri Lanka</option>
+                                        <!-- Add more countries as needed -->
+                                    </select>
+                                    <label for="country">Country <span class="text-danger">*</span></label>
+                                    <div class="invalid-feedback">Please select a country</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="locationName" name="location_name" placeholder="Location" required>
+                                    <label for="locationName">Location <span class="text-danger">*</span></label>
+                                    <div class="invalid-feedback">Please enter a location</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary next-step" data-step="1">
+                                Next <i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Sub-Admin Details -->
+                    <div class="form-step d-none" id="step2">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="fullName" name="full_name" placeholder="Full Name" required>
+                            <label for="fullName">Full Name <span class="text-danger">*</span></label>
+                            <div class="invalid-feedback">Please enter the admin's full name</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Email">
+                                    <label for="email">Email (Optional)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="tel" class="form-control" id="phone" name="phone" placeholder="Phone" required>
+                                    <label for="phone">Phone <span class="text-danger">*</span></label>
+                                    <div class="invalid-feedback">Please enter a valid phone number</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <select class="form-select" id="gender" name="gender" required>
+                                <option value="" selected disabled>Select gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <label for="gender">Gender <span class="text-danger">*</span></label>
+                            <div class="invalid-feedback">Please select a gender</div>
+                        </div>
+                        <div class="d-flex justify-content-between gap-2 mt-4">
+                            <button type="button" class="btn btn-light prev-step" data-step="2">
+                                <i class="bi bi-arrow-left me-2"></i>Previous
+                            </button>
+                            <button type="button" class="btn btn-primary next-step" data-step="2">
+                                Next <i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                <!-- Step 3: Bank Details -->
+                <div class="form-step d-none" id="step3">
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="bankName" name="bank_name" placeholder="Bank Name">
+                        <label for="bankName">Bank Name</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="accountName" name="account_name" placeholder="Account Name">
+                        <label for="accountName">Account Name</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="accountNumber" name="account_number" placeholder="Account Number">
+                        <label for="accountNumber">Account Number</label>
+                    </div>
+                 
+                    <div class="mb-3">
+                        <label for="qrImage" class="form-label">QR Code Image (Optional)</label>
+                        <input type="file" class="form-control" id="qrImage" name="qr_image" accept="image/*">
+                        <div id="qrPreview" class="mt-2 d-none">
+                            <img src="" alt="QR Preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="removeQR">
+                                <i class="bi bi-x-circle"></i> Remove
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-text text-muted mb-3">
+                        <i class="bi bi-info-circle me-1"></i> Bank details are optional but recommended for smoother transactions.
+                    </div>
+                    <div class="d-flex justify-content-between gap-2 mt-4">
+                        <button type="button" class="btn btn-light prev-step" data-step="3">
+                            <i class="bi bi-arrow-left me-2"></i>Previous
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save me-2"></i>Save Company
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- QR Code Preview Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-primary bg-gradient text-white">
+            <h5 class="modal-title" id="qrModalLabel">
+                <i class="bi bi-qr-code me-2"></i>QR Code
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center p-4">
+            <img src="" alt="QR Code" id="qrModalImage" class="img-fluid" style="max-height: 300px;">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-primary" id="downloadQR">
+                <i class="bi bi-download me-2"></i>Download
+            </button>
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-danger bg-gradient text-white">
+            <h5 class="modal-title" id="deleteModalLabel">
+                <i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+            <p class="mb-0">Are you sure you want to delete <strong id="companyToDelete">this company</strong>? This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+            <a href="#" class="btn btn-danger" id="confirmDelete">
+                <i class="bi bi-trash me-2"></i>Delete Permanently
+            </a>
+        </div>
+    </div>
+</div>
+</div>
+
+{% endblock %}
+
+
+
+
 {% block extra_js %}
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Universal search functionality
-        const searchCompany = document.getElementById('searchCompany');
-        if (searchCompany) {
-            searchCompany.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                
-                // For table rows (desktop)
-                const tableRows = document.querySelectorAll('.company-row');
-                tableRows.forEach(row => {
-                    const rowText = row.textContent.toLowerCase();
-                    row.style.display = rowText.includes(searchTerm) ? '' : 'none';
-                });
-                
-                // For cards (mobile)
-                const cards = document.querySelectorAll('.company-card');
-                cards.forEach(card => {
-                    const cardText = card.textContent.toLowerCase();
-                    card.style.display = cardText.includes(searchTerm) ? '' : 'none';
-                });
-            });
+$(document).ready(function() {
+// Calculate unique locations and admins for stats cards
+function updateStats() {
+    let locations = new Set();
+    let admins = new Set();
+    
+    $('.company-row').each(function() {
+        const locationText = $(this).find('td:nth-child(3)').text().trim();
+        const adminText = $(this).find('td:nth-child(4) .fw-medium').text().trim();
+        
+        if (locationText) {
+            locations.add(locationText);
         }
         
-        // Multi-step form functionality
-        const nextButtons = document.querySelectorAll('.next-step');
-        const prevButtons = document.querySelectorAll('.prev-step');
-        const steps = document.querySelectorAll('.step');
-        const formSteps = document.querySelectorAll('.form-step');
-        const form = document.getElementById('companyForm');
-        let currentStep = 1;
-
-        function updateStepIndicators(stepNumber) {
-            steps.forEach(step => {
-                const stepNum = parseInt(step.getAttribute('data-step'));
-                step.classList.remove('active', 'completed');
-                if (stepNum === stepNumber) {
-                    step.classList.add('active');
-                } else if (stepNum < stepNumber) {
-                    step.classList.add('completed');
-                }
-            });
+        if (adminText && adminText !== 'Not assigned') {
+            admins.add(adminText);
         }
-
-        function showStep(stepNumber) {
-            formSteps.forEach(step => {
-                step.classList.add('d-none');
-                if (parseInt(step.id.replace('step', '')) === stepNumber) {
-                    step.classList.remove('d-none');
-                }
-            });
-            updateStepIndicators(stepNumber);
-            currentStep = stepNumber;
-        }
-
-        nextButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const step = parseInt(this.getAttribute('data-step'));
-                const currentFormStep = document.getElementById(`step${step}`);
-                const inputs = currentFormStep.querySelectorAll('input[required], select[required]');
-                let isValid = true;
-
-                inputs.forEach(input => {
-                    if (!input.value.trim()) {
-                        input.classList.add('is-invalid');
-                        isValid = false;
-                    } else {
-                        input.classList.remove('is-invalid');
-                    }
-                });
-
-                if (isValid && step < 3) {
-                    showStep(step + 1);
-                }
-            });
-        });
-
-        prevButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const step = parseInt(this.getAttribute('data-step'));
-                if (step > 1) {
-                    showStep(step - 1);
-                }
-            });
-        });
-
-        form.addEventListener('submit', function(e) {
-            const requiredInputs = form.querySelectorAll('input[required], select[required]');
-            let isValid = true;
-
-            requiredInputs.forEach(input => {
-                if (!input.value.trim()) {
-                    input.classList.add('is-invalid');
-                    isValid = false;
-                } else {
-                    input.classList.remove('is-invalid');
-                }
-            });
-
-            if (!isValid) {
-                e.preventDefault();
-                alert('Please fill in all required fields.');
-            }
-        });
-
-        // Delete confirmation
-        const deleteButtons = document.querySelectorAll('.delete-company');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const companyName = this.getAttribute('data-company-name');
-                const confirmDelete = confirm(`Are you sure you want to delete "${companyName}"? This action cannot be undone.`);
-                if (confirmDelete) {
-                    window.location.href = this.href;
-                }
-            });
-        });
-
-        showStep(1);
     });
+    
+    $('#uniqueLocations').text(locations.size);
+    $('#uniqueAdmins').text(admins.size);
+    $('#companiesCount').text($('.company-row:visible').length + ' Companies');
+}
+
+// Initialize stats
+updateStats();
+
+// Enhanced search functionality
+$('#searchCompany').on('input', function() {
+    const searchTerm = $(this).val().toLowerCase();
+    let resultsFound = false;
+    
+    // For table rows (desktop)
+    $('.company-row').each(function() {
+        const rowText = $(this).text().toLowerCase();
+        const isVisible = rowText.includes(searchTerm);
+        $(this).toggle(isVisible);
+        
+        if (isVisible) resultsFound = true;
+    });
+    
+    // For cards (mobile)
+    $('.company-card').each(function() {
+        const cardText = $(this).text().toLowerCase();
+        const isVisible = cardText.includes(searchTerm);
+        $(this).toggle(isVisible);
+        
+        if (isVisible) resultsFound = true;
+    });
+    
+    // Show/hide no results message
+    $('#noResults').toggleClass('d-none', resultsFound);
+    updateStats();
+});
+
+// Clear search
+$('#clearSearchBtn').on('click', function() {
+    $('#searchCompany').val('').trigger('input');
+});
+
+// Filtering functionality
+$('.filter-btn').on('click', function() {
+    $('.filter-btn').removeClass('active');
+    $(this).addClass('active');
+    
+    const filter = $(this).data('filter');
+    
+    // For table rows (desktop)
+    $('.company-row').each(function() {
+        const hasAdmin = $(this).data('has-admin');
+        const hasBank = $(this).data('has-bank');
+        
+        let isVisible = true;
+        
+        if (filter === 'has-admin') {
+            isVisible = hasAdmin === true;
+        } else if (filter === 'no-admin') {
+            isVisible = hasAdmin === false;
+        } else if (filter === 'has-bank') {
+            isVisible = hasBank === true;
+        }
+        
+        $(this).toggle(isVisible);
+    });
+    
+    // For cards (mobile)
+    $('.company-card').each(function() {
+        const hasAdmin = $(this).data('has-admin');
+        const hasBank = $(this).data('has-bank');
+        
+        let isVisible = true;
+        
+        if (filter === 'has-admin') {
+            isVisible = hasAdmin === true;
+        } else if (filter === 'no-admin') {
+            isVisible = hasAdmin === false;
+        } else if (filter === 'has-bank') {
+            isVisible = hasBank === true;
+        }
+        
+        $(this).toggle(isVisible);
+    });
+    
+    updateStats();
+});
+
+// Sorting functionality
+$('.sortable').on('click', function() {
+    const sortBy = $(this).data('sort');
+    const tableBody = $('#companiesTable tbody');
+    const rows = tableBody.find('tr').toArray();
+    
+    // Toggle sort direction
+    const currentDirection = $(this).data('direction') === 'asc' ? 'desc' : 'asc';
+    $(this).data('direction', currentDirection);
+    
+    // Update sort icons
+    $('.sortable .sort-icon').removeClass('text-primary');
+    $(this).find('.sort-icon').addClass('text-primary');
+    
+    rows.sort(function(a, b) {
+        let aValue, bValue;
+        
+        if (sortBy === 'name') {
+            aValue = $(a).find('td:nth-child(2)').text().toLowerCase();
+            bValue = $(b).find('td:nth-child(2)').text().toLowerCase();
+        } else if (sortBy === 'location') {
+            aValue = $(a).find('td:nth-child(3)').text().toLowerCase();
+            bValue = $(b).find('td:nth-child(3)').text().toLowerCase();
+        }
+        
+        if (currentDirection === 'asc') {
+            return aValue.localeCompare(bValue);
+        } else {
+            return bValue.localeCompare(aValue);
+        }
+    });
+    
+    // Reappend sorted rows
+    $.each(rows, function(index, row) {
+        tableBody.append(row);
+    });
+});
+
+// QR Code preview in modal
+$('.qr-preview').on('click', function() {
+    const qrSrc = $(this).data('qr-src');
+    $('#qrModalImage').attr('src', qrSrc);
+});
+
+// Download QR code
+$('#downloadQR').on('click', function() {
+    const imgSrc = $('#qrModalImage').attr('src');
+    const link = document.createElement('a');
+    link.href = imgSrc;
+    link.download = 'qr-code.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
+// Multi-step form functionality
+const nextButtons = $('.next-step');
+const prevButtons = $('.prev-step');
+const steps = $('.step');
+const formSteps = $('.form-step');
+const form = $('#companyForm');
+let currentStep = 1;
+
+function updateStepIndicators(stepNumber) {
+    steps.each(function() {
+        const stepNum = parseInt($(this).data('step'));
+        $(this).removeClass('active completed');
+        
+        if (stepNum === stepNumber) {
+            $(this).addClass('active');
+        } else if (stepNum < stepNumber) {
+            $(this).addClass('completed');
+        }
+    });
+}
+
+function showStep(stepNumber) {
+    formSteps.addClass('d-none');
+    $('#step' + stepNumber).removeClass('d-none');
+    updateStepIndicators(stepNumber);
+    currentStep = stepNumber;
+}
+
+nextButtons.on('click', function() {
+    const step = parseInt($(this).data('step'));
+    const currentFormStep = $('#step' + step);
+    const inputs = currentFormStep.find('input[required], select[required]');
+    let isValid = true;
+
+    inputs.each(function() {
+        if (!$(this).val().trim()) {
+            $(this).addClass('is-invalid');
+            isValid = false;
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+
+    if (isValid && step < 3) {
+        showStep(step + 1);
+    }
+});
+
+prevButtons.on('click', function() {
+    const step = parseInt($(this).data('step'));
+    if (step > 1) {
+        showStep(step - 1);
+    }
+});
+
+form.on('submit', function(e) {
+    const requiredInputs = form.find('input[required], select[required]');
+    let isValid = true;
+
+    requiredInputs.each(function() {
+        if (!$(this).val().trim()) {
+            $(this).addClass('is-invalid');
+            isValid = false;
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+
+    if (!isValid) {
+        e.preventDefault();
+        
+        // Show toast notification instead of alert
+        showToast('Please fill in all required fields', 'error');
+        
+        // Find the first step with invalid fields
+        const step1Invalid = $('#step1').find('.is-invalid').length > 0;
+        const step2Invalid = $('#step2').find('.is-invalid').length > 0;
+        
+        if (step1Invalid) {
+            showStep(1);
+        } else if (step2Invalid) {
+            showStep(2);
+        }
+    }
+});
+
+// Add company button functionality
+$('#addCompanyBtn, #addFirstCompanyBtn, #addFirstCompanyTableBtn').on('click', function() {
+    $('#companyModal').modal('show');
+    $('#modalTitle').text('Add New Transportation Company');
+    $('#companyId').val('');
+    form[0].reset();
+    showStep(1);
+});
+
+// Delete company functionality
+$('.delete-company').on('click', function(e) {
+    e.preventDefault();
+    const companyId = $(this).data('id');
+    const companyName = $(this).data('company-name');
+    
+    $('#companyToDelete').text(companyName);
+    $('#confirmDelete').attr('href', '/delete_transportation_company/' + companyId + '/');
+    $('#deleteModal').modal('show');
+});
+
+// QR image preview
+$('#qrImage').on('change', function() {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            $('#qrPreview').removeClass('d-none');
+            $('#qrPreview img').attr('src', e.target.result);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Remove QR preview
+$('#removeQR').on('click', function() {
+    $('#qrImage').val('');
+    $('#qrPreview').addClass('d-none');
+});
+
+// Tooltips initialization
+$('[data-bs-toggle="tooltip"]').tooltip();
+
+// Toast notification function
+function showToast(message, type = 'success') {
+    const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle';
+    const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+    
+    const toast = `
+        <div class="toast company-toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header ${bgClass} text-white">
+                <i class="bi ${iconClass} me-2"></i>
+                <strong class="me-auto">Go Sewa</strong>
+                <small>Just now</small>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body py-3">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    $('.toast-container').append(toast);
+    const toastElement = $('.toast').last();
+    const bsToast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 3000
+    });
+    bsToast.show();
+    
+    // Remove toast after it's hidden
+    toastElement.on('hidden.bs.toast', function() {
+        $(this).remove();
+    });
+}
+
+// Initialize the first step
+showStep(1);
+});
 </script>
-{% endblock %}
+
 {% endblock %}

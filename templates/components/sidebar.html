@@ -1,19 +1,27 @@
-<!-- Sidebar Component -->
+<!-- components/sidebar.html -->
 <div class="wrapper">
+  <!-- Mobile Toggle Button - Visible only on small screens -->
+  <button type="button" id="mobileSidebarToggle" class="btn btn-success d-lg-none mobile-toggle-btn">
+    <i class="bi bi-list"></i>
+  </button>
+  
   <!-- Sidebar -->
   <nav id="sidebar" class="sidebar" data-compact="false">
     <div class="sidebar-header">
       <div class="d-flex align-items-center justify-content-between">
         <a href="" class="sidebar-brand text-decoration-none">
           {% if system.name %}
-          <span class="sidebar-brand">{{ system.name }}</span>
+          <span class="sidebar-brand ms-2">{{ system.name }}</span>
           {% endif %}
           {% if system.image%}
           <img src={{ system.image.url }} alt="Go Sewa" height="32">
           {% endif %}
         </a>
-        <button type="button" id="sidebarToggleBtn" class="btn btn-icon">
+        <button type="button" id="sidebarToggleBtn" class="btn btn-icon d-none d-lg-flex">
           <i class="bi bi-arrow-left-right"></i>
+        </button>
+        <button type="button" id="closeMobileSidebar" class="btn btn-icon d-lg-none">
+          <i class="bi bi-x-lg"></i>
         </button>
       </div>
     </div>
@@ -100,8 +108,6 @@
             </div>
           </li>
           
-
-
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/reports/' %}active{% endif %}" href={% url 'report_analysis' %}>
               <i class="bi bi-graph-up menu-icon"></i>
@@ -115,7 +121,7 @@
             </a>
           </li>
 
-        {% elif user.role == 'sub_admin' %}
+        {% else %}
           <!-- Sub Admin Menu Items -->
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="/admin-dashboard/">
@@ -166,7 +172,6 @@
             </a>
           </li>
 
-
           <li class="nav-item">
             <a class="nav-link collapsed" data-bs-toggle="collapse" href="#accountEarningsMenu" role="button" aria-expanded="false" aria-controls="accountEarningsMenu">
               <i class="bi bi-credit-card menu-icon"></i>
@@ -183,10 +188,6 @@
               </ul>
             </div>
           </li>
-          
-
-
-
       {% endif %}
       </ul>
     </div>
@@ -201,28 +202,64 @@
     {% endif %}
   </nav>
 
-  <!-- Page Content -->
-  <div id="content">
-    <!-- Main content container -->
-    <div class="container-fluid main-content">
-      {% block content %}
-      {% endblock %}
-    </div>
-  </div>
+  <!-- Overlay for mobile sidebar -->
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
 </div>
-
 
 <style>
   :root {
     --sidebar-width: 260px;
     --sidebar-compact-width: 70px;
     --sidebar-transition: 0.3s;
+    --primary-color: #28a745;
+    --primary-hover: #218838;
+    --text-dark: #343a40;
+    --bg-light: #f8f9fa;
+    --border-radius: 0.375rem;
+    --transition-speed: 0.3s;
   }
 
   .wrapper {
-    display: flex;
-    min-height: 100vh;
     position: relative;
+  }
+
+  /* Mobile toggle button */
+  .mobile-toggle-btn {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1040;
+    padding: 0.5rem;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  }
+
+  .mobile-toggle-btn i {
+    font-size: 1.5rem;
+  }
+
+  /* Sidebar Overlay */
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1029;
+    display: none;
+    transition: opacity 0.3s;
+    opacity: 0;
+  }
+
+  .sidebar-overlay.show {
+    display: block;
+    opacity: 1;
   }
 
   .sidebar {
@@ -376,48 +413,18 @@
     margin-right: 0;
   }
 
-  #content {
-    flex: 1;
-   
-    transition: margin var(--sidebar-transition);
-    min-height: 100vh;
-    background: var(--bg-light);
-    padding: 2rem;
-  }
-
-  /* Content shift when sidebar is compact */
-  .sidebar[data-compact="true"] + #content {
-    margin-left: var(--sidebar-compact-width);
-  }
-
   /* Mobile Styles */
   @media (max-width: 991.98px) {
     .sidebar {
-      width: var(--sidebar-width);
       transform: translateX(-100%);
+      z-index: 1035;
     }
     
     .sidebar.show {
       transform: translateX(0);
     }
     
-    /* Compact sidebar always visible on mobile */
-    .sidebar[data-compact="true"] {
-      width: var(--sidebar-width);
-      transform: translateX(0);
-    }
-    
-    #content {
-      margin-left: 0;
-      padding: 1rem;
-    }
-    
-    /* Even when compact, content shouldn't shift on mobile */
-    .sidebar[data-compact="true"] + #content {
-      margin-left: 0;
-    }
-    
-    /* On mobile, restore text visibility even in compact mode */
+    /* Restore text visibility in mobile view */
     .sidebar[data-compact="true"] .menu-text,
     .sidebar[data-compact="true"] .settings-text,
     .sidebar[data-compact="true"] .sidebar-brand {
@@ -428,6 +435,11 @@
     .sidebar[data-compact="true"] .menu-icon,
     .sidebar[data-compact="true"] .settings-link i {
       margin-right: 1rem;
+    }
+    
+    /* Reset compact width in mobile view */
+    .sidebar[data-compact="true"] {
+      width: var(--sidebar-width);
     }
   }
 
@@ -450,7 +462,53 @@
   }
 </style>
 
-
 <script>
+  $(document).ready(function() {
+    // Toggle sidebar compact mode for desktop
+    $("#sidebarToggleBtn").on("click", function() {
+      const sidebar = $("#sidebar");
+      const isCompact = sidebar.attr("data-compact") === "true";
+      sidebar.attr("data-compact", !isCompact);
+      
+      // Update content margin
 
+    });
+    
+    // Mobile sidebar toggle
+    $("#mobileSidebarToggle").on("click", function() {
+      $("#sidebar").addClass("show");
+      $("#sidebarOverlay").addClass("show");
+    });
+    
+    // Close mobile sidebar
+    $("#closeMobileSidebar, #sidebarOverlay").on("click", function() {
+      $("#sidebar").removeClass("show");
+      $("#sidebarOverlay").removeClass("show");
+    });
+    
+    // Handle window resize
+    $(window).on("resize", function() {
+      if ($(window).width() > 991.98) {
+        // Close sidebar overlay when resizing to desktop
+        $("#sidebarOverlay").removeClass("show");
+        $("#sidebar").removeClass("show");
+      }
+    });
+    
+    // Initialize sidebar state based on screen size
+    function initSidebar() {
+      if ($(window).width() <= 991.98) {
+        $("#sidebar").attr("data-compact", "false");
+      }
+    }
+    
+    // Run on page load
+    initSidebar();
+    
+    // Handle collapsible submenus
+    $(".nav-link[data-bs-toggle='collapse']").on("click", function() {
+      const isExpanded = $(this).attr("aria-expanded") === "true";
+      $(this).attr("aria-expanded", !isExpanded);
+    });
+  });
 </script>

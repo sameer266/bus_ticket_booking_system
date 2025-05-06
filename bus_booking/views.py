@@ -41,13 +41,20 @@ def login_view(request):
             return render(request, 'admin/reset_password.html', {"message": message})
         user = authenticate(phone=phone, password=password)
         print(user)
+        
+            
         if user:
-            login(request,user)
-            print(user)
-            return redirect('admin_dashboard')
+            if user.role=="admin" or user.role=="sub_admin":
+                login(request,user)
+                print(user)
+                return redirect('admin_dashboard')
+            else:
+                error_message = "Invalid User"
+            return render(request, 'pages/login.html', {'error_message': error_message})
+                
         else:
             error_message = "Invalid phone number or password"
-            return render(request, 'pages/login.html', {'error_message': error_message})
+            return render(request, 'pages/login.html', {'messages': error_message})
     return render(request, 'pages/login.html')
 
 
@@ -61,6 +68,8 @@ def logout_view(request):
 def send_otp(request):
     if request.method == 'POST':
         try:
+            
+            print(request.POST)
             phone = request.POST.get('phone')
             full_name = request.POST.get('full_name')
 
@@ -91,7 +100,7 @@ def verify_otp(request):
             login(request, user)
             return redirect('admin_dashboard')
         except UserOtp.DoesNotExist:
-            return render(request, 'pages/verify_otp.html', {'error': 'Invalid OTP'})
+            return render(request, 'pages/verify_otp.html', {'messages': 'Invalid OTP'})
     return render(request, 'pages/verify_otp.html')
         
         
@@ -126,28 +135,32 @@ def forget_password(request):
     if request.method == 'POST':
         phone = request.POST.get('phone')
         try:
-            user = CustomUser.objects.get(phone=phone, role="customer")
-            otp_number = UserOtp.generate_otp()
-            # Send the OTP via SMS
-            sms_response = UserOtp.send_sms(phone, otp_number)
+           
+                if CustomUser.objects.filter(phone=phone).exists():
+                    user = CustomUser.objects.get(phone=phone, role="customer")
+                    otp_number = UserOtp.generate_otp()
+                    # Send the OTP via SMS
+                    sms_response = UserOtp.send_sms(phone, otp_number)
 
-            if "error" in sms_response or sms_response.get("response_code") != 200:
-                return render(request, 'pages/forget_password.html', {'error': 'Failed to send SMS'})
+                    if "error" in sms_response or sms_response.get("response_code") != 200:
+                        return render(request, 'pages/forget_password.html', {'error': 'Failed to send SMS'})
 
-            # Save or update the OTP
-            user_otp, _ = UserOtp.objects.get_or_create(
-                user=user,
-                phone=phone,
-                temp_name= user.full_name
-            )
+                    # Save or update the OTP
+                    user_otp, _ = UserOtp.objects.get_or_create(
+                        user=user,
+                        phone=phone,
+                        temp_name= user.full_name
+                    )
 
-            user_otp.otp = otp_number
-            user_otp.save()
+                    user_otp.otp = otp_number
+                    user_otp.save()
 
-            return render(request, 'pages/verify_otp.html', {'phone': phone, 'message': 'OTP has been sent. Please verify!'})
+                    return render(request, 'pages/verify_otp.html', {'phone': phone, 'message': 'OTP has been sent. Please verify!'})
+                else:
+                    return render(request, 'pages/forget_password.html', {'messages': 'User not found'})
 
         except CustomUser.DoesNotExist:
-            return render(request, 'pages/forget_password.html', {'error': 'User not found'})
+            return render(request, 'pages/forget_password.html', {'messages': 'User not found'})
     return render(request, 'pages/forget_password.html')
 
 

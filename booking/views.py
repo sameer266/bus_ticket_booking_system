@@ -587,6 +587,8 @@ def create_bus(request):
 
 # ======= Edit bus ===========
 
+
+
 @login_required
 def edit_bus(request, bus_id):
     print(request.POST)
@@ -666,6 +668,7 @@ def edit_bus(request, bus_id):
                 'success': False,
                 'error': 'An unexpected error occurred'
             }, status=500)
+    
 
 
 # Add this view to fetch bus data
@@ -717,7 +720,7 @@ def delete_bus(request, bus_id):
 
 from django.core.serializers.json import DjangoJSONEncoder
 # ======================
-# Vehicle Reservation (Django Template View)
+# Vehicle Reservation 
 # =======================
 @login_required
 def vehicle_list(request):
@@ -782,6 +785,7 @@ def vehicle_list(request):
                 total_seats = request.POST.get('total_seats', 35)
                 price = request.POST.get('price')
                 source=request.POST.get('source')
+                source=source.lower()
 
                 type_obj = VechicleType.objects.get(id=type_id) if type_id else None
                 driver_obj = Driver.objects.get(id=driver_id) if driver_id else None
@@ -1248,7 +1252,7 @@ def schedule_bus_details(request, id):
         schedule = Schedule.objects.get(id=id)
         bus=schedule.bus
         layout = get_object_or_404(SeatLayoutBooking, schedule=schedule)
-    
+
         total_booked=bus.total_seats-schedule.available_seats
         
         
@@ -1474,6 +1478,7 @@ def system_settings_view(request):
     system = System.objects.first()
 
     if request.method == "POST":
+    
         name = request.POST.get('name')
         email = request.POST.get('email')
         phone = request.POST.get('phone')
