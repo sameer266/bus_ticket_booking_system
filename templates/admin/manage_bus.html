@@ -1,6 +1,3 @@
-
-
-
 {% extends 'components/base.html' %}
 {% block title %}Manage Buses | Go Sewa{% endblock %}
 {% block content %}
@@ -900,7 +897,7 @@ $(document).ready(function() {
     // Edit Bus Handling
     $('.edit-bus-btn').on('click', function() {
         const busId = $(this).data('bus-id');
-        $('#editBusForm').attr('action', `/edit-bus/${busId}/edit/`);
+        $('#editBusForm').attr('action', `/edit-bus/${busId}/`);
         $('#edit_bus_id').val(busId);
         
         $.ajax({
@@ -985,31 +982,7 @@ $(document).ready(function() {
         });
     });
 
-    // Add Bus Form submission
-    $('#addBusForm').on('submit', function(e) {
-        e.preventDefault();
-        updateLayoutData(true);
-        
-        const formData = new FormData(this);
-        
-        $.ajax({
-            url: $(this).attr('action'),
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(data) {
-                if (data.success) {
-                    addBusModal.hide();
-                    window.location.href = data.redirect || window.location.href;
-                } 
-            },
-            error: function(xhr, status, error) {
-                console.error('Error adding bus:', error);
-                alert('Failed to add bus. Please try again.');
-            }
-        });
-    });
+
 
     // Delete handling
 $('.delete-bus-btn').on('click', function(e) {
@@ -1019,14 +992,14 @@ $('.delete-bus-btn').on('click', function(e) {
     const busNumber = $(this).data('bus-number');
     
     $('#deleteBusNumber').text(busNumber);
-    $('#deleteBusForm').attr('action', `/delete_bus/${busId}/`);
+    $('#deleteBusForm').attr('action', `/delete-bus/${busId}/`);
     
     // Show the confirmation modal
     deleteConfirmModal.show();
 });
 
     // Delete Bus Form submission
-    $('#deleteBusForm').on('submit', function(e) {
+    {% comment %} $('#deleteBusForm').on('submit', function(e) {
         e.preventDefault();
         
         $.ajax({
@@ -1044,7 +1017,7 @@ $('.delete-bus-btn').on('click', function(e) {
                 alert('Failed to delete bus. Please try again.');
             }
         });
-    });
+    }); {% endcomment %}
 
     // Search functionality
     $('#searchBuses').on('input', function() {
@@ -1078,3 +1051,5 @@ $('.delete-bus-btn').on('click', function(e) {
 });
 </script>
 {% endblock %}
+
+

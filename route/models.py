@@ -102,28 +102,14 @@ class Schedule(models.Model):
     status=models.CharField(max_length=20,null=True,blank=True)
 
     def save(self, *args, **kwargs):
-        """
-        Custom save method to update the bus route and set the schedule date if not provided.
-        """
-   
-            
-       
         if not self.date:
             self.date = timezone.now()
-        
-        super().save(*args, **kwargs)
-        
-        # create a seat layout booking for the bus
-        SeatLayoutBooking=apps.get_model('bus','SeatLayoutBooking')
 
-        BusLayout=apps.get_model('bus','BusLayout')
-        bus_layout=BusLayout.objects.get(bus=self.bus)
-        if SeatLayoutBooking.objects.filter(schedule=self).exists():
-            pass
-        else:
-            SeatLayoutBooking.objects.get_or_create(
-            layout_data=bus_layout.layout_data,
-            schedule=self )
+        super().save(*args, **kwargs)
+
+       
+        
+
     
     def delete(self, *args, **kwargs):
         Trip = apps.get_model('route', 'Trip')
@@ -189,7 +175,7 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
                 source=instance.route.source,
                 destination=instance.route.destination,
             )
-
+        print("------- trip -------")
         # Create Trip if not exists
         trip = Trip.objects.filter(bus=instance.bus, route=instance.route, scheduled_departure=instance.departure_time).first()
         if not trip:
@@ -202,6 +188,7 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
                 scheduled_departure=instance.departure_time,
                 scheduled_arrival=instance.arrival_time,
             )
+            print('___________')
 
 
 # ======== Customer Review ============

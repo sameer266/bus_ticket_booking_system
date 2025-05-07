@@ -1,47 +1,30 @@
-{% extends 'components/base.html' %} {% block title %}Manage Drivers & Staff |
-Go Sewa{% endblock %} {% block content %}
+{% extends 'components/base.html' %}
+{% block title %}Manage Drivers & Staff | Go Sewa{% endblock %}
+{% block content %}
 <div class="container-fluid">
   <div class="row g-0">
- 
-   
     <!-- Main Content -->
-    <main class=" col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content">
-
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4 main-content">
+      <!-- Messages -->
+      {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+      {% endif %}
       
-
-       <!-- Messages --> 
-       {% if messages %}
-       {% for message in messages %}
-           <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2" role="alert">
-               {{ message }}
-               <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-           </div>
-       {% endfor %}
-   {% endif %}
-
-   
-      <div
-        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4"
-      >
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
         <h1 class="h2 fw-bold">
           <i class="bi bi-people-fill me-2 text-primary"></i>Manage Team
         </h1>
         <div class="btn-toolbar d-none d-md-flex">
           <div class="btn-group me-2">
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#addDriverModal"
-            >
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addDriverModal">
               <i class="bi bi-plus-lg me-1"></i> New Driver
             </button>
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-primary"
-              data-bs-toggle="modal"
-              data-bs-target="#addStaffModal"
-            >
+            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addStaffModal">
               <i class="bi bi-plus-lg me-1"></i> New Staff
             </button>
           </div>
@@ -50,20 +33,10 @@ Go Sewa{% endblock %} {% block content %}
 
       <!-- Mobile Action Buttons -->
       <div class="d-flex d-md-none mb-3 gap-2">
-        <button
-          type="button"
-          class="btn btn-primary flex-grow-1"
-          data-bs-toggle="modal"
-          data-bs-target="#addDriverModal"
-        >
+        <button type="button" class="btn btn-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#addDriverModal">
           <i class="bi bi-plus-lg me-1"></i> Add Driver
         </button>
-        <button
-          type="button"
-          class="btn btn-primary flex-grow-1"
-          data-bs-toggle="modal"
-          data-bs-target="#addStaffModal"
-        >
+        <button type="button" class="btn btn-primary flex-grow-1" data-bs-toggle="modal" data-bs-target="#addStaffModal">
           <i class="bi bi-plus-lg me-1"></i> Add Staff
         </button>
       </div>
@@ -71,30 +44,12 @@ Go Sewa{% endblock %} {% block content %}
       <!-- Team Management Tabs -->
       <ul class="nav nav-tabs mb-4" id="teamTabs" role="tablist">
         <li class="nav-item" role="presentation">
-          <button
-            class="nav-link active"
-            id="drivers-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#drivers"
-            type="button"
-            role="tab"
-            aria-controls="drivers"
-            aria-selected="true"
-          >
+          <button class="nav-link active" id="drivers-tab" data-bs-toggle="tab" data-bs-target="#drivers" type="button" role="tab" aria-controls="drivers" aria-selected="true">
             <i class="bi bi-steering me-1"></i> Drivers
           </button>
         </li>
         <li class="nav-item" role="presentation">
-          <button
-            class="nav-link"
-            id="staff-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#staff"
-            type="button"
-            role="tab"
-            aria-controls="staff"
-            aria-selected="false"
-          >
+          <button class="nav-link" id="staff-tab" data-bs-toggle="tab" data-bs-target="#staff" type="button" role="tab" aria-controls="staff" aria-selected="false">
             <i class="bi bi-person-badge me-1"></i> Staff
           </button>
         </li>
@@ -102,30 +57,15 @@ Go Sewa{% endblock %} {% block content %}
 
       <div class="tab-content" id="teamTabContent">
         <!-- Drivers Tab -->
-        <div
-          class="tab-pane fade show active"
-          id="drivers"
-          role="tabpanel"
-          aria-labelledby="drivers-tab"
-        >
+        <div class="tab-pane fade show active" id="drivers" role="tabpanel" aria-labelledby="drivers-tab">
           <div class="card shadow-sm mb-4">
-            <div
-              class="card-header bg-white d-flex justify-content-between align-items-center py-3"
-            >
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
               <h5 class="mb-0 fw-bold text-primary">
                 <i class="bi bi-steering me-2"></i>Driver List
               </h5>
               <div class="input-group input-group-sm w-auto">
-                <span class="input-group-text bg-light border-end-0"
-                  ><i class="bi bi-search"></i
-                ></span>
-                <input
-                  type="text"
-                  class="form-control border-start-0 ps-0"
-                  id="searchDrivers"
-                  placeholder="Search drivers..."
-                  style="max-width: 200px"
-                />
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" id="searchDrivers" placeholder="Search drivers..." style="max-width: 200px" />
               </div>
             </div>
             <div class="card-body p-0">
@@ -145,75 +85,45 @@ Go Sewa{% endblock %} {% block content %}
                       <td class="ps-3">
                         <div class="d-flex align-items-center">
                           {% if driver.driver_profile %}
-                          <img
-                            src="{{ driver.driver_profile.url }}"
-                            alt="Profile"
-                            class="rounded-circle me-3"
-                            width="40"
-                            height="40"
-                          />
+                          <img src="{{ driver.driver_profile.url }}" alt="Profile" class="rounded-circle me-3" width="40" height="40" />
                           {% else %}
-                          <div
-                            class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3"
-                            style="width: 40px; height: 40px"
-                          >
+                          <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px">
                             <i class="bi bi-person"></i>
                           </div>
                           {% endif %}
                           <div>
                             <h6 class="mb-0">{{ driver.full_name }}</h6>
-                            <small class="text-muted d-md-none"
-                              >ID: {{ driver.id }}</small
-                            >
+                            <small class="text-muted d-md-none">ID: {{ driver.id }}</small>
                           </div>
                         </div>
                       </td>
                       <td>{{ driver.phone_number }}</td>
-                      
                       <td class="d-none d-md-table-cell">
                         {% if driver.license_image %}
-                          <a href="{{ driver.license_image.url }}" target="_blank" title="View License">
-                            <img src="{{ driver.license_image.url }}" alt="License" class="img-thumbnail" style="max-width: 50px; max-height: 50px;" />
-                          </a>
+                        <a href="{{ driver.license_image.url }}" target="_blank" title="View License">
+                          <img src="{{ driver.license_image.url }}" alt="License" class="img-thumbnail" style="max-width: 50px; max-height: 50px;" />
+                        </a>
                         {% else %}
-                          <span class="badge bg-secondary">Not Uploaded</span>
+                        <span class="badge bg-secondary">Not Uploaded</span>
                         {% endif %}
                       </td>
                       <td class="text-end pe-3">
-                        <a
-                          href="{% url 'edit_driver' driver.id %}"
-                          class="btn btn-sm btn-outline-warning me-2"
-                          title="Edit"
-                        >
+                        <a href="{% url 'edit_driver' driver.id %}" class="btn btn-sm btn-outline-warning me-2" title="Edit">
                           <i class="bi bi-pencil-square"></i>
                         </a>
-                        <a
-                          href="{% url 'delete_driver' driver.id %}"
-                          class="btn btn-sm btn-outline-danger"
-                          title="Delete"
-                          onclick="return confirm('Are you sure you want to delete this driver?')"
-                        >
+                        <button class="btn btn-sm btn-outline-danger delete-driver" data-href="{% url 'delete_driver' driver.id %}" title="Delete" data-driver-name="{{ driver.full_name }}">
                           <i class="bi bi-trash"></i>
-                        </a>
+                        </button>
                       </td>
                     </tr>
                     {% empty %}
                     <tr>
                       <td colspan="4" class="text-center py-5">
                         <div class="py-4">
-                          <i
-                            class="bi bi-steering display-5 text-muted d-block mb-3"
-                          ></i>
+                          <i class="bi bi-steering display-5 text-muted d-block mb-3"></i>
                           <h5 class="text-muted">No drivers found</h5>
-                          <p class="text-muted">
-                            Add your first driver to get started
-                          </p>
-                          <button
-                            type="button"
-                            class="btn btn-primary mt-2"
-                            data-bs-toggle="modal"
-                            data-bs-target="#addDriverModal"
-                          >
+                          <p class="text-muted">Add your first driver to get started</p>
+                          <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addDriverModal">
                             <i class="bi bi-plus-circle me-1"></i> Add Driver
                           </button>
                         </div>
@@ -228,30 +138,15 @@ Go Sewa{% endblock %} {% block content %}
         </div>
 
         <!-- Staff Tab -->
-        <div
-          class="tab-pane fade"
-          id="staff"
-          role="tabpanel"
-          aria-labelledby="staff-tab"
-        >
+        <div class="tab-pane fade" id="staff" role="tabpanel" aria-labelledby="staff-tab">
           <div class="card shadow-sm mb-4">
-            <div
-              class="card-header bg-white d-flex justify-content-between align-items-center py-3"
-            >
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
               <h5 class="mb-0 fw-bold text-primary">
                 <i class="bi bi-person-badge me-2"></i>Staff List
               </h5>
               <div class="input-group input-group-sm w-auto">
-                <span class="input-group-text bg-light border-end-0"
-                  ><i class="bi bi-search"></i
-                ></span>
-                <input
-                  type="text"
-                  class="form-control border-start-0 ps-0"
-                  id="searchStaff"
-                  placeholder="Search staff..."
-                  style="max-width: 200px"
-                />
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" id="searchStaff" placeholder="Search staff..." style="max-width: 200px" />
               </div>
             </div>
             <div class="card-body p-0">
@@ -270,44 +165,24 @@ Go Sewa{% endblock %} {% block content %}
                       <td class="ps-3">
                         <div class="d-flex align-items-center">
                           {% if staff_member.staff_profile %}
-                          <img
-                            src="{{ staff_member.staff_profile.url }}"
-                            alt="Profile"
-                            class="rounded-circle me-3"
-                            width="40"
-                            height="40"
-                          />
+                          <img src="{{ staff_member.staff_profile.url }}" alt="Profile" class="rounded-circle me-3" width="40" height="40" />
                           {% else %}
-                          <div
-                            class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3"
-                            style="width: 40px; height: 40px"
-                          >
+                          <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px">
                             <i class="bi bi-person"></i>
                           </div>
                           {% endif %}
                           <div>
                             <h6 class="mb-0">{{ staff_member.full_name }}</h6>
-                            <small class="text-muted d-md-none"
-                              >ID: {{ staff_member.id }}</small
-                            >
+                            <small class="text-muted d-md-none">ID: {{ staff_member.id }}</small>
                           </div>
                         </div>
                       </td>
                       <td>{{ staff_member.phone_number }}</td>
                       <td class="text-end pe-3">
-                        <a
-                          href="{% url 'edit_staff' staff_member.id %}"
-                          class="btn btn-sm btn-outline-warning me-2"
-                          title="Edit"
-                        >
+                        <a href="{% url 'edit_staff' staff_member.id %}" class="btn btn-sm btn-outline-warning me-2" title="Edit">
                           <i class="bi bi-pencil-square"></i>
                         </a>
-                        <a
-                          href="{% url 'delete_staff' staff_member.id %}"
-                          class="btn btn-sm btn-outline-danger"
-                          title="Delete"
-                          onclick="return confirm('Are you sure you want to delete this driver?')"
-                        >
+                        <a href="{% url 'delete_staff' staff_member.id %}" class="btn btn-sm btn-outline-danger delete-staff" title="Delete">
                           <i class="bi bi-trash"></i>
                         </a>
                       </td>
@@ -316,19 +191,10 @@ Go Sewa{% endblock %} {% block content %}
                     <tr>
                       <td colspan="3" class="text-center py-5">
                         <div class="py-4">
-                          <i
-                            class="bi bi-person-badge display-5 text-muted d-block mb-3"
-                          ></i>
+                          <i class="bi bi-person-badge display-5 text-muted d-block mb-3"></i>
                           <h5 class="text-muted">No staff members found</h5>
-                          <p class="text-muted">
-                            Add your first staff member to get started
-                          </p>
-                          <button
-                            type="button"
-                            class="btn btn-primary mt-2"
-                            data-bs-toggle="modal"
-                            data-bs-target="#addStaffModal"
-                          >
+                          <p class="text-muted">Add your first staff member to get started</p>
+                          <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addStaffModal">
                             <i class="bi bi-plus-circle me-1"></i> Add Staff
                           </button>
                         </div>
@@ -347,25 +213,14 @@ Go Sewa{% endblock %} {% block content %}
 </div>
 
 <!-- Add Driver Modal -->
-<div
-  class="modal fade"
-  id="addDriverModal"
-  tabindex="-1"
-  aria-labelledby="addDriverModalLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="addDriverModal" tabindex="-1" aria-labelledby="addDriverModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addDriverModalLabel">
           <i class="bi bi-person-plus me-2 text-primary"></i>Add New Driver
         </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data" id="addDriverForm">
@@ -373,53 +228,25 @@ Go Sewa{% endblock %} {% block content %}
           <div class="row g-3">
             <div class="col-12 col-md-6">
               <label class="form-label">Full Name</label>
-              <input
-                type="text"
-                class="form-control"
-                name="full_name"
-                placeholder="John Doe"
-                required
-              />
+              <input type="text" class="form-control" name="full_name" placeholder="John Doe" required />
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Phone Number</label>
-              <input
-                type="text"
-                class="form-control"
-                name="phone_number"
-                placeholder=" 98..."
-                required
-              />
+              <input type="text" class="form-control" name="phone_number" placeholder="98..." required />
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Profile Image</label>
               <div class="input-group">
-                <input
-                  type="file"
-                  class="form-control"
-                  name="driver_profile"
-                  id="driverProfileUpload"
-                  required
-                />
-                <label class="input-group-text" for="driverProfileUpload"
-                  ><i class="bi bi-upload"></i
-                ></label>
+                <input type="file" class="form-control" name="driver_profile" id="driverProfileUpload" required />
+                <label class="input-group-text" for="driverProfileUpload"><i class="bi bi-upload"></i></label>
               </div>
               <div class="form-text">Upload a clear photo (JPEG or PNG)</div>
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">License Image</label>
               <div class="input-group">
-                <input
-                  type="file"
-                  class="form-control"
-                  name="license_image"
-                  id="licenseUpload"
-                  required
-                />
-                <label class="input-group-text" for="licenseUpload"
-                  ><i class="bi bi-upload"></i
-                ></label>
+                <input type="file" class="form-control" name="license_image" id="licenseUpload" required />
+                <label class="input-group-text" for="licenseUpload"><i class="bi bi-upload"></i></label>
               </div>
               <div class="form-text">Upload a clear photo of valid license</div>
             </div>
@@ -428,13 +255,7 @@ Go Sewa{% endblock %} {% block content %}
         </form>
       </div>
       <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-outline-secondary"
-          data-bs-dismiss="modal"
-        >
-          Cancel
-        </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
         <button type="submit" form="addDriverForm" class="btn btn-primary">
           <i class="bi bi-person-plus me-1"></i> Add Driver
         </button>
@@ -444,25 +265,14 @@ Go Sewa{% endblock %} {% block content %}
 </div>
 
 <!-- Add Staff Modal -->
-<div
-  class="modal fade"
-  id="addStaffModal"
-  tabindex="-1"
-  aria-labelledby="addStaffModalLabel"
-  aria-hidden="true"
->
+<div class="modal fade" id="addStaffModal" tabindex="-1" aria-labelledby="addStaffModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="addStaffModalLabel">
           <i class="bi bi-person-plus me-2 text-primary"></i>Add New Staff
         </h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form method="POST" enctype="multipart/form-data" id="addStaffForm">
@@ -470,37 +280,17 @@ Go Sewa{% endblock %} {% block content %}
           <div class="row g-3">
             <div class="col-12">
               <label class="form-label">Full Name</label>
-              <input
-                type="text"
-                class="form-control"
-                name="full_name"
-                placeholder="John Doe"
-                required
-              />
+              <input type="text" class="form-control" name="full_name" placeholder="John Doe" required />
             </div>
             <div class="col-12">
               <label class="form-label">Phone Number</label>
-              <input
-                type="text"
-                class="form-control"
-                name="phone_number"
-                placeholder=" 98..."
-                required
-              />
+              <input type="text" class="form-control" name="phone_number" placeholder="98..." required />
             </div>
             <div class="col-12">
               <label class="form-label">Profile Image</label>
               <div class="input-group">
-                <input
-                  type="file"
-                  class="form-control"
-                  name="staff_profile"
-                  id="staffProfileUpload"
-                  required
-                />
-                <label class="input-group-text" for="staffProfileUpload"
-                  ><i class="bi bi-upload"></i
-                ></label>
+                <input type="file" class="form-control" name="staff_profile" id="staffProfileUpload" required />
+                <label class="input-group-text" for="staffProfileUpload"><i class="bi bi-upload"></i></label>
               </div>
               <div class="form-text">Upload a clear photo (JPEG or PNG)</div>
             </div>
@@ -509,13 +299,7 @@ Go Sewa{% endblock %} {% block content %}
         </form>
       </div>
       <div class="modal-footer">
-        <button
-          type="button"
-          class="btn btn-outline-secondary"
-          data-bs-dismiss="modal"
-        >
-          Cancel
-        </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
         <button type="submit" form="addStaffForm" class="btn btn-primary">
           <i class="bi bi-person-plus me-1"></i> Add Staff
         </button>
@@ -523,88 +307,121 @@ Go Sewa{% endblock %} {% block content %}
     </div>
   </div>
 </div>
- {% block extra_js %}
+
+<!-- Delete Driver Confirmation Modal -->
+<div class="modal fade" id="deleteDriverModal" tabindex="-1" aria-labelledby="deleteDriverModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteDriverModalLabel">
+          <i class="bi bi-exclamation-triangle me-2 text-danger"></i>Confirm Deletion
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete the driver <strong id="driverName"></strong>? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteDriverForm" method="POST" action="">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1"></i> Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(
-      document.querySelectorAll('[data-bs-toggle="tooltip"]')
-    );
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new bootstrap.Tooltip(tooltipTriggerEl);
+$(document).ready(function() {
+  // Initialize tooltips (override base.html to ensure it runs after our elements are loaded)
+  $('[data-bs-toggle="tooltip"]').tooltip();
+
+  // Handle delete confirmation for drivers
+  $('.delete-driver').on('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent base.html's <a> handler from interfering
+    var href = $(this).data('href') || $(this).attr('href');
+    var driverName = $(this).data('driver-name') || 'this driver';
+    
+    if (!href) {
+      console.error('data-href or href attribute is missing on delete-driver element');
+      return;
+    }
+    
+    // Set driver name and form action
+    $('#driverName').text(driverName);
+    $('#deleteDriverForm').attr('action', href);
+    
+    // Show the modal
+    $('#deleteDriverModal').modal('show');
+  });
+
+  // Handle delete confirmation for staff (using native confirm dialog)
+  $('.delete-staff').on('click', function(e) {
+    e.preventDefault();
+    var href = $(this).attr('href');
+    if (confirm('Are you sure you want to delete this staff member?')) {
+      window.location.href = href;
+    }
+  });
+
+  // Search functionality for drivers
+  $('#searchDrivers').on('keyup', function() {
+    var searchTerm = $(this).val().toLowerCase();
+    var $driverTable = $('#drivers table tbody');
+    var visibleRows = 0;
+
+    $driverTable.find('tr').each(function() {
+      if (!$(this).find('td[colspan]').length) {
+        var text = $(this).text().toLowerCase();
+        $(this).toggle(text.includes(searchTerm));
+        if (text.includes(searchTerm)) visibleRows++;
+      }
     });
 
-    // Search functionality for drivers
-    document
-      .getElementById("searchDrivers")
-      .addEventListener("keyup", function () {
-        const searchTerm = this.value.toLowerCase();
-        const driverTable = document.querySelector("#drivers table tbody");
-        const rows = driverTable.querySelectorAll("tr");
-
-        rows.forEach((row) => {
-          if (row.querySelector("td") && !row.querySelector("td[colspan]")) {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? "" : "none";
-          }
-        });
-
-        // Show empty state if no results
-        const visibleRows = Array.from(rows).filter(
-          (row) =>
-            row.style.display !== "none" && !row.querySelector("td[colspan]")
-        ).length;
-        const emptyRow = driverTable.querySelector("tr td[colspan]");
-
-        if (visibleRows === 0 && !emptyRow) {
-          const newRow = document.createElement("tr");
-          newRow.innerHTML = `<td colspan="4" class="text-center py-3">
-                    <i class="bi bi-search text-muted d-block mb-2"></i>
-                    <p class="text-muted">No drivers matching "${searchTerm}"</p>
-                </td>`;
-          newRow.classList.add("search-empty");
-          driverTable.appendChild(newRow);
-        } else if (visibleRows > 0 && document.querySelector(".search-empty")) {
-          document.querySelector(".search-empty").remove();
-        }
-      });
-
-    // Search functionality for staff
-    document
-      .getElementById("searchStaff")
-      .addEventListener("keyup", function () {
-        const searchTerm = this.value.toLowerCase();
-        const staffTable = document.querySelector("#staff table tbody");
-        const rows = staffTable.querySelectorAll("tr");
-
-        rows.forEach((row) => {
-          if (row.querySelector("td") && !row.querySelector("td[colspan]")) {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? "" : "none";
-          }
-        });
-
-        // Show empty state if no results
-        const visibleRows = Array.from(rows).filter(
-          (row) =>
-            row.style.display !== "none" && !row.querySelector("td[colspan]")
-        ).length;
-        const emptyRow = staffTable.querySelector("tr td[colspan]");
-
-        if (visibleRows === 0 && !emptyRow) {
-          const newRow = document.createElement("tr");
-          newRow.innerHTML = `<td colspan="3" class="text-center py-3">
-                    <i class="bi bi-search text-muted d-block mb-2"></i>
-                    <p class="text-muted">No staff members matching "${searchTerm}"</p>
-                </td>`;
-          newRow.classList.add("search-empty");
-          staffTable.appendChild(newRow);
-        } else if (visibleRows > 0 && document.querySelector(".search-empty")) {
-          document.querySelector(".search-empty").remove();
-        }
-      });
-
-    
+    // Show empty state if no results
+    $driverTable.find('.search-empty').remove();
+    if (visibleRows === 0 && !$driverTable.find('tr td[colspan]').length) {
+      $driverTable.append(
+        '<tr class="search-empty"><td colspan="4" class="text-center py-3">' +
+        '<i class="bi bi-search text-muted d-block mb-2"></i>' +
+        '<p class="text-muted">No drivers matching "' + searchTerm + '"</p>' +
+        '</td></tr>'
+      );
+    }
   });
+
+  // Search functionality for staff
+  $('#searchStaff').on('keyup', function() {
+    var searchTerm = $(this).val().toLowerCase();
+    var $staffTable = $('#staff table tbody');
+    var visibleRows = 0;
+
+    $staffTable.find('tr').each(function() {
+      if (!$(this).find('td[colspan]').length) {
+        var text = $(this).text().toLowerCase();
+        $(this).toggle(text.includes(searchTerm));
+        if (text.includes(searchTerm)) visibleRows++;
+      }
+    });
+
+    // Show empty state if no results
+    $staffTable.find('.search-empty').remove();
+    if (visibleRows === 0 && !$staffTable.find('tr td[colspan]').length) {
+      $staffTable.append(
+        '<tr class="search-empty"><td colspan="3" class="text-center py-3">' +
+        '<i class="bi bi-search text-muted d-block mb-2"></i>' +
+        '<p class="text-muted">No staff members matching "' + searchTerm + '"</p>' +
+        '</td></tr>'
+      );
+    }
+  });
+});
 </script>
-{% endblock %} {% endblock %}
+{% endblock %}

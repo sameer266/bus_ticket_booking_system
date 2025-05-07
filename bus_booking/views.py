@@ -38,7 +38,7 @@ def login_view(request):
         password = request.POST.get('password')
         if password == "counter@123":
             message = "Please Reset Password"
-            return render(request, 'admin/reset_password.html', {"message": message})
+            return render(request, 'pages/reset_new_password.html', {"message": message,"phone":phone})
         user = authenticate(phone=phone, password=password)
         print(user)
         
@@ -54,7 +54,7 @@ def login_view(request):
                 
         else:
             error_message = "Invalid phone number or password"
-            return render(request, 'pages/login.html', {'messages': error_message})
+            return render(request, 'pages/login.html', {'message': error_message})
     return render(request, 'pages/login.html')
 
 
@@ -100,17 +100,55 @@ def verify_otp(request):
             login(request, user)
             return redirect('admin_dashboard')
         except UserOtp.DoesNotExist:
-            return render(request, 'pages/verify_otp.html', {'messages': 'Invalid OTP'})
+            return render(request, 'pages/verify_otp.html', {'message': 'Invalid OTP'})
     return render(request, 'pages/verify_otp.html')
         
-        
+
+def unauthenticated_reset_password(request):
+    message = ""
+    if request.method == "POST":
+            if request.POST.get("phone"):
+                p1 = request.POST.get("password")
+                p2 = request.POST.get("confirm_password")
+                if p1 == p2:
+                    print(request.POST)
+                    phone=request.POST.get('phone')
+                    print(phone)
+                    user=CustomUser.objects.get(phone=phone)
+                    user.set_password(p1)
+                    user.save()
+                
+                    message= "Password reset successfully."
+                    return render(request, 'pages/login.html', {'message': message})
+                else:
+                    message = "Passwords do not match."
+                    return render(request, 'pages/reset_new_password.html', {'message': message})
+    return render(request, 'pages/login.html', {'message': message})
+
 
 def reset_password(request):
     message = ""
     try:
-        
-        user = request.user
+     
         if request.method == "POST":
+            if request.POST.get("phone"):
+                p1 = request.POST.get("password")
+                p2 = request.POST.get("confirm_password")
+                if p1 == p2:
+                   
+                    phone=request.POST.get('phone')
+                    print(phone)
+                    user=CustomUser.objects.get(phone=phone)
+                    user.set_password(p1)
+                    user.save()
+                    login(request,user)
+                    messages.success(request, "Password reset successfully.")
+                    return render(request, 'pages/login.html', {'message': message})
+                else:
+                    message = "Passwords do not match."
+                    return render(request, 'admin/reset_password.html', {'message': message})
+                
+            user = request.user
             print(request.POST)
             p1 = request.POST.get("password")
             p2 = request.POST.get("confirm_password")
@@ -124,6 +162,7 @@ def reset_password(request):
                 return redirect('admin_dashboard')
             else:
                 message = "Passwords do not match."
+                return render(request, 'admin/reset_password.html', {'message': message})
     except CustomUser.DoesNotExist:
         message = "Invalid reset link."
     
@@ -157,10 +196,10 @@ def forget_password(request):
 
                     return render(request, 'pages/verify_otp.html', {'phone': phone, 'message': 'OTP has been sent. Please verify!'})
                 else:
-                    return render(request, 'pages/forget_password.html', {'messages': 'User not found'})
+                    return render(request, 'pages/forget_password.html', {'message': 'User not found'})
 
         except CustomUser.DoesNotExist:
-            return render(request, 'pages/forget_password.html', {'messages': 'User not found'})
+            return render(request, 'pages/forget_password.html', {'message': 'User not found'})
     return render(request, 'pages/forget_password.html')
 
 

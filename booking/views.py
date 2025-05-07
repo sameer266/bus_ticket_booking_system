@@ -157,6 +157,7 @@ def transportation_company_list(request):
                 vat_number=vat_number,
                 country=country,
                 location_name=location_name,
+              
                 
                 bank_name=bank_name,
                 account_name=account_name,
@@ -225,9 +226,11 @@ def delete_transportation_company(request, id):
         transportation_company.delete()
 
         messages.success(request, "Ticket Counter deleted successfully!")
-        return redirect("ticket_counter_list")
+        return redirect("transportation_company_list")
     except Exception as e:
         print(str(e))
+        return redirect("transportation_company_list")
+        
         
         
 
@@ -520,7 +523,8 @@ def create_bus(request):
             staff = Staff.objects.get(id=staff_id) if staff_id else None
            
             
-            commission_rate=request.POST.get('commission_rate')
+            commission_rate = float(request.POST.get('commission_rate') or 0)
+
             
 
             # Create bus
@@ -550,8 +554,8 @@ def create_bus(request):
                     layout_data=layout_data['layout'],
                     aisle_column=layout_data.get('aisleAfterColumn')
                 )
-            if commission_rate:
-                Commission.objects.create(bus=bus,rate=commission_rate)
+   
+            Commission.objects.create(bus=bus,rate=commission_rate)
 
             messages.success(request, "Bus created successfully.")
             return redirect('bus_list')
@@ -656,7 +660,9 @@ def edit_bus(request, bus_id):
             
             return JsonResponse({
                 'success': True,
-                'redirect': '/buses-management/'
+                'redirect': '/buses-management/',
+                'message':'Bus Updated Successfully'
+                
             })
         except (ValidationError, json.JSONDecodeError, ValueError) as e:
             return JsonResponse({
@@ -676,8 +682,9 @@ def edit_bus(request, bus_id):
 def get_bus(request, bus_id):
     bus = get_object_or_404(Bus, id=bus_id)
     try:
-        commission=Commission.objects.get(bus=bus)
-        rate=commission.rate
+        commission=Commission.objects.filter(bus=bus).first()
+        rate=commission.rate if commission else 0
+    
         layout = BusLayout.objects.get(bus=bus)
         layout_data = {
             'rows': layout.rows,
@@ -785,7 +792,11 @@ def vehicle_list(request):
                 total_seats = request.POST.get('total_seats', 35)
                 price = request.POST.get('price')
                 source=request.POST.get('source')
-                source=source.lower()
+                if source:
+                    source = source.lower()
+                else:
+    
+                    source = ''  
 
                 type_obj = VechicleType.objects.get(id=type_id) if type_id else None
                 driver_obj = Driver.objects.get(id=driver_id) if driver_id else None
@@ -865,6 +876,7 @@ def edit_vehicle(request, id):
             reservation.price = request.POST.get('price', reservation.price)
 
             reservation.save()
+            messages.success(request,f'Vehicle {reservation.vechicle_number} Updated Successfully  ')
             return redirect('vehicle_reservation')
         except Exception as e:
             print(f"Error updating reservation: {str(e)}")
@@ -889,11 +901,9 @@ def edit_vehicle(request, id):
 def delete_vehicle(request, id):
     try:
         reservation = get_object_or_404(BusReservation, id=id)
-        
-        
-            
+        vehicle_number = reservation.vechicle_number 
         reservation.delete()
-        messages.success(request, "Vehicle reservation deleted successfully")
+        messages.success(request, f"Vehicle  {vehicle_number}reservation deleted successfully")
         
     except Exception as e:
         messages.error(request, f"Error deleting reservation: {str(e)}")
@@ -1081,11 +1091,12 @@ class BusDetails(APIView):
 
 # ========= Schedule list ===========
 
+
 def schedule_list(request):
-    
     Schedule.update_all_status()
-    user=request.user
+    user = request.user
     transportation_company = getattr(user, "transportation_company", None)
+
     if request.method == "POST":
         try:
             # Get form data
@@ -1115,15 +1126,16 @@ def schedule_list(request):
             overlap_exists = Schedule.objects.filter(
                 bus=bus,
                 departure_time__lte=arrival_time,
-                arrival_time__gte=departure_time
+                arrival_time__gte=departure_time,
+              
             ).exists()
-
+            print('----sad----------')
             if overlap_exists:
                 messages.error(request, "A schedule already exists for this bus with overlapping times.")
                 return redirect("schedule_list")
 
-            # Create schedule
-            Schedule.objects.create(
+            # Create schedule and store the reference
+            schedule = Schedule.objects.create(
                 route=route,
                 bus=bus,
                 available_seats=bus.total_seats,
@@ -1132,7 +1144,15 @@ def schedule_list(request):
                 price=price,
                 transportation_company=transportation_company
             )
-
+            print("sads------")
+            # Bus layout booking
+            bus_layout = BusLayout.objects.get(bus=bus)
+            SeatLayoutBooking.objects.create(
+                    schedule=schedule,
+                    layout_data= bus_layout.layout_data
+                )
+            print('-----------)))S--')
+            
             messages.success(request, "Schedule created successfully!")
             return redirect("schedule_list")
 
@@ -1140,11 +1160,10 @@ def schedule_list(request):
             messages.error(request, f"Error creating schedule: {str(e)}")
             return redirect("schedule_list")
 
-
+    # Handle GET (list, search, filter)
     selected_date_str = request.GET.get('date')
     search_query = request.GET.get('search', '').strip()
     time_range = request.GET.get('time_range', '').strip()
-    print(time_range)
 
     try:
         selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date() if selected_date_str else timezone.now().date()
@@ -1152,31 +1171,28 @@ def schedule_list(request):
         selected_date = timezone.now().date()
         messages.warning(request, "Invalid date format, showing today's schedules")
 
+    # Base queryset
+    schedules = Schedule.objects.filter(departure_time__date=selected_date)
     if transportation_company:
-        
-        schedules = Schedule.objects.filter(departure_time__date=selected_date,transportation_company=transportation_company)
-    else:
-        schedules=Schedule.objects.filter(departure_time__date=selected_date)
-        
+        schedules = schedules.filter(transportation_company=transportation_company)
+
+    # Apply filters
+    filters = Q()
     if search_query:
-        filters = Q(route__source__icontains=search_query) | \
-                  Q(route__destination__icontains=search_query) | \
-                  Q(bus__bus_number__icontains=search_query) | \
-                  Q(price__icontains=search_query)
-        if time_range:
-            filters = Q(status=time_range)
-            
+        filters &= (
+            Q(route__source__icontains=search_query) |
+            Q(route__destination__icontains=search_query) |
+            Q(bus__bus_number__icontains=search_query) |
+            Q(price__icontains=search_query)
+        )
+    if time_range:
+        filters &= Q(status=time_range)
+
+    if filters:
         schedules = schedules.filter(filters).distinct()
 
     all_routes = Route.objects.all()
-    transportation_company = getattr(request.user, "transportation_company", None)
-
-    if transportation_company:
-        all_buses = Bus.objects.filter(transportation_company=transportation_company)
-    else:
-        all_buses = Bus.objects.all()
-
-   
+    all_buses = Bus.objects.filter(transportation_company=transportation_company) if transportation_company else Bus.objects.all()
 
     context = {
         'schedules': schedules,

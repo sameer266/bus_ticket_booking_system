@@ -1,51 +1,37 @@
 {% extends 'components/base.html' %}
 
 {% block title %}
-    Booking Management
+    Booking Management | Go Sewa
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
     <div class="row g-0">
-
-
         <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 ms-md-auto px-md-4 py-4 main-content">
+            <h1 class="h2 mb-4 fw-bold"><i class="bi bi-ticket-detailed me-2 text-primary"></i>Booking Management</h1>
 
-        
-        <div class="col-md-9 col-lg-10 ms-md-auto px-md-4 py-4 main-content " >
-            <h1 class="h2 mb-4">Booking Management</h1>
-
+            <!-- Error and Messages -->
             {% if error %}
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <strong>Error:</strong> {{ error }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endif %}
-
-            {% comment %} ==== Messages ====== {% endcomment %}
-            {% if messages %}
-                <div class="messages">
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
+            
 
             <!-- Filter and Search Section -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-light">
-                    <h3 class="h5 mb-0">Filters & Search</h3>
+                    <h3 class="h5 mb-0 fw-bold text-primary"><i class="bi bi-funnel me-2"></i>Filters & Search</h3>
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
                             <div class="input-group">
                                 <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control" id="global-search" placeholder="Search across all bookings...">
-                                <button class="btn btn-outline-secondary" type="button" id="clear-search">Clear</button>
+                                <input type="text" class="form-control" id="global-search" placeholder="Search bookings by name, bus, route...">
+                                <button class="btn btn-outline-secondary" type="button" id="clear-search"><i class="bi bi-x-circle"></i> Clear</button>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -84,7 +70,7 @@
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="bookings-tab" data-bs-toggle="tab" data-bs-target="#bookings-list" type="button" role="tab">
-                        Seat Bookings List 
+                        Seat Bookings
                     </button>
                 </li>
             </ul>
@@ -95,7 +81,7 @@
                 <div class="tab-pane fade show active" id="bus-reservations" role="tabpanel" aria-labelledby="bus-tab">
                     <div class="card shadow-sm">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <h3 class="h5 mb-0">Vehicle Reservations</h3>
+                            <h3 class="h5 mb-0 fw-bold text-primary"><i class="bi bi-bus-front me-2"></i>Vehicle Reservations</h3>
                             <div class="text-muted small">
                                 Showing <span id="bus-showing-count">{{ bus_reserve_data|length }}</span> of {{ bus_reserve_data.paginator.count }} records
                             </div>
@@ -110,14 +96,12 @@
                                             <th>Status</th>
                                             <th>Route</th>
                                             <th>Price</th>
-                                            <th>Request At </th>
+                                            <th>Requested</th>
                                             <th>Start Date</th>
-                                            <th>End Date </th>
+                                            <th>End Date</th>
                                             <th>Duration</th>
-                                            <th>Agreed Price </th>
+                                            <th>Agreed Price</th>
                                             <th>Action</th>
-
-                                            
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -125,59 +109,60 @@
                                             <tr class="bus-row" 
                                                 data-status="{{ bus_booking.status|lower }}"
                                                 data-start-date="{{ bus_booking.start_date|date:'Y-m-d' }}"
-                                                data-search="{{ bus_booking.user.full_name }} {{ bus_booking.bus_reserve.bus_number }} {{ bus_booking.source }} {{ bus_booking.destination }}">
-                                                <td>{{ bus_booking.user.full_name }} <span class="text-muted d-block small">{{bus_booking.user.phone}}</span></td>
+                                                data-search="{{ bus_booking.user.full_name|lower }} {{ bus_booking.bus_reserve.vechicle_number|lower }} {{ bus_booking.source|lower }} {{ bus_booking.destination|lower }}"
+                                                data-reservation-id="{{ bus_booking.id }}"
+                                                data-user="{{ bus_booking.user.full_name }}"
+                                                data-bus="{{ bus_booking.bus_reserve.vechicle_number }}"
+                                                data-route="{{ bus_booking.source }} to {{ bus_booking.destination }}">
+                                                <td>
+                                                    {{ bus_booking.user.full_name }}
+                                                    <span class="text-muted d-block small">{{ bus_booking.user.phone }}</span>
+                                                </td>
                                                 <td>{{ bus_booking.bus_reserve.vechicle_number }}</td>
                                                 <td>
-                                                           <span class="badge {% if bus_booking.status == 'booked' %}bg-success{% elif booking.booking_status == 'pending' %}bg-warning{% elif booking.booking_status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
-                                                        {{ bus_booking.status }}
-                                                    </span>        
+                                                    <span class="badge {% if bus_booking.status == 'booked' %}bg-success{% elif bus_booking.status == 'pending' %}bg-warning{% elif bus_booking.status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                                        {{ bus_booking.status|title }}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <span class="d-block">From: {{ bus_booking.source }}</span>
                                                     <span class="d-block">To: {{ bus_booking.destination }}</span>
                                                 </td>
-                                                <td>Rs {{bus_booking.bus_reserve.price}}</td>
-                                                <td> {{bus_booking.bus_reserve.created_at| timesince}} ago
-                                                <td>{{ bus_booking.start_date }}</td>
-                                                <td>{{bus_booking.end_date }}
+                                                <td>Rs {{ bus_booking.bus_reserve.price|floatformat:2 }}</td>
+                                                <td>{{ bus_booking.bus_reserve.created_at|timesince }} ago</td>
+                                                <td>{{ bus_booking.start_date|date:"d M, Y" }}</td>
+                                                <td>{{ bus_booking.end_date|date:"d M, Y" }}</td>
                                                 <td>{{ bus_booking.date }} days</td>
-                                                <td>{{ bus_booking.agreed_price }}</td>
+                                                <td>Rs {{ bus_booking.agreed_price|floatformat:2 }}</td>
                                                 <td class="text-end pe-3">
                                                     <div class="btn-group btn-group-sm" role="group">
-                                                        <a href="{% url 'update_reservation' bus_booking.id %}"
-                                                           class="btn btn-outline-warning"
-                                                           title="Edit">
-                                                            <i class="bi bi-pencil-square d-none d-sm-inline"></i>
-                                                            <span class="d-inline d-sm-none">Edit</span>
+                                                        <a href="{% url 'update_reservation' bus_booking.id %}" class="btn btn-outline-warning" title="Edit">
+                                                            <i class="bi bi-pencil-square"></i>
                                                         </a>
-                                                        <a href="{% url 'delete_reservation' bus_booking.id %}"
-                                                           class="btn btn-outline-danger"
-                                                           title="Delete"
-                                                           onclick="return confirm('Are you sure you want to delete this reservation?')">
-                                                            <i class="bi bi-trash d-none d-sm-inline"></i>
-                                                            <span class="d-inline d-sm-none">Delete</span>
-                                                        </a>
+                                                        <button class="btn btn-outline-danger delete-reservation-btn" 
+                                                                data-delete-url="{% url 'delete_reservation' bus_booking.id %}"
+                                                                title="Delete">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
                                         {% empty %}
-                                            <tr>
-                                                <td colspan="6" class="text-center py-3">No reservations found</td>
+                                            <tr class="no-results-row">
+                                                <td colspan="11" class="text-center py-3">No reservations found</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                        <!-- Pagination remains the same -->
                         {% if bus_reserve_data.paginator.num_pages > 1 %}
                         <div class="card-footer bg-white">
                             <nav aria-label="Bus reservations pagination">
                                 <ul class="pagination justify-content-center mb-0">
                                     {% if bus_reserve_data.has_previous %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ bus_reserve_data.previous_page_number }}" aria-label="Previous">
+                                            <a class="page-link" href="?bus_page={{ bus_reserve_data.previous_page_number }}" aria-label="Previous">
                                                 <span aria-hidden="true">«</span>
                                             </a>
                                         </li>
@@ -186,7 +171,6 @@
                                             <span class="page-link">«</span>
                                         </li>
                                     {% endif %}
-
                                     {% for num in bus_reserve_data.paginator.page_range %}
                                         {% if bus_reserve_data.number == num %}
                                             <li class="page-item active">
@@ -194,14 +178,13 @@
                                             </li>
                                         {% elif num > bus_reserve_data.number|add:'-3' and num < bus_reserve_data.number|add:'3' %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                                <a class="page-link" href="?bus_page={{ num }}">{{ num }}</a>
                                             </li>
                                         {% endif %}
                                     {% endfor %}
-
                                     {% if bus_reserve_data.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ bus_reserve_data.next_page_number }}" aria-label="Next">
+                                            <a class="page-link" href="?bus_page={{ bus_reserve_data.next_page_number }}" aria-label="Next">
                                                 <span aria-hidden="true">»</span>
                                             </a>
                                         </li>
@@ -217,12 +200,11 @@
                     </div>
                 </div>
 
-                <!-- Bookings Tab (unchanged) -->
+                <!-- Bookings Tab -->
                 <div class="tab-pane fade" id="bookings-list" role="tabpanel" aria-labelledby="bookings-tab">
-                    <!-- Previous bookings tab content remains unchanged -->
                     <div class="card shadow-sm">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                            <h3 class="h5 mb-0">Booking List</h3>
+                            <h3 class="h5 mb-0 fw-bold text-primary"><i class="bi bi-ticket me-2"></i>Seat Bookings</h3>
                             <div class="text-muted small">
                                 Showing <span id="booking-showing-count">{{ booking_data|length }}</span> of {{ booking_data.paginator.count }} records
                             </div>
@@ -239,6 +221,7 @@
                                             <th>Status</th>
                                             <th>Date</th>
                                             <th>Amount</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -246,22 +229,37 @@
                                             <tr class="booking-row" 
                                                 data-status="{{ booking.booking_status|lower }}"
                                                 data-booked-date="{{ booking.booked_at|date:'Y-m-d' }}"
-                                                data-search="#{{ booking.id }} {{ booking.user.full_name }} {{ booking.schedule.source }} to {{ booking.schedule.destination }}">
+                                                data-search="#{{ booking.id }} {{ booking.user.full_name|lower }} {{ booking.schedule.route.source|lower }} {{ booking.schedule.route.destination|lower }}"
+                                                data-booking-id="{{ booking.id }}"
+                                                data-customer="{{ booking.user.full_name }}"
+                                                data-trip="{{ booking.schedule.route.source }} to {{ booking.schedule.route.destination }}">
                                                 <td>#{{ booking.id }}</td>
                                                 <td>{{ booking.user.full_name }}</td>
                                                 <td>{{ booking.schedule.route.source }} to {{ booking.schedule.route.destination }}</td>
                                                 <td>{{ booking.seat|join:", " }}</td>
                                                 <td>
                                                     <span class="badge {% if booking.booking_status == 'booked' %}bg-success{% elif booking.booking_status == 'pending' %}bg-warning{% elif booking.booking_status == 'cancelled' %}bg-danger{% else %}bg-secondary{% endif %}">
-                                                        {{ booking.booking_status }}
+                                                        {{ booking.booking_status|title }}
                                                     </span>
                                                 </td>
                                                 <td>{{ booking.booked_at|date:"d M, Y" }}</td>
                                                 <td>Rs. {{ booking.schedule.price|floatformat:2 }}</td>
+                                                <td class="text-end pe-3">
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <a href="" class="btn btn-outline-warning" title="Edit">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </a>
+                                                        <button class="btn btn-outline-danger delete-booking-btn" 
+                                                                data-delete-url=""
+                                                                title="Delete">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         {% empty %}
-                                            <tr>
-                                                <td colspan="7" class="text-center py-3">No bookings found</td>
+                                            <tr class="no-results-row">
+                                                <td colspan="8" class="text-center py-3">No bookings found</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -274,7 +272,7 @@
                                 <ul class="pagination justify-content-center mb-0">
                                     {% if booking_data.has_previous %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ booking_data.previous_page_number }}" aria-label="Previous">
+                                            <a class="page-link" href="?booking_page={{ booking_data.previous_page_number }}" aria-label="Previous">
                                                 <span aria-hidden="true">«</span>
                                             </a>
                                         </li>
@@ -283,7 +281,6 @@
                                             <span class="page-link">«</span>
                                         </li>
                                     {% endif %}
-
                                     {% for num in booking_data.paginator.page_range %}
                                         {% if booking_data.number == num %}
                                             <li class="page-item active">
@@ -291,14 +288,13 @@
                                             </li>
                                         {% elif num > booking_data.number|add:'-3' and num < booking_data.number|add:'3' %}
                                             <li class="page-item">
-                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                                <a class="page-link" href="?booking_page={{ num }}">{{ num }}</a>
                                             </li>
                                         {% endif %}
                                     {% endfor %}
-
                                     {% if booking_data.has_next %}
                                         <li class="page-item">
-                                            <a class="page-link" href="?page={{ booking_data.next_page_number }}" aria-label="Next">
+                                            <a class="page-link" href="?booking_page={{ booking_data.next_page_number }}" aria-label="Next">
                                                 <span aria-hidden="true">»</span>
                                             </a>
                                         </li>
@@ -318,137 +314,269 @@
     </div>
 </div>
 
-<!-- Toast HTML (unchanged) -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-    <div id="deleteToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header bg-danger text-white">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <strong class="me-auto">Confirm Delete</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body">
-            <p>Are you sure you want to delete this booking?</p>
-            <div class="mt-2 pt-2 border-top">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="toast">Cancel</button>
-                <button type="button" class="btn btn-danger btn-sm" id="confirmDelete">Delete</button>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmModalLabel"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this booking?</p>
+                <div class="alert alert-light border p-3 mt-2">
+                    <p class="mb-1 fw-bold" id="deleteDetails"></p>
+                </div>
+                <p class="text-muted mt-3">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-1"></i> Delete
+                </button>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_css %}
+<style>
+    .table-responsive {
+        border-radius: 8px;
+        overflow-x: auto;
+    }
+    
+    .badge {
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fa;
+    }
+    
+    .nav-tabs .nav-link {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        border-bottom-width: 3px;
+    }
+    
+    .hidden-row {
+        display: none !important;
+    }
+    
+    .modal-content {
+        border-radius: 12px;
+    }
+    
+    .modal-header {
+        border-bottom: none;
+    }
+    
+    .modal-footer {
+        border-top: none;
+    }
+    
+    .btn:focus, .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1060;
+    }
+    
+    @media (max-width: 767.98px) {
+        .main-content {
+            margin-top: 0 !important;
+        }
+        
+        .table td, .table th {
+            font-size: 0.875rem;
+        }
+        
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+        }
+    }
+    
+    @media (max-width: 575.98px) {
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .btn-group-sm .btn {
+            font-size: 0.75rem;
+        }
+    }
+    
+    .modal { z-index: 1055; }
+    .modal-backdrop { z-index: 1050; }
+</style>
+{% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const globalSearch = document.getElementById('global-search');
-    const statusFilter = document.getElementById('status-filter');
-    const startDate = document.getElementById('start-date');
-    const endDate = document.getElementById('end-date');
-    const clearSearch = document.getElementById('clear-search');
-    const todayFilter = document.getElementById('today-filter');
-    const busShowingCount = document.getElementById('bus-showing-count');
-    const bookingShowingCount = document.getElementById('booking-showing-count');
+$(document).ready(function() {
+    // Initialize Bootstrap components
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    const deleteModal = new bootstrap.Modal('#deleteConfirmModal', { keyboard: false });
 
+    // Toast notification utility
+    function showToast(message, type = 'success') {
+        let $toastContainer = $('.toast-container');
+        if (!$toastContainer.length) {
+            $toastContainer = $('<div class="toast-container"></div>').appendTo('body');
+        }
+
+        const $toast = $(`
+            <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi ${type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `).appendTo($toastContainer);
+
+        const toast = new bootstrap.Toast($toast[0], { delay: 5000 });
+        toast.show();
+        $toast.on('hidden.bs.toast', () => $toast.remove());
+    }
+
+    // Show Django messages
+    {% if messages %}
+    {% for message in messages %}
+    showToast('{{ message|escapejs }}', '{{ message.tags|escapejs }}');
+    {% endfor %}
+    {% endif %}
+
+    // Filter tables
     function filterTables() {
-        const searchTerm = globalSearch.value.toLowerCase();
-        const statusValue = statusFilter.value.toLowerCase();
-        const startDateValue = startDate.value;
-        const endDateValue = endDate.value;
+        const searchTerm = $('#global-search').val().toLowerCase().trim();
+        const statusValue = $('#status-filter').val().toLowerCase();
+        const startDateValue = $('#start-date').val();
+        const endDateValue = $('#end-date').val();
 
         let visibleBusRows = 0;
-        document.querySelectorAll('#bus-reservations-table tbody tr.bus-row').forEach(row => {
-            const matchesSearch = row.getAttribute('data-search').toLowerCase().includes(searchTerm);
-            const matchesStatus = statusValue === '' || row.getAttribute('data-status') === statusValue;
-            const rowDate = row.getAttribute('data-start-date');
+        $('#bus-reservations-table tbody tr.bus-row').each(function() {
+            const $row = $(this);
+            const searchText = $row.data('search').toLowerCase();
+            const status = $row.data('status');
+            const rowDate = $row.data('start-date');
+
+            const matchesSearch = searchText.includes(searchTerm);
+            const matchesStatus = !statusValue || status === statusValue;
             const matchesDate = (!startDateValue || rowDate >= startDateValue) && 
                               (!endDateValue || rowDate <= endDateValue);
 
-            if (matchesSearch && matchesStatus && matchesDate) {
-                row.classList.remove('hidden-row');
-                visibleBusRows++;
-            } else {
-                row.classList.add('hidden-row');
-            }
+            $row.toggleClass('hidden-row', !(matchesSearch && matchesStatus && matchesDate));
+            if (matchesSearch && matchesStatus && matchesDate) visibleBusRows++;
         });
 
         let visibleBookingRows = 0;
-        document.querySelectorAll('#bookings-table tbody tr.booking-row').forEach(row => {
-            const matchesSearch = row.getAttribute('data-search').toLowerCase().includes(searchTerm);
-            const matchesStatus = statusValue === '' || row.getAttribute('data-status') === statusValue;
-            const rowDate = row.getAttribute('data-booked-date');
+        $('#bookings-table tbody tr.booking-row').each(function() {
+            const $row = $(this);
+            const searchText = $row.data('search').toLowerCase();
+            const status = $row.data('status');
+            const rowDate = $row.data('booked-date');
+
+            const matchesSearch = searchText.includes(searchTerm);
+            const matchesStatus = !statusValue || status === statusValue;
             const matchesDate = (!startDateValue || rowDate >= startDateValue) && 
                               (!endDateValue || rowDate <= endDateValue);
 
-            if (matchesSearch && matchesStatus && matchesDate) {
-                row.classList.remove('hidden-row');
-                visibleBookingRows++;
-            } else {
-                row.classList.add('hidden-row');
+            $row.toggleClass('hidden-row', !(matchesSearch && matchesStatus && matchesDate));
+            if (matchesSearch && matchesStatus && matchesDate) visibleBookingRows++;
+        });
+
+        $('#bus-showing-count').text(visibleBusRows);
+        $('#booking-showing-count').text(visibleBookingRows);
+
+        updateNoResultsRow('#bus-reservations-table', visibleBusRows, 11);
+        updateNoResultsRow('#bookings-table', visibleBookingRows, 8);
+    }
+
+    // Update no results row
+    function updateNoResultsRow(tableId, visibleCount, colspan) {
+        const $table = $(tableId);
+        let $noResultsRow = $table.find('tbody tr.no-results-row');
+
+        if (visibleCount === 0) {
+            if (!$noResultsRow.length || !$noResultsRow.text().includes('No matching')) {
+                $noResultsRow.remove();
+                $table.find('tbody').append(
+                    `<tr class="no-results-row"><td colspan="${colspan}" class="text-center py-3">No matching records found</td></tr>`
+                );
             }
-        });
-
-        busShowingCount.textContent = visibleBusRows;
-        bookingShowingCount.textContent = visibleBookingRows;
-
-        showNoResultsMessage('#bus-reservations-table', visibleBusRows);
-        showNoResultsMessage('#bookings-table', visibleBookingRows);
-    }
-
-    function showNoResultsMessage(tableId, visibleCount) {
-        const table = document.querySelector(tableId);
-        const noResultsRow = table.querySelector('tbody tr:not([class*="row"])');
-        
-        if (visibleCount === 0 && noResultsRow && !noResultsRow.textContent.includes('No')) {
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `<td colspan="${tableId === '#bus-reservations-table' ? 6 : 7}" class="text-center py-3">No matching records found</td>`;
-            table.querySelector('tbody').appendChild(newRow);
-        } else if (visibleCount > 0 && noResultsRow && noResultsRow.textContent.includes('No matching')) {
-            noResultsRow.remove();
+        } else {
+            $noResultsRow.remove();
         }
     }
 
-    globalSearch.addEventListener('input', filterTables);
-    statusFilter.addEventListener('change', filterTables);
-    startDate.addEventListener('change', filterTables);
-    endDate.addEventListener('change', filterTables);
-    
-    clearSearch.addEventListener('click', function() {
-        globalSearch.value = '';
-        statusFilter.value = '';
-        startDate.value = '';
-        endDate.value = '';
+    // Event handlers
+    $('#global-search').on('input', filterTables);
+    $('#status-filter').on('change', filterTables);
+    $('#start-date, #end-date').on('change', filterTables);
+
+    $('#clear-search').on('click', function() {
+        $('#global-search, #status-filter, #start-date, #end-date').val('');
         filterTables();
     });
 
-    todayFilter.addEventListener('click', function() {
+    $('#today-filter').on('click', function() {
         const today = new Date().toISOString().split('T')[0];
-        startDate.value = today;
-        endDate.value = today;
+        $('#start-date, #end-date').val(today);
         filterTables();
     });
 
-    filterTables();
+    // Delete confirmation
+    let currentDeleteUrl = '';
+    $(document).on('click', '.delete-reservation-btn, .delete-booking-btn', function() {
+        const $btn = $(this);
+        currentDeleteUrl = $btn.data('delete-url');
+        
+        const $row = $btn.closest('tr');
+        const details = $row.hasClass('bus-row') 
+            ? `User: ${$row.data('user')}<br>Bus: ${$row.data('bus')}<br>Route: ${$row.data('route')}`
+            : `Booking ID: #${$row.data('booking-id')}<br>Customer: ${$row.data('customer')}<br>Trip: ${$row.data('trip')}`;
 
-    const deleteToast = new bootstrap.Toast(document.getElementById('deleteToast'), {
-        autohide: false
+        $('#deleteDetails').html(details);
+        deleteModal.show();
     });
 
-    let deleteUrl = '';
-    document.querySelectorAll('.delete-schedule-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            deleteUrl = this.href;
-            deleteToast.show();
-        });
-    });
-
-    document.getElementById('confirmDelete').addEventListener('click', function() {
-        if (deleteUrl) {
-            window.location.href = deleteUrl;
+    $('#confirmDeleteBtn').on('click', function() {
+        if (currentDeleteUrl) {
+            window.location.href = currentDeleteUrl;
         }
-        deleteToast.hide();
+        deleteModal.hide();
     });
+
+    // Responsive layout
+    function handleResponsiveLayout() {
+        const isMobile = window.innerWidth < 576;
+        $('.btn-group-sm .btn').each(function() {
+            const $btn = $(this);
+            $btn.find('.bi').toggleClass('d-none', isMobile);
+            $btn.find('span').toggleClass('d-none', !isMobile);
+        });
+    }
+
+    handleResponsiveLayout();
+    $(window).on('resize', handleResponsiveLayout);
+
+    // Initialize filters
+    filterTables();
 });
 </script>
-{% endblock %}
 {% endblock %}

@@ -140,7 +140,7 @@
                         </div>
                         <div class="col-md-6">
                             <label for="distance" class="form-label fw-bold">Distance (km) <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" class="form-control" id="distance" name="distance" placeholder="e.g., 200.50" required>
+                            <input type="number" step="0.01" class="form-control" id="distance" name="distance" placeholder="e.g., 200 " required>
                         </div>
                         <div class="col-md-6">
                             <label for="estimated_time" class="form-label fw-bold">Estimated Time (hour) <span class="text-danger">*</span></label>
@@ -197,110 +197,107 @@
 
 {% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Bootstrap modals
-        const addRouteModal = new bootstrap.Modal(document.getElementById('addRouteModal'));
-        const deleteRouteModal = new bootstrap.Modal(document.getElementById('deleteRouteModal'));
-        
-        // Show Add Route Modal functions
-        const addButtons = [
-            document.getElementById('addRouteBtn'),
-            document.getElementById('mobileAddRouteBtn'),
-            document.getElementById('emptyAddRouteBtn')
-        ];
-        
-        addButtons.forEach(button => {
-            if (button) {
-                button.addEventListener('click', function() {
-                    addRouteModal.show();
-                });
-            }
-        });
-        
-        // Delete confirmation functionality
-        const deleteButtons = document.querySelectorAll('.btn-outline-danger');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // Get route details from the table row
-                const row = this.closest('tr');
-                const sourceCell = row.querySelector('td:nth-child(2)');
-                const destinationCell = row.querySelector('td:nth-child(3)');
-                
-                // Extract route information
-                const source = sourceCell.textContent.trim();
-                const destination = destinationCell.textContent.trim();
-                const routeName = `${source} to ${destination}`;
-                
-                // Set the route name in the confirmation modal
-                document.getElementById('deleteRouteName').textContent = routeName;
-                
-                // Update the form action to point to the correct URL
-                const deleteUrl = this.getAttribute('href');
-                document.getElementById('deleteRouteForm').setAttribute('action', deleteUrl);
-                
-                // Show the confirmation modal
-                deleteRouteModal.show();
-            });
-        });
-        
-        // Search functionality
-        const searchInput = document.getElementById('searchRoutes');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                const searchTerm = this.value.toLowerCase();
-                
-                // Search in table rows
-                const tableRows = document.querySelectorAll('.route-row');
-                tableRows.forEach(row => {
-                    const source = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                    const destination = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                    const isVisible = source.includes(searchTerm) || destination.includes(searchTerm);
-                    row.style.display = isVisible ? '' : 'none';
-                });
-                
-                // Search in card view
-                const routeCards = document.querySelectorAll('.route-card');
-                routeCards.forEach(card => {
-                    const routeText = card.textContent.toLowerCase();
-                    card.style.display = routeText.includes(searchTerm) ? '' : 'none';
-                });
-            });
-        }
-        
-        // Make table horizontally scrollable with touch feedback
-        const tableResponsive = document.querySelector('.table-responsive');
-        if (tableResponsive) {
-            let isDown = false;
-            let startX;
-            let scrollLeft;
-            
-            tableResponsive.addEventListener('mousedown', (e) => {
-                isDown = true;
-                tableResponsive.classList.add('active');
-                startX = e.pageX - tableResponsive.offsetLeft;
-                scrollLeft = tableResponsive.scrollLeft;
-            });
-            
-            tableResponsive.addEventListener('mouseleave', () => {
-                isDown = false;
-                tableResponsive.classList.remove('active');
-            });
-            
-            tableResponsive.addEventListener('mouseup', () => {
-                isDown = false;
-                tableResponsive.classList.remove('active');
-            });
-            
-            tableResponsive.addEventListener('mousemove', (e) => {
-                if (!isDown) return;
-                e.preventDefault();
-                const x = e.pageX - tableResponsive.offsetLeft;
-                const walk = (x - startX) * 2; // Scroll speed
-                tableResponsive.scrollLeft = scrollLeft - walk;
+  // Updated JavaScript for the delete confirmation functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap modals
+    const addRouteModal = new bootstrap.Modal(document.getElementById('addRouteModal'));
+    const deleteRouteModal = new bootstrap.Modal(document.getElementById('deleteRouteModal'));
+    
+    // Show Add Route Modal functions
+    const addButtons = [
+        document.getElementById('addRouteBtn'),
+        document.getElementById('mobileAddRouteBtn'),
+        document.getElementById('emptyAddRouteBtn')
+    ];
+    
+    addButtons.forEach(button => {
+        if (button) {
+            button.addEventListener('click', function() {
+                addRouteModal.show();
             });
         }
     });
+    
+    // Delete confirmation functionality
+    const deleteButtons = document.querySelectorAll('.delete-route-btn');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Get route details from data attributes
+            const routeId = this.getAttribute('data-route-id');
+            const source = this.getAttribute('data-route-source');
+            const destination = this.getAttribute('data-route-destination');
+            const routeName = `${source} to ${destination}`;
+            
+            // Set the route name in the confirmation modal
+            document.getElementById('deleteRouteName').textContent = routeName;
+            
+            // Set the correct delete URL
+            const deleteUrl = `/routes-delete/${routeId}/`;
+            document.getElementById('deleteRouteForm').setAttribute('action', deleteUrl);
+            
+            // Show the confirmation modal
+            deleteRouteModal.show();
+        });
+    });
+    
+    // Rest of your existing JavaScript code...
+    const searchInput = document.getElementById('searchRoutes');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            // Search in table rows
+            const tableRows = document.querySelectorAll('.route-row');
+            tableRows.forEach(row => {
+                const source = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const destination = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                const isVisible = source.includes(searchTerm) || destination.includes(searchTerm);
+                row.style.display = isVisible ? '' : 'none';
+            });
+            
+            // Search in card view
+            const routeCards = document.querySelectorAll('.route-card');
+            routeCards.forEach(card => {
+                const routeText = card.textContent.toLowerCase();
+                card.style.display = routeText.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+    
+    // Make table horizontally scrollable with touch feedback
+    const tableResponsive = document.querySelector('.table-responsive');
+    if (tableResponsive) {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        
+        tableResponsive.addEventListener('mousedown', (e) => {
+            isDown = true;
+            tableResponsive.classList.add('active');
+            startX = e.pageX - tableResponsive.offsetLeft;
+            scrollLeft = tableResponsive.scrollLeft;
+        });
+        
+        tableResponsive.addEventListener('mouseleave', () => {
+            isDown = false;
+            tableResponsive.classList.remove('active');
+        });
+        
+        tableResponsive.addEventListener('mouseup', () => {
+            isDown = false;
+            tableResponsive.classList.remove('active');
+        });
+        
+        tableResponsive.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - tableResponsive.offsetLeft;
+            const walk = (x - startX) * 2; // Scroll speed
+            tableResponsive.scrollLeft = scrollLeft - walk;
+        });
+    }
+});
 </script>
 {% endblock %}

@@ -8,12 +8,11 @@
                 <!-- Page Header -->
                 <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between mb-4 gap-3">
                     <div class="d-flex align-items-center gap-3">
-                        <!-- Back Button -->
                         <a href="{% url 'transportation_company_list' %}" class="btn sub-admin-btn-back" title="Back to Table">
                             <i class="bi bi-arrow-left"></i>
                         </a>
                         <h1 class="sub-admin-title mb-0">
-                            <i class="bi bi-bus-front me-2"></i>Transportation Management
+                            <i class="bi bi-bus-front me-2 text-primary"></i>Transportation Management
                         </h1>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
@@ -24,7 +23,7 @@
                             <i class="bi bi-calendar-check me-1"></i>Total Schedules: {{ bus_schedule_count }}
                         </span>
                         <span class="sub-admin-stat-badge">
-                            <i class="bi bi-truck me-1 " style="width:10px !important"></i>Total Vehicles: {{ vehicle_count }}
+                            <i class="bi bi-truck me-1"></i>Total Vehicles: {{ vehicle_count }}
                         </span>
                     </div>
                 </div>
@@ -32,12 +31,12 @@
                 <!-- Tabs for Buses and Vehicles -->
                 <ul class="nav nav-tabs mb-4" id="transportationTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="buses-tab" data-bs-toggle="tab" data-bs-target="#buses" type="button" role="tab" aria-controls="buses" aria-selected="true">
+                        <button class="nav-link active" id="buses-tab" data-bs-toggle="tab" data-bs-target="#buses" type="button" role="tab">
                             <i class="bi bi-bus-front me-1"></i>Buses
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="vehicles-tab" data-bs-toggle="tab" data-bs-target="#vehicles" type="button" role="tab" aria-controls="vehicles" aria-selected="false">
+                        <button class="nav-link" id="vehicles-tab" data-bs-toggle="tab" data-bs-target="#vehicles" type="button" role="tab">
                             <i class="bi bi-truck me-1"></i>Vehicles
                         </button>
                     </li>
@@ -46,7 +45,6 @@
                 <div class="tab-content" id="transportationTabsContent">
                     <!-- Buses Tab Content -->
                     <div class="tab-pane fade show active" id="buses" role="tabpanel" aria-labelledby="buses-tab">
-                        <!-- Bus List Table -->
                         <div class="card sub-admin-card mb-4">
                             <div class="card-header sub-admin-card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                                 <h6 class="m-0">
@@ -64,7 +62,7 @@
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table sub-admin-table m-0">
+                                    <table class="table sub-admin-table m-0" id="busTable">
                                         <thead>
                                             <tr>
                                                 <th>ID</th>
@@ -75,18 +73,21 @@
                                                 <th>Driver</th>
                                                 <th>Staff</th>
                                                 <th>Status</th>
-                                                {% comment %} <th>Actions</th> {% endcomment %}
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody id="busTableBody">
                                             {% for bus in buses %}
-                                            <tr class="bus-row">
+                                            <tr class="bus-row" 
+                                                data-search="{{ bus.bus_number|lower }} {{ bus.bus_type|lower }} {{ bus.driver.full_name|lower }} {{ bus.staff.full_name|lower }}"
+                                                data-bus-id="{{ bus.id }}"
+                                                data-bus-name="{{ bus.bus_number }}">
                                                 <td>{{ bus.id }}</td>
                                                 <td class="fw-medium">{{ bus.bus_number }}</td>
                                                 <td>{{ bus.bus_type }}</td>
                                                 <td>
                                                     {% if bus.image %}
-                                                        <img src="{{ bus.image.url }}" alt="Bus Image" class="img-fluid" style="max-width: 50px; max-height: 50px;">
+                                                        <img src="{{ bus.image.url }}" alt="Bus Image" class="img-fluid rounded" style="max-width: 50px; max-height: 50px; object-fit: cover;">
                                                     {% else %}
                                                         <span class="sub-admin-badge-none">No Image</span>
                                                     {% endif %}
@@ -94,43 +95,46 @@
                                                 <td>{{ bus.total_seats }} seats</td>
                                                 <td>
                                                     {% if bus.driver %}
-                                                        {{ bus.driver.full_name }} 
+                                                        {{ bus.driver.full_name }}
                                                     {% else %}
                                                         <span class="sub-admin-badge-none">No Driver</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>
                                                     {% if bus.staff %}
-                                                        {{ bus.staff.full_name}}
+                                                        {{ bus.staff.full_name }}
                                                     {% else %}
                                                         <span class="sub-admin-badge-none">No Staff</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>
-                                                    {% if bus.is_active %}
-                                                        <span class="badge bg-success">Active</span>
-                                                    {% else %}
-                                                        <span class="badge bg-danger">Inactive</span>
-                                                    {% endif %}
+                                                    <span class="badge {% if bus.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                                        {{ bus.is_active|yesno:"Active,Inactive" }}
+                                                    </span>
                                                 </td>
-                                                {% comment %} <td>
+                                                <td>
                                                     <div class="sub-admin-actions">
-                                                        <a href="javascript:void(0);" class="btn sub-admin-btn-edit btn-sm edit-bus" 
-                                                           data-bus-id="{{ bus.id }}" data-bus-name="{{ bus.bus_number }}" title="Edit Bus">
+                                                        <button class="btn sub-admin-btn-edit btn-sm edit-bus" 
+                                                                data-bus-id="{{ bus.id }}" 
+                                                                data-bus-name="{{ bus.bus_number }}" 
+                                                                title="Edit Bus">
                                                             <i class="bi bi-pencil"></i>
-                                                        </a>
-                                                        <a href="javascript:void(0);" class="btn sub-admin-btn-delete btn-sm delete-bus" 
-                                                           data-bus-id="{{ bus.id }}" data-bus-name="{{ bus.bus_number }}" title="Delete Bus">
+                                                        </button>
+                                                        <button class="btn sub-admin-btn-delete btn-sm delete-bus" 
+                                                                data-bus-id="{{ bus.id }}" 
+                                                                data-bus-name="{{ bus.bus_number }}"
+                                                                data-delete-url="{% url 'delete_bus' bus.id %}" 
+                                                                title="Delete Bus">
                                                             <i class="bi bi-trash"></i>
-                                                        </a>
+                                                        </button>
                                                     </div>
-                                                </td> {% endcomment %}
-                                                                                        </tr>
+                                                </td>
+                                            </tr>
                                             {% empty %}
-                                            <tr id="emptyBusRow">
+                                            <tr id="emptyBusRow" class="no-results-row">
                                                 <td colspan="9" class="sub-admin-empty">
                                                     <div class="sub-admin-empty-state">
-                                                        <i class="bi bi-bus-front"></i>
+                                                        <i class="bi bi-bus-front display-4 text-muted"></i>
                                                         <p>No buses found</p>
                                                         <a href="{% url 'create_bus' %}" class="btn sub-admin-btn-add">
                                                             <i class="bi bi-plus-circle me-2"></i>Add Your First Bus
@@ -142,7 +146,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <!-- Pagination for Buses -->
                                 {% if buses.paginator.num_pages > 1 %}
                                 <nav class="sub-admin-pagination mt-3">
                                     <ul class="pagination justify-content-center flex-wrap">
@@ -174,7 +177,6 @@
 
                     <!-- Vehicles Tab Content -->
                     <div class="tab-pane fade" id="vehicles" role="tabpanel" aria-labelledby="vehicles-tab">
-                        <!-- Vehicles List Table -->
                         <div class="card sub-admin-card mb-4">
                             <div class="card-header sub-admin-card-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                                 <h6 class="m-0">
@@ -192,7 +194,7 @@
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table sub-admin-table m-0">
+                                    <table class="table sub-admin-table m-0" id="vehicleTable">
                                         <thead>
                                             <tr>
                                                 <th>ID</th>
@@ -210,13 +212,16 @@
                                         </thead>
                                         <tbody id="vehicleTableBody">
                                             {% for vehicle in vehicles %}
-                                            <tr class="vehicle-row">
+                                            <tr class="vehicle-row" 
+                                                data-search="{{ vehicle.vechicle_number|lower }} {{ vehicle.type.name|lower }} {{ vehicle.driver.full_name|lower }} {{ vehicle.staff.full_name|lower }}"
+                                                data-vehicle-id="{{ vehicle.id }}"
+                                                data-vehicle-name="{{ vehicle.vechicle_number }}">
                                                 <td>{{ vehicle.id }}</td>
                                                 <td class="fw-medium">{{ vehicle.vechicle_number }}</td>
                                                 <td>{{ vehicle.type.name }}</td>
                                                 <td>
                                                     {% if vehicle.image %}
-                                                        <img src="{{ vehicle.image.url }}" alt="Vehicle Image" class="img-fluid" style="max-width: 50px; max-height: 50px;">
+                                                        <img src="{{ vehicle.image.url }}" alt="Vehicle Image" class="img-fluid rounded" style="max-width: 50px; max-height: 50px; object-fit: cover;">
                                                     {% else %}
                                                         <span class="sub-admin-badge-none">No Image</span>
                                                     {% endif %}
@@ -225,52 +230,55 @@
                                                     {% if vehicle.document %}
                                                         <a href="{{ vehicle.document.url }}" target="_blank" class="btn sub-admin-btn-edit btn-sm" title="View Document">
                                                             <i class="bi bi-file-earmark-text"></i>
-                                                        </a>    
+                                                        </a>
                                                     {% else %}
                                                         <span class="sub-admin-badge-none">No Document</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>
                                                     {% if vehicle.driver %}
-                                                        {{ vehicle.driver.full_name }} 
+                                                        {{ vehicle.driver.full_name }}
                                                     {% else %}
                                                         <span class="sub-admin-badge-none">No Driver</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>
                                                     {% if vehicle.staff %}
-                                                        {{ vehicle.staff.full_name}}
+                                                        {{ vehicle.staff.full_name }}
                                                     {% else %}
                                                         <span class="sub-admin-badge-none">No Staff</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>{{ vehicle.total_seats }} seats</td>
-                                                <td>Rs {{ vehicle.price }}</td>
+                                                <td>Rs {{ vehicle.price|floatformat:2 }}</td>
                                                 <td>
-                                                    {% if vehicle.is_active %}
-                                                        <span class="badge bg-success">Active</span>
-                                                    {% else %}
-                                                        <span class="badge bg-danger">Inactive</span>
-                                                    {% endif %}
+                                                    <span class="badge {% if vehicle.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                                        {{ vehicle.is_active|yesno:"Active,Inactive" }}
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <div class="sub-admin-actions">
-                                                        <a href="{% url 'vehicle_reservation_edit' vehicle.id %}" class="btn sub-admin-btn-edit btn-sm edit-vehicle" 
-                                                           data-vehicle-id="{{ vehicle.id }}" data-vehicle-name="{{ vehicle.vechicle_number }}" title="Edit Vehicle">
+                                                        <button class="btn sub-admin-btn-edit btn-sm edit-vehicle" 
+                                                                data-vehicle-id="{{ vehicle.id }}" 
+                                                                data-vehicle-name="{{ vehicle.vechicle_number }}" 
+                                                                title="Edit Vehicle">
                                                             <i class="bi bi-pencil"></i>
-                                                        </a>
-                                                        <a href="{% url 'delete_vehicle_reservation' vehicle.id %}" class="btn sub-admin-btn-delete btn-sm delete-vehicle" 
-                                                           data-vehicle-id="{{ vehicle.id }}" data-vehicle-name="{{ vehicle.vechicle_number }}" title="Delete Vehicle">
+                                                        </button>
+                                                        <button class="btn sub-admin-btn-delete btn-sm delete-vehicle" 
+                                                                data-vehicle-id="{{ vehicle.id }}" 
+                                                                data-vehicle-name="{{ vehicle.vechicle_number }}"
+                                                                data-delete-url="{% url 'delete_vehicle_reservation' vehicle.id %}" 
+                                                                title="Delete Vehicle">
                                                             <i class="bi bi-trash"></i>
-                                                        </a>
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
                                             {% empty %}
-                                            <tr id="emptyVehicleRow">
+                                            <tr id="emptyVehicleRow" class="no-results-row">
                                                 <td colspan="11" class="sub-admin-empty">
                                                     <div class="sub-admin-empty-state">
-                                                        <i class="bi bi-truck"></i>
+                                                        <i class="bi bi-truck display-4 text-muted"></i>
                                                         <p>No vehicles found</p>
                                                         <a href="{% url 'vehicle_reservation' %}" class="btn sub-admin-btn-add">
                                                             <i class="bi bi-plus-circle me-2"></i>Add Your First Vehicle
@@ -282,7 +290,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <!-- Pagination for Vehicles -->
                                 {% if vehicles.paginator.num_pages > 1 %}
                                 <nav class="sub-admin-pagination mt-3">
                                     <ul class="pagination justify-content-center flex-wrap">
@@ -318,20 +325,26 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteConfirmModalLabel">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="deleteConfirmMessage">
-                <!-- Content will be injected dynamically -->
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteItemName"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-circle me-2"></i>This action cannot be undone.
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <a href="#" id="confirmDeleteBtn" class="btn btn-danger">Delete</a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
             </div>
         </div>
     </div>
@@ -356,31 +369,20 @@
                     <form id="editForm" method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="row">
-                            <!-- Bus/Vehicle Number -->
                             <div class="col-md-6 mb-3">
-                                <label for="editBusNumber" class="form-label">Bus/Vehicle Number</label>
-                                <input type="text" class="form-control" id="editBusNumber" name="bus_number" required>
+                                <label for="editNumber" class="form-label">Number</label>
+                                <input type="text" class="form-control" id="editNumber" name="number" required>
                             </div>
-                            
-                            <!-- Type -->
                             <div class="col-md-6 mb-3">
-                                <label for="editBusType" class="form-label">Type</label>
-                                <select class="form-select" id="editBusType" name="bus_type" required>
+                                <label for="editType" class="form-label">Type</label>
+                                <select class="form-select" id="editType" name="type" required>
                                     <option value="">Select Type</option>
-                                    <option value="AC">AC</option>
-                                    <option value="Non-AC">Non-AC</option>
-                                    <option value="Sleeper">Sleeper</option>
-                                    <option value="Seater">Seater</option>
                                 </select>
                             </div>
-                            
-                            <!-- Total Seats -->
                             <div class="col-md-6 mb-3">
                                 <label for="editTotalSeats" class="form-label">Total Seats</label>
-                                <input type="number" class="form-control" id="editTotalSeats" name="total_seats" required>
+                                <input type="number" class="form-control" id="editTotalSeats" name="total_seats" min="1" required>
                             </div>
-                            
-                            <!-- Driver -->
                             <div class="col-md-6 mb-3">
                                 <label for="editDriver" class="form-label">Driver</label>
                                 <select class="form-select" id="editDriver" name="driver">
@@ -390,8 +392,6 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            
-                            <!-- Staff -->
                             <div class="col-md-6 mb-3">
                                 <label for="editStaff" class="form-label">Staff</label>
                                 <select class="form-select" id="editStaff" name="staff">
@@ -401,39 +401,34 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            
-                            <!-- Price (for vehicles) -->
                             <div class="col-md-6 mb-3" id="priceFieldContainer" style="display: none;">
                                 <label for="editPrice" class="form-label">Price</label>
-                                <input type="number" class="form-control" id="editPrice" name="price" step="0.01">
+                                <input type="number" class="form-control" id="editPrice" name="price" step="0.01" min="0">
                             </div>
-                            
-                            <!-- Image -->
                             <div class="col-md-6 mb-3">
                                 <label for="editImage" class="form-label">Image</label>
                                 <input type="file" class="form-control" id="editImage" name="image" accept="image/*">
+                                <div id="imagePreviewContainer" class="mt-2 d-none">
+                                    <img id="imagePreview" src="#" class="img-thumbnail" style="max-width: 100px;">
+                                </div>
                             </div>
-                            
-                            <!-- Status -->
                             <div class="col-md-6 mb-3">
                                 <div class="form-check form-switch mt-4">
-                                    <input class="form-check-input" type="checkbox" id="editIsActive" name="is_active" checked>
+                                    <input class="form-check-input" type="checkbox" id="editIsActive" name="is_active">
                                     <label class="form-check-label" for="editIsActive">Active</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                        </div>
                     </form>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" form="editForm">Save Changes</button>
             </div>
         </div>
     </div>
 </div>
-
-
 
 <!-- Loading Spinner Modal -->
 <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true">
@@ -449,179 +444,338 @@
         </div>
     </div>
 </div>
-
-<!-- Toast for notifications -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-            <i class="bi bi-info-circle me-2"></i>
-            <strong class="me-auto" id="toastTitle">Notification</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body" id="toastMessage">
-            Action completed successfully
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
-/* Responsive styling */
-@media (max-width: 767.98px) {
-    .sub-admin-title {
-        font-size: 1.25rem;
+    .sub-admin-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
     }
     
-    .sub-admin-stat-badge {
-        font-size: 0.8rem;
+    .sub-admin-card:hover {
+        transform: translateY(-3px);
     }
     
-    .table-responsive {
-        font-size: 0.875rem;
+    .sub-admin-table img {
+        border-radius: 4px;
     }
     
     .sub-admin-actions {
         display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
+        gap: 8px;
     }
-}
-
-@media (min-width: 768px) and (max-width: 991.98px) {
-    .sub-admin-card-header {
-        padding: 0.75rem 1rem;
+    
+    .sub-admin-btn-edit, .sub-admin-btn-delete, .sub-admin-btn-add, .sub-admin-btn-back {
+        border-radius: 6px;
+        padding: 6px 12px;
+        transition: all 0.2s;
     }
-}
-
-@media (min-width: 992px) {
-    .main-content {
-       margin-left: 150px !important;
-       width: calc(100% - 150px);
+    
+    .sub-admin-btn-edit:hover, .sub-admin-btn-delete:hover, .sub-admin-btn-add:hover, .sub-admin-btn-back:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-}
-
-/* Table mobile optimizations */
-@media (max-width: 575.98px) {
-    .table-responsive table {
-        min-width: 800px;
+    
+    .sub-admin-stat-badge {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 6px 12px;
+        font-size: 0.9rem;
     }
-}
-
-/* General improvements */
-.sub-admin-card {
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    border-radius: 0.5rem;
-    overflow: hidden;
-}
-
-.sub-admin-btn-back:hover,
-.sub-admin-btn-edit:hover,
-.sub-admin-btn-delete:hover,
-.sub-admin-btn-add:hover {
-    opacity: 0.85;
-    transform: translateY(-1px);
-    transition: all 0.2s;
-}
-
-.sub-admin-empty-state {
-    padding: 3rem 1rem;
-}
-
-.sub-admin-empty-state i {
-    font-size: 1rem;
-    color: #ccc;
-    margin-bottom: 1rem;
-}
-
-.nav-tabs .nav-link.active {
-    font-weight: 500;
-}
-
-/* Toast styling */
-.toast {
-    background: white;
-    border-left: 4px solid #0d6efd;
-}
-
-.toast.error {
-    border-left-color: #dc3545;
-}
-
-.toast.success {
-    border-left-color: #198754;
-}
+    
+    .modal-content {
+        border-radius: 12px;
+    }
+    
+    .modal-header, .modal-footer {
+        border: none;
+    }
+    
+    .sub-admin-empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    
+    .sub-admin-empty-state i {
+        font-size: 3rem;
+        opacity: 0.5;
+    }
+    
+    .badge {
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 12px;
+    }
+    
+    .sub-admin-badge-none {
+        background: #f1f3f5;
+        color: #6c757d;
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+    
+    @media (max-width: 767.98px) {
+        .sub-admin-title {
+            font-size: 1.5rem;
+        }
+        
+        .sub-admin-table {
+            font-size: 0.875rem;
+        }
+        
+        .sub-admin-actions {
+            flex-wrap: wrap;
+        }
+        
+        .table-responsive table {
+            min-width: 800px;
+        }
+    }
+    
+    @media (min-width: 992px) {
+        .main-content {
+            margin-left: 150px !important;
+            width: calc(100% - 150px);
+        }
+    }
 </style>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-// Edit functionality for buses
-$(document).on('click', '.edit-bus', function(e) {
-    e.preventDefault();
-    const busId = $(this).data('bus-id');
-    const busName = $(this).data('bus-name');
-    
-    // Reset and prepare the modal
-    $('#editModalLabel').text('Edit Bus: ' + busName);
-    $('#editModalContent').hide();
-    $('#editModalSpinner').show();
-    $('#priceFieldContainer').hide();
-    
-    // Show the modal
-    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
-    editModal.show();
-    
-    // Load bus data via AJAX
-    $.ajax({
-        url: '/edit-bus/' + busId + '/',  // Update this URL to match your API endpoint
-        method: 'GET',
-        success: function(response) {
-            // Fill form with bus data
-            $('#editForm').attr('action', '/buses/' + busId + '/update/');  // Update this URL
-            $('#editBusNumber').val(response.bus_number);
-            $('#editBusType').val(response.bus_type);
-            $('#editTotalSeats').val(response.total_seats);
-            $('#editDriver').val(response.driver?.id || '');
-            $('#editStaff').val(response.staff?.id || '');
-            $('#editIsActive').prop('checked', response.is_active);
-            
-            // Show form, hide spinner
-            $('#editModalSpinner').hide();
-            $('#editModalContent').show();
-        },
-        error: function(xhr) {
-            // Handle error
-            $('#editModalSpinner').hide();
-            $('#editModalContent').html(`
-                <div class="alert alert-danger">
-                    Failed to load bus data. Please try again.
-                    ${xhr.responseJSON?.detail || ''}
-                </div>
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            `);
-            $('#editModalContent').show();
+$(document).ready(function() {
+    // Initialize Bootstrap components
+    const editModal = new bootstrap.Modal('#editModal', { keyboard: false });
+    const deleteModal = new bootstrap.Modal('#deleteConfirmModal', { keyboard: false });
+    const loadingModal = new bootstrap.Modal('#loadingModal', { keyboard: false });
+
+    // Toast notification utility
+    function showToast(message, type = 'success') {
+        const $toast = $('#notificationToast').clone().removeAttr('id').addClass(`toast ${type}`);
+        $toast.find('#toastTitle').text(type.charAt(0).toUpperCase() + type.slice(1));
+        $toast.find('#toastMessage').text(message);
+        $('.toast-container').length || $('<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 11;"></div>').appendTo('body');
+        $('.toast-container').append($toast);
+        const toast = new bootstrap.Toast($toast[0], { delay: 5000 });
+        toast.show();
+        $toast.on('hidden.bs.toast', () => $toast.remove());
+    }
+
+    // Show Django messages
+    {% if messages %}
+    {% for message in messages %}
+    showToast('{{ message|escapejs }}', '{{ message.tags|escapejs }}');
+    {% endfor %}
+    {% endif %}
+
+    // Search functionality
+    function searchTable(inputId, tableId, rowClass) {
+        $(inputId).on('input', function() {
+            const searchTerm = $(this).val().toLowerCase().trim();
+            let visibleRows = 0;
+
+            $(`${tableId} ${rowClass}`).each(function() {
+                const $row = $(this);
+                const searchText = $row.data('search') || '';
+                const isVisible = searchText.includes(searchTerm);
+                $row.toggle(isVisible);
+                if (isVisible) visibleRows++;
+            });
+
+            const $noResultsRow = $(`${tableId} .no-results-row`);
+            if (visibleRows === 0 && !$noResultsRow.length) {
+                $(`${tableId} tbody`).append(`
+                    <tr class="no-results-row">
+                        <td colspan="${tableId === '#busTable' ? 9 : 11}" class="sub-admin-empty">
+                            <div class="sub-admin-empty-state">
+                                <i class="bi bi-search display-4 text-muted"></i>
+                                <p>No results found for "${searchTerm}"</p>
+                            </div>
+                        </td>
+                    </tr>
+                `);
+            } else if (visibleRows > 0) {
+                $noResultsRow.remove();
+            }
+        });
+    }
+
+    searchTable('#searchBus', '#busTable', '.bus-row');
+    searchTable('#searchVehicle', '#vehicleTable', '.vehicle-row');
+
+    // Edit bus functionality
+    $(document).on('click', '.edit-bus', function(e) {
+        e.preventDefault();
+        const busId = $(this).data('bus-id');
+        const busName = $(this).data('bus-name');
+
+        $('#editModalLabel').text(`Edit Bus: ${busName}`);
+        $('#editModalContent').hide();
+        $('#editModalSpinner').show();
+        $('#priceFieldContainer').hide();
+        $('#editForm').attr('action', `/buses/${busId}/update/`);
+        $('#editType').html(`
+            <option value="">Select Type</option>
+            <option value="AC">AC</option>
+            <option value="Non-AC">Non-AC</option>
+            <option value="Sleeper">Sleeper</option>
+            <option value="Seater">Seater</option>
+        `);
+
+        loadingModal.show();
+        $.ajax({
+            url: `/edit-bus/${busId}/`,
+            method: 'GET',
+            success: function(response) {
+                $('#editNumber').val(response.bus_number);
+                $('#editType').val(response.bus_type);
+                $('#editTotalSeats').val(response.total_seats);
+                $('#editDriver').val(response.driver?.id || '');
+                $('#editStaff').val(response.staff?.id || '');
+                $('#editIsActive').prop('checked', response.is_active);
+                $('#imagePreviewContainer').addClass('d-none');
+                $('#editModalSpinner').hide();
+                $('#editModalContent').show();
+                loadingModal.hide();
+                editModal.show();
+            },
+            error: function(xhr) {
+                loadingModal.hide();
+                showToast('Failed to load bus data: ' + (xhr.responseJSON?.detail || 'Unknown error'), 'error');
+                editModal.hide();
+            }
+        });
+    });
+
+    // Edit vehicle functionality
+    $(document).on('click', '.edit-vehicle', function(e) {
+        e.preventDefault();
+        const vehicleId = $(this).data('vehicle-id');
+        const vehicleName = $(this).data('vehicle-name');
+
+        $('#editModalLabel').text(`Edit Vehicle: ${vehicleName}`);
+        $('#editModalContent').hide();
+        $('#editModalSpinner').show();
+        $('#priceFieldContainer').show();
+        $('#editForm').attr('action', `/vehicles/${vehicleId}/update/`);
+        $('#editType').html('<option value="">Select Type</option>');
+
+        loadingModal.show();
+        $.ajax({
+            url: `/edit-vehicle/${vehicleId}/`,
+            method: 'GET',
+            success: function(response) {
+                response.types.forEach(type => {
+                    $('#editType').append(`<option value="${type.id}">${type.name}</option>`);
+                });
+                $('#editNumber').val(response.vechicle_number);
+                $('#editType').val(response.type?.id || '');
+                $('#editTotalSeats').val(response.total_seats);
+                $('#editDriver').val(response.driver?.id || '');
+                $('#editStaff').val(response.staff?.id || '');
+                $('#editPrice').val(response.price);
+                $('#editIsActive').prop('checked', response.is_active);
+                $('#imagePreviewContainer').toggleClass('d-none', !response.image);
+                if (response.image) {
+                    $('#imagePreview').attr('src', response.image);
+                }
+                $('#editModalSpinner').hide();
+                $('#editModalContent').show();
+                loadingModal.hide();
+                editModal.show();
+            },
+            error: function(xhr) {
+                loadingModal.hide();
+                showToast('Failed to load vehicle data: ' + (xhr.responseJSON?.detail || 'Unknown error'), 'error');
+                editModal.hide();
+            }
+        });
+    });
+
+    // Image preview for edit form
+    $('#editImage').on('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#imagePreview').attr('src', e.target.result);
+                $('#imagePreviewContainer').removeClass('d-none');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#imagePreviewContainer').addClass('d-none');
         }
     });
-});
 
-// Edit functionality for vehicles
-$(document).on('click', '.edit-vehicle', function(e) {
-    e.preventDefault();
-    const vehicleId = $(this).data('vehicle-id');
-    const vehicleName = $(this).data('vehicle-name');
-    
-    // Reset and prepare the modal
-    $('#editModalLabel').text('Edit Vehicle: ' + vehicleName);
-    $('#editModalContent').hide();
-    $('#editModalSpinner').show();
-    $('#priceFieldContainer').show();
-    
-    // Show the modal
-    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
-    editModal.show();
-    
-   
+    // Delete functionality
+    let currentDeleteUrl = '';
+    $(document).on('click', '.delete-bus, .delete-vehicle', function() {
+        const itemName = $(this).data('bus-name') || $(this).data('vehicle-name');
+        currentDeleteUrl = $(this).data('delete-url');
+        $('#deleteItemName').text(itemName);
+        deleteModal.show();
+    });
+
+    $('#confirmDeleteBtn').on('click', function() {
+        if (currentDeleteUrl) {
+            window.location.href = currentDeleteUrl;
+        }
+        deleteModal.hide();
+    });
+
+    // Form validation
+    $('#editForm').on('submit', function(e) {
+        const $number = $('#editNumber');
+        const $totalSeats = $('#editTotalSeats');
+        const $price = $('#editPrice');
+        let isValid = true;
+
+        if ($number.val().trim().length < 2) {
+            $number.addClass('is-invalid');
+            showToast('Number must be at least 2 characters', 'error');
+            isValid = false;
+        } else {
+            $number.removeClass('is-invalid');
+        }
+
+        if ($totalSeats.val() < 1) {
+            $totalSeats.addClass('is-invalid');
+            showToast('Total seats must be at least 1', 'error');
+            isValid = false;
+        } else {
+            $totalSeats.removeClass('is-invalid');
+        }
+
+        if ($('#priceFieldContainer').is(':visible') && ($price.val() < 0 || !$price.val())) {
+            $price.addClass('is-invalid');
+            showToast('Price must be a positive number', 'error');
+            isValid = false;
+        } else {
+            $price.removeClass('is-invalid');
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+        } else {
+            $(this).find('button[type="submit"]').html('<span class="spinner-border spinner-border-sm me-2"></span>Saving...').prop('disabled', true);
+        }
+    });
+
+    // Responsive adjustments
+    function handleResponsive() {
+        const isMobile = window.innerWidth < 768;
+        $('.sub-admin-actions .btn').each(function() {
+            const $btn = $(this);
+            $btn.find('i').toggleClass('d-none', !isMobile);
+            $btn.find('span').toggleClass('d-none', isMobile);
+        });
+    }
+
+    handleResponsive();
+    $(window).on('resize', handleResponsive);
 });
 </script>
 {% endblock %}

@@ -384,18 +384,22 @@
                 <p class="text-white-50 mb-0">Sign in to continue to Go Sewa</p>
                 <div class="wave"></div>
             </div>
-            {% if messages %}
-               
-                    <div class="text-danger text-center mb-2">
-                        {{ messages }}
-                    </div>
-               
-            {% endif %}
+         
             
             <!-- Body -->
             <div class="login-body">
                 <form action={% url 'login' %} method="post" class="needs-validation" novalidate>
                     {% csrf_token %}
+                     
+            {% if message %}
+               
+            <div class="text-danger text-center mb-2">
+                {{ message }}
+            </div>
+       
+    {% endif %}
+
+
                     <!-- Phone Number -->
                     <div class="form-group">
                         <label for="phone" class="form-label">Phone Number</label>

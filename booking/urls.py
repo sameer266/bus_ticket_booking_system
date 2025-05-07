@@ -54,7 +54,7 @@ urlpatterns = [
   path('buses-management/', views.bus_list, name='bus_list'),
   path('add-bus/', views.create_bus, name='create_bus'),
   path('edit-bus/<int:bus_id>/', views.edit_bus, name='edit_bus'),
-  path('delete-bus/<int:bus_id>/delete/', views.delete_bus, name='delete_bus'),
+  path('delete-bus/<int:bus_id>/', views.delete_bus, name='delete_bus'),
   path('get_bus/<int:bus_id>/', views.get_bus, name='get_bus'),
 
   # ======== Schedule Management ==========

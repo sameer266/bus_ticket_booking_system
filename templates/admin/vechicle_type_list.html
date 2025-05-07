@@ -7,14 +7,14 @@
             <!-- Header with back button -->
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
                 <div class="d-flex align-items-center">
-                    <a href="{% url 'vehicle_reservation' %}" class="btn btn-outline-primary me-3 rounded-pill">
+                    <a href="{% url 'vehicle_reservation' %}" class="btn btn-outline-primary me-3 ">
                         <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Back</span>
                     </a>
                     <h1 class="h2 mb-0 fw-bold">
                         <i class="bi bi-car-front me-2 text-primary"></i>Vehicle Types
                     </h1>
                 </div>
-                <button class="btn btn-primary rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#addTypeModal">
+                <button class="btn btn-primary  shadow-sm" data-bs-toggle="modal" data-bs-target="#addTypeModal">
                     <i class="bi bi-plus-lg me-1"></i> Add New Type
                 </button>
             </div>
@@ -34,8 +34,6 @@
                         </div>
                     </div>
                 </div>
-             
-            
             </div>
 
             <!-- Vehicle Types List Card -->
@@ -62,7 +60,9 @@
                             </thead>
                             <tbody>
                                 {% for vehicle_type in vehicle_types %}
-                                <tr data-type-id="{{ vehicle_type.id }}" class="align-middle">
+                                <tr data-type-id="{{ vehicle_type.id }}" 
+                                    data-search="{{ vehicle_type.name|lower }}" 
+                                    class="align-middle animate__animated animate__fadeIn">
                                     <td class="ps-3">
                                         <div class="d-flex align-items-center">
                                             <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3 d-md-none" style="width: 40px; height: 40px;">
@@ -97,7 +97,12 @@
                                                 <i class="bi bi-pencil-square"></i>
                                                 <span class="d-none d-xl-inline ms-1">Edit</span>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-danger rounded-pill delete-type-btn" data-bs-toggle="modal" data-bs-target="#deleteTypeModal" data-type-id="{{ vehicle_type.id }}" data-type-name="{{ vehicle_type.name }}" title="Delete">
+                                            <button class="btn btn-sm btn-outline-danger rounded-pill delete-type-btn" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteTypeModal" 
+                                                    data-type-id="{{ vehicle_type.id }}" 
+                                                    data-type-name="{{ vehicle_type.name }}" 
+                                                    title="Delete">
                                                 <i class="bi bi-trash"></i>
                                                 <span class="d-none d-xl-inline ms-1">Delete</span>
                                             </button>
@@ -105,13 +110,13 @@
                                     </td>
                                 </tr>
                                 {% empty %}
-                                <tr>
+                                <tr class="no-results-row">
                                     <td colspan="4" class="text-center py-5">
                                         <div class="py-5">
                                             <i class="bi bi-car-front display-4 text-muted d-block mb-3 opacity-50"></i>
                                             <h5 class="text-muted">No vehicle types found</h5>
                                             <p class="text-muted mb-4">Add your first vehicle type to get started</p>
-                                            <button class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addTypeModal">
+                                            <button class="btn btn-primary  px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addTypeModal">
                                                 <i class="bi bi-plus-circle me-2"></i> Add Vehicle Type
                                             </button>
                                         </div>
@@ -122,7 +127,6 @@
                         </table>
                     </div>
                 </div>
-            
             </div>
         </div>
     </div>
@@ -149,7 +153,7 @@
                             </span>
                             <input type="text" class="form-control border-start-0 ps-0" id="typeName" name="name" required placeholder="e.g. Sedan, SUV, Truck">
                         </div>
-                        <div class="invalid-feedback">Please enter a valid type name.</div>
+                        <div class="invalid-feedback">Please enter a valid type name (minimum 2 characters).</div>
                     </div>
                     <div class="mb-3">
                         <label for="typeImage" class="form-label fw-medium">Image (Optional)</label>
@@ -159,9 +163,13 @@
                             </span>
                             <input type="file" class="form-control border-start-0 ps-0" id="typeImage" name="image" accept="image/*">
                         </div>
+                        <div id="imagePreviewContainer" class="text-center mt-3 d-none">
+                            <p class="text-muted mb-2">Preview:</p>
+                            <img id="imagePreview" src="#" class="img-thumbnail rounded-3" style="max-height: 150px; max-width: 100%;">
+                        </div>
                         <div class="d-flex align-items-center">
                             <i class="bi bi-info-circle text-primary me-2"></i>
-                            <small class="text-muted">Recommended size: 200x200 pixels. Supports JPG, PNG.</small>
+                            <small class="text-muted">Recommended size: 200x200 pixels. Max 2MB. Supports JPG, PNG.</small>
                         </div>
                     </div>
                 </div>
@@ -196,7 +204,6 @@
                         <p class="mb-1">You are about to delete the vehicle type:</p>
                         <p class="h4 fw-bold text-danger mb-0" id="deleteTypeName"></p>
                     </div>
-                    
                     <div class="alert alert-danger">
                         <div class="d-flex">
                             <div class="me-3">
@@ -208,7 +215,6 @@
                             </div>
                         </div>
                     </div>
-                    
                     <div class="form-check mt-3">
                         <input class="form-check-input" type="checkbox" id="confirmDelete" required>
                         <label class="form-check-label" for="confirmDelete">
@@ -226,179 +232,248 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_css %}
 <style>
-   
+    .table-responsive {
+        border-radius: 8px;
+        overflow-x: auto;
+    }
     
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .table-responsive {
-            overflow-x: auto;
-        }
-        
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
+    }
+    
+    .modal-content {
+        border-radius: 12px;
+    }
+    
+    .modal-header, .modal-footer {
+        border: none;
+    }
+    
+    .btn:focus, .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1060;
+    }
+    
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+    
+    .invalid-feedback {
+        display: none;
+        font-size: 0.875rem;
+    }
+    
+    .is-invalid ~ .invalid-feedback {
+        display: block;
+    }
+    
+    .is-valid {
+        border-color: #198754 !important;
+    }
+    
+    @media (max-width: 767.98px) {
         .container-fluid {
-            padding-left: rem;
+            padding-left: 1rem;
             padding-right: 1rem;
         }
+        
+        .table td, .table th {
+            font-size: 0.875rem;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+        }
     }
+    
     @media (min-width: 768px) {
-       
         .container-fluid {
-          
             padding-left: 10rem;
         }
     }
+    
+    .modal { z-index: 1055; }
+    .modal-backdrop { z-index: 1050; }
 </style>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Initialize AOS animation for cards
-    AOS.refresh();
-    
-    // Search functionality with highlighting
-    $('#searchTypes').on('input', function() {
-        const searchTerm = $(this).val().toLowerCase();
-        let rowsVisible = 0;
-        
-        $('#typesTable tbody tr').each(function() {
-            const typeName = $(this).find('td:first').text().toLowerCase();
-            const isVisible = typeName.includes(searchTerm);
-            $(this).toggle(isVisible);
-            
-            if (isVisible) {
-                rowsVisible++;
-            }
-        });
-        
-        // Show/hide empty state
-        if (rowsVisible === 0 && searchTerm !== '') {
-            if ($('#noSearchResults').length === 0) {
-                $('#typesTable tbody').append(`
-                    <tr id="noSearchResults">
-                        <td colspan="4" class="text-center py-4">
-                            <i class="bi bi-search display-5 text-muted d-block mb-3 opacity-50"></i>
-                            <h5 class="text-muted">No results found</h5>
-                            <p class="text-muted">No vehicle types match "<strong>${searchTerm}</strong>"</p>
-                        </td>
-                    </tr>
-                `);
-            }
-        } else {
-            $('#noSearchResults').remove();
-        }
-    });
+    // Initialize Bootstrap components
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    const addTypeModal = new bootstrap.Modal('#addTypeModal', { keyboard: false });
+    const deleteTypeModal = new bootstrap.Modal('#deleteTypeModal', { keyboard: false });
 
-    // Delete modal setup with enhanced UX
-    $('#deleteTypeModal').on('show.bs.modal', function(event) {
-        const button = $(event.relatedTarget);
-        const typeId = button.data('type-id');
-        const typeName = button.data('type-name');
-        
-        $('#deleteTypeName').text(typeName);
-        $('#deleteTypeForm').attr('action', `/vehicle-types/${typeId}/delete/`);
-        
-        // Reset confirmation checkbox
-        $('#confirmDelete').prop('checked', false);
-        $('#deleteSubmitBtn').prop('disabled', true);
-        
-        // Add subtle animation
-        setTimeout(() => {
-            $('#deleteTypeName').addClass('animate__animated animate__heartBeat');
-            setTimeout(() => {
-                $('#deleteTypeName').removeClass('animate__animated animate__heartBeat');
-            }, 1000);
-        }, 300);
-    });
-
-    // Enable delete button when checkbox is checked with animation
-    $('#confirmDelete').change(function() {
-        const isChecked = $(this).is(':checked');
-        $('#deleteSubmitBtn').prop('disabled', !isChecked);
-        
-        if (isChecked) {
-            $('#deleteSubmitBtn').addClass('animate__animated animate__pulse');
-        } else {
-            $('#deleteSubmitBtn').removeClass('animate__animated animate__pulse');
+    // Toast notification utility
+    function showToast(message, type = 'success') {
+        let $toastContainer = $('.toast-container');
+        if (!$toastContainer.length) {
+            $toastContainer = $('<div class="toast-container"></div>').appendTo('body');
         }
-    });
 
-    // Enhanced form validation for add type
-    $('#addTypeForm').submit(function(e) {
-        const typeName = $('#typeName').val().trim();
-        if (!typeName) {
-            e.preventDefault();
-            $('#typeName').addClass('is-invalid').focus();
-            return false;
-        }
-        
-        // Add loading state to button
-        const submitBtn = $(this).find('button[type="submit"]');
-        submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Adding...');
-        submitBtn.prop('disabled', true);
-        
-        return true;
-    });
+        const $toast = $(`
+            <div class="toast align-items-center text-white bg-${type} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi ${type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `).appendTo($toastContainer);
 
-    // Clear validation on input with immediate feedback
-    $('#typeName').on('input', function() {
-        if ($(this).val().trim()) {
-            $(this).removeClass('is-invalid').addClass('is-valid');
-        } else {
-            $(this).removeClass('is-valid');
-        }
-    });
-
-    // Preview image before upload
-    $('#typeImage').change(function() {
-        const file = this.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                // Check if preview container exists, if not create it
-                if ($('#imagePreviewContainer').length === 0) {
-                    $(this).closest('.mb-3').append(`
-                        <div id="imagePreviewContainer" class="text-center mt-3 animate__animated animate__fadeIn">
-                            <p class="text-muted mb-2">Preview:</p>
-                            <img id="imagePreview" src="${e.target.result}" class="img-thumbnail rounded-3" style="max-height: 150px; max-width: 100%;">
-                        </div>
-                    `);
-                } else {
-                    $('#imagePreview').attr('src', e.target.result);
-                }
-            }.bind(this);
-            reader.readAsDataURL(file);
-        } else {
-            $('#imagePreviewContainer').remove();
-        }
-    });
-
-    // Responsive adjustments with enhanced UX
-    function handleResponsive() {
-        if ($(window).width() < 768) {
-            $('.table-responsive').addClass('table-sm');
-            $('table').addClass('small');
-        } else {
-            $('.table-responsive').removeClass('table-sm');
-            $('table').removeClass('small');
-        }
+        const toast = new bootstrap.Toast($toast[0], { delay: 5000 });
+        toast.show();
+        $toast.on('hidden.bs.toast', () => $toast.remove());
     }
 
-    // Run on load and resize
+    // Show Django messages
+    {% if messages %}
+    {% for message in messages %}
+    showToast('{{ message|escapejs }}', '{{ message.tags|escapejs }}');
+    {% endfor %}
+    {% endif %}
+
+    // Search functionality
+    $('#searchTypes').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase().trim();
+        let visibleRows = 0;
+
+        $('#typesTable tbody tr:not(.no-results-row)').each(function() {
+            const $row = $(this);
+            const searchText = $row.data('search');
+            const isVisible = searchText.includes(searchTerm);
+            $row.toggle(isVisible);
+            if (isVisible) visibleRows++;
+        });
+
+        const $noResultsRow = $('#typesTable .no-results-row');
+        if (visibleRows === 0 && !$noResultsRow.length) {
+            $('#typesTable tbody').append(`
+                <tr class="no-results-row">
+                    <td colspan="4" class="text-center py-4">
+                        <i class="bi bi-search display-5 text-muted d-block mb-3 opacity-50"></i>
+                        <h5 class="text-muted">No results found</h5>
+                        <p class="text-muted">No vehicle types match "<strong>${searchTerm}</strong>"</p>
+                    </td>
+                </tr>
+            `);
+        } else if (visibleRows > 0) {
+            $noResultsRow.remove();
+        }
+    });
+
+    // Add type form validation
+    $('#addTypeForm').on('submit', function(e) {
+        const $typeName = $('#typeName');
+        const typeName = $typeName.val().trim();
+        const $typeImage = $('#typeImage');
+        const file = $typeImage[0].files[0];
+
+        if (typeName.length < 2) {
+            e.preventDefault();
+            $typeName.addClass('is-invalid').focus();
+            showToast('Type name must be at least 2 characters long', 'danger');
+            return false;
+        }
+
+        if (file && file.size > 2 * 1024 * 1024) {
+            e.preventDefault();
+            $typeImage.addClass('is-invalid');
+            showToast('Image size must not exceed 2MB', 'danger');
+            return false;
+        }
+
+        const $submitBtn = $(this).find('button[type="submit"]');
+        $submitBtn.html('<span class="spinner-border spinner-border-sm me-2"></span>Adding...').prop('disabled', true);
+    });
+
+    // Real-time input validation
+    $('#typeName').on('input', function() {
+        const value = $(this).val().trim();
+        $(this).toggleClass('is-valid', value.length >= 2)
+               .toggleClass('is-invalid', value.length > 0 && value.length < 2);
+    });
+
+    $('#typeImage').on('change', function() {
+        const file = this.files[0];
+        const $previewContainer = $('#imagePreviewContainer');
+        const $previewImg = $('#imagePreview');
+
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                $(this).addClass('is-invalid');
+                showToast('Image size must not exceed 2MB', 'danger');
+                $previewContainer.addClass('d-none');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $previewImg.attr('src', e.target.result);
+                $previewContainer.removeClass('d-none');
+            };
+            reader.readAsDataURL(file);
+            $(this).removeClass('is-invalid');
+        } else {
+            $previewContainer.addClass('d-none');
+        }
+    });
+
+    // Delete modal setup
+    $(document).on('click', '.delete-type-btn', function() {
+        const $btn = $(this);
+        const typeId = $btn.data('type-id');
+        const typeName = $btn.data('type-name');
+
+        $('#deleteTypeName').text(typeName);
+        $('#deleteTypeForm').attr('action', `/'vehicle-type-delete/${typeId}/`);
+        $('#confirmDelete').prop('checked', false);
+        $('#deleteSubmitBtn').prop('disabled', true);
+    });
+
+    // Delete confirmation checkbox
+    $('#confirmDelete').on('change', function() {
+        $('#deleteSubmitBtn').prop('disabled', !this.checked);
+    });
+
+    // Responsive adjustments
+    function handleResponsive() {
+        const isMobile = window.innerWidth < 768;
+        $('#typesTable').toggleClass('table-sm', isMobile);
+        $('.btn-sm').each(function() {
+            const $btn = $(this);
+            $btn.find('i').toggleClass('d-none', !isMobile);
+            $btn.find('span').toggleClass('d-none', isMobile);
+        });
+    }
+
     handleResponsive();
-    $(window).resize(handleResponsive);
-    
-    // Add row highlight effect when clicked
-    $('#typesTable tbody tr').click(function(e) {
-        if (!$(e.target).is('a, button, i, input')) {
+    $(window).on('resize', handleResponsive);
+
+    // Row interaction
+    $('#typesTable tbody tr').on('click', function(e) {
+        if (!$(e.target).is('a, button, i')) {
             $(this).addClass('table-primary');
-            setTimeout(() => {
-                $(this).removeClass('table-primary');
-            }, 300);
+            setTimeout(() => $(this).removeClass('table-primary'), 300);
         }
     });
 });

@@ -28,6 +28,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name="logout"),
     path('send-otp/', views.send_otp, name="send_otp"),
     path('verify-otp/', views.verify_otp, name="verify_otp"),
+    path('reset-new-password/',views.unauthenticated_reset_password,name='reset_new_password'),
     path('reset-password/', views.reset_password, name="reset_password"),
     path('forget-password/', views.forget_password, name="forget_password"),
 

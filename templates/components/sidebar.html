@@ -121,7 +121,7 @@
             </a>
           </li>
 
-        {% else %}
+        {% elif user.role == 'sub_admin' %}
           <!-- Sub Admin Menu Items -->
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="/admin-dashboard/">

@@ -122,7 +122,8 @@ class Bus(models.Model):
     total_seats = models.PositiveIntegerField(default=35)
    
     is_active = models.BooleanField(default=True, help_text="Indicates if the bus is active")
-   
+    
+ 
 
         
     # def save(self, *args, **kwargs):
