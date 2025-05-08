@@ -605,13 +605,18 @@ def edit_bus(request, bus_id):
             bus.bus_type = request.POST.get('bus_type', bus.bus_type)
             
             # Handle driver
-            driver_id = request.POST.get('driver', '')
-            bus.driver = Driver.objects.get(id=driver_id) if driver_id else None
+            driver_id = request.POST.get('driver')
+            if driver_id:
+                bus.driver = Driver.objects.get(id=driver_id) 
+            else:
+                bus.driver=bus.driver
             
             # Handle staff
-            staff_id = request.POST.get('staff', '')
-            bus.staff = Staff.objects.get(id=staff_id) if staff_id else None
-            
+            staff_id = request.POST.get('staff')
+            if staff_id:
+                bus.staff = Staff.objects.get(id=staff_id) 
+            else:
+                bus.staff=bus.staff
             
             # Get total_seats from layout data if available
             if 'layout' in request.POST:
@@ -682,17 +687,15 @@ def edit_bus(request, bus_id):
 def get_bus(request, bus_id):
     bus = get_object_or_404(Bus, id=bus_id)
     try:
-        commission=Commission.objects.filter(bus=bus).first()
-        rate=commission.rate if commission else 0
+        commission = Commission.objects.filter(bus=bus).first()
+        rate = commission.rate if commission else 0
     
         layout = BusLayout.objects.get(bus=bus)
         layout_data = {
             'rows': layout.rows,
-            'columns': layout.column,
+            'columns': layout.column,  # Ensure this matches your model field
             'aisleAfterColumn': layout.aisle_column,
-            
             'layout': layout.layout_data,
-            
         }
     except BusLayout.DoesNotExist:
         layout_data = {}
@@ -701,17 +704,18 @@ def get_bus(request, bus_id):
         'bus_id': bus.id,
         'bus_number': bus.bus_number,
         'bus_type': bus.bus_type,
-        'rate':rate,
-        'bus_image':bus.bus_image.url if bus.bus_image else '',
+        'rate': rate,
+        'bus_image': bus.bus_image.url if bus.bus_image else '',
         'total_seats': bus.total_seats,
         'driver': bus.driver.id if bus.driver else None,
         'staff': bus.staff.id if bus.staff else None,
+        
         'is_active': bus.is_active,
         'features': bus.features,
-        'layout': json.dumps(layout_data)
+        'layout': json.dumps(layout_data),
+        'transportation_company': bus.transportation_company.id if bus.transportation_company else None,
     }
     return JsonResponse(data)
-
 
 @login_required
 def delete_bus(request, bus_id):
