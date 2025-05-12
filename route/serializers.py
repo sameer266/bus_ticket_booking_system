@@ -32,7 +32,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Schedule
-        fields=['bus','route','departure_time','arrival_time','date','price','available_seats','status']
+        fields=['id','bus','route','departure_time','arrival_time','date','price','available_seats','status']
         
         
       
@@ -270,4 +270,4 @@ class TransportationCompanySerializer(serializers.Serializer):
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model=Notification
-        fields=['title','message','is_read','created_at']
+        fields=['id','title','message','is_read','created_at']

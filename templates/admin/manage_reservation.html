@@ -1,3 +1,4 @@
+
 {% extends 'components/base.html' %}
 {% block title %}Vehicle Reservations | Go Sewa{% endblock %}
 {% block content %}
@@ -568,6 +569,21 @@
                 }
             }).find('tr[data-reservation-id]').css('cursor', 'pointer');
             
+            // Ensure backdrop is properly removed on modal close
+    $('#addReservationModal').on('hidden.bs.modal', function() {
+        // Remove any lingering backdrops
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+    });
+    
+    // Same for delete modal
+    $('#deleteConfirmModal').on('hidden.bs.modal', function() {
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open');
+        $('body').css('padding-right', '');
+    });
+    
             // Initialize tooltips
             $('[data-bs-toggle="tooltip"]').tooltip();
         });

@@ -445,7 +445,7 @@ $(document).ready(function() {
         const typeName = $btn.data('type-name');
 
         $('#deleteTypeName').text(typeName);
-        $('#deleteTypeForm').attr('action', `/'vehicle-type-delete/${typeId}/`);
+        $('#deleteTypeForm').attr('action', `/vehicle-type-delete/${typeId}/`);
         $('#confirmDelete').prop('checked', false);
         $('#deleteSubmitBtn').prop('disabled', true);
     });

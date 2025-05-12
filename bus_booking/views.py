@@ -768,8 +768,7 @@ class SeatBookingAPiView(APIView):
 
 # ========= Bus Layout =========
 class BusLayoutApiView(APIView):
-    authentication_classes=[JWTAuthentication]
-    permission_classes=[IsAuthenticated]
+   
     def get(self, request, *args, **kwargs):
         try:
             schedule_id = kwargs.get('id')
@@ -799,6 +798,12 @@ class UserNotificationApiView(APIView):
         serializer=NotificationSerializer(notification,many=True)
         return Response({'success':True,'data':serializer.data},status=200)
     
+    def post(self,request,id):
+        is_read=request.data.get('is_read')
+        notification=Notification.objects.get(id=id)
+        notification.is_read=is_read
+        notification.save()
+        return Response({'success':True,'message':'Nofication read success'},status=200)
     
     
     

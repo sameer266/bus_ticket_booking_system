@@ -745,11 +745,14 @@ def vehicle_list(request):
     else:
         reservations = BusReservation.objects.all()
 
-    assigned_driver_ids = BusReservation.objects.filter(driver__isnull=False).values_list('driver__id', flat=True)
-    unassigned_drivers = Driver.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_driver_ids)
-
-    assigned_staff_ids = BusReservation.objects.filter(staff__isnull=False).values_list('staff__id', flat=True)
-    unassigned_staff = Staff.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_staff_ids)
+    staffs=None
+    drivers=None
+    if transportation_company:
+        staffs = Staff.objects.filter(transportation_company=transportation_company)
+        drivers = Driver.objects.filter(transportation_company=transportation_company)
+    else:
+        staffs = Staff.objects.all()
+        drivers = Driver.objects.all()
 
     vechicle_types = VechicleType.objects.all()
 
@@ -774,8 +777,8 @@ def vehicle_list(request):
             
     context = {
         'reservations': reservations,
-        'unassigned_drivers': unassigned_drivers,
-        'unassigned_staff': unassigned_staff,
+        'unassigned_drivers': drivers,
+        'unassigned_staff': staffs,
         'vechicle_types': vechicle_types,
         'source':source,
         'reservation_json': reservation_json,
@@ -849,11 +852,16 @@ def edit_vehicle(request, id):
     transportation_company = getattr(user, 'transportation_company', None)
 
     # Filter available drivers and staff from same company
-    assigned_driver_ids = BusReservation.objects.exclude(id=id).filter(driver__isnull=False).values_list('driver__id', flat=True)
-    unassigned_drivers = Driver.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_driver_ids)
-
-    assigned_staff_ids = BusReservation.objects.exclude(id=id).filter(staff__isnull=False).values_list('staff__id', flat=True)
-    unassigned_staff = Staff.objects.filter(transportation_company=transportation_company).exclude(id__in=assigned_staff_ids)
+    staffs=None
+    drivers=None
+    if transportation_company:
+        staffs = Staff.objects.filter(transportation_company=transportation_company)
+        drivers = Driver.objects.filter(transportation_company=transportation_company)
+    else:
+        staffs = Staff.objects.all()
+        drivers = Driver.objects.all()
+        
+    
 
     vechicle_types = VechicleType.objects.all()
    
@@ -887,16 +895,16 @@ def edit_vehicle(request, id):
             return render(request, 'admin/edit_reservation.html', {
                 'reservation': reservation,
                 'vechicle_types': vechicle_types,
-                'unassigned_drivers': unassigned_drivers,
-                'unassigned_staff': unassigned_staff,
+                'unassigned_drivers': drivers,
+                'unassigned_staff': staffs,
                 'error': str(e)
             })
 
     return render(request, 'admin/edit_reservation.html', {
         'reservation': reservation,
         'vechicle_types': vechicle_types,
-        'unassigned_drivers': unassigned_drivers,
-        'unassigned_staff': unassigned_staff,
+        'unassigned_drivers': drivers,
+        'unassigned_staff': staffs,
     })
     
 # ====== Delete Vehicle reservation ========
@@ -1692,6 +1700,7 @@ def bus_earning_details(request, bus_id):
                 'booking_id':payment.booking.id
                 
             })
+        
 
         context = {
             'bus': bus,

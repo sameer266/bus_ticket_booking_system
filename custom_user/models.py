@@ -75,7 +75,7 @@ class TransportationCompany(models.Model):
 class System(models.Model):
     name=models.CharField(max_length=100)
     email=models.CharField(max_length=100)
-    phone=models.PositiveIntegerField(max_length=10)
+    phone=models.PositiveIntegerField()
     address=models.CharField(max_length=100)
     image=models.ImageField(upload_to='system_logo/')
     

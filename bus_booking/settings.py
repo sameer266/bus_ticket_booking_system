@@ -137,8 +137,9 @@ USE_L10N = True  # Enable localization
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-
+import os
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_ROOT= BASE_DIR / "media"
 MEDIA_URL='media/'
 
@@ -204,6 +205,6 @@ SPARROW_SENDER = config("SPARROW_SENDER")
 
 # ======= Celery settings ========
 
-# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
-# CELERY_ACCEPT_CONTENT = ['json']
-# CELERY_TASK_SERIALIZER = 'json'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'

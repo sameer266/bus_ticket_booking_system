@@ -116,7 +116,7 @@
                                     <img id="modal-bus-image" src="" alt="Bus Image" class="img-fluid rounded-4" style="max-height: 200px; width: 100%; object-fit: cover;">
                                     <div class="position-absolute bottom-0 end-0 mb-2 me-2">
                                         <span id="modal-seat-badge" class="badge bg-success rounded-pill px-3 py-2">
-                                            <i class="bi bi-person-check me-1"></i><span id="modal-available-seats"></span> Available
+                                            <i class="bi bi-person-check me-1"></i><span id="modal-available-seats"></span> 
                                         </span>
                                     </div>
                                 </div>
@@ -299,13 +299,13 @@
 
                         // Update Driver Information
                         document.getElementById('modal-driver-name').textContent = busData.driver?.full_name || "Nan";
-                        document.getElementById('modal-driver-phone').textContent = busData.driver?.phone || "Nan";
+                        document.getElementById('modal-driver-phone').textContent = busData.driver?.phone_number || "Nan";
                         document.getElementById('modal-driver-license').textContent = 'License Available';
                         document.getElementById('modal-driver-image').src = busData.driver?.driver_profile  || "Nan";
 
                         // Update Staff Information
                         document.getElementById('modal-staff-name').textContent = busData.staff?.full_name || "Nan";
-                        document.getElementById('modal-staff-phone').textContent = busData.staff?.phone || "Nan";
+                        document.getElementById('modal-staff-phone').textContent = busData.staff?.phone_number || "Nan";
                         document.getElementById('modal-staff-role').textContent = 'Bus Staff';
                         document.getElementById('modal-staff-image').src = busData.staff?.staff_profile || "Nan";
 

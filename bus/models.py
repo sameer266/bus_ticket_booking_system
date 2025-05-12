@@ -63,6 +63,18 @@ class Driver(models.Model):
             self.license_image.delete(save=False)
         super().delete(*args, **kwargs)
 
+    def save(self, *args, **kwargs):
+        try:
+            # Get old image before saving
+            old_instance = Driver.objects.get(pk=self.pk)
+            if old_instance.driver_profile and old_instance.driver_profile != self.driver_profile:
+                if old_instance.driver_profile.storage.exists(old_instance.driver_profile.name):
+                    old_instance.driver_profile.delete(save=False)
+        except Driver.DoesNotExist:
+            pass  # it's a new object, no need to delete
+
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return f"Driver: {self.full_name} - {self.phone_number}"
 
@@ -79,6 +91,19 @@ class Staff(models.Model):
     staff_card = models.ImageField(upload_to="staff_card/", null=True, blank=True)
     phone_number = models.CharField(max_length=10, unique=True, null=False)
 
+
+    def save(self, *args, **kwargs):
+        try:
+            # Get old image before saving
+            old_instance = Staff.objects.get(pk=self.pk)
+            if old_instance.staff_profile and old_instance.staff_profile != self.staff_profile:
+                if old_instance.staff_profile.storage.exists(old_instance.staff_profile.name):
+                    old_instance.staff_profile.delete(save=False)
+        except Staff.DoesNotExist:
+            pass  # it's a new object, no need to delete
+
+        super().save(*args, **kwargs)
+        
     def delete(self, *args, **kwargs):
         """
         Deletes associated profile image before deleting the model.
@@ -123,16 +148,18 @@ class Bus(models.Model):
    
     is_active = models.BooleanField(default=True, help_text="Indicates if the bus is active")
     
- 
-
         
-    # def save(self, *args, **kwargs):
-    #     """
-    #     Ensures available seats do not exceed total seats.
-    #     """
-    #     if self.available_seats > self.total_seats:
-    #         raise ValidationError("Available seats cannot exceed total seats.")
-    #     super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+            try:
+                # Get old image before saving
+                old_instance = Bus.objects.get(pk=self.pk)
+                if old_instance.bus_image and old_instance.bus_image != self.bus_image:
+                    if old_instance.bus_image.storage.exists(old_instance.bus_image.name):
+                        old_instance.bus_image.delete(save=False)
+            except Bus.DoesNotExist:
+                pass  # it's a new object, no need to delete
+
+            super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """
@@ -175,9 +202,9 @@ class SeatLayoutBooking(models.Model):
                             print(f"Seat {seat_key} is now available.")
                         else:
                             print(f"Seat {seat_key} is already available.")
-                        break  # No need to continue if we've found the seat
+                        break 
                 if found:
-                    break  # Exit the outer loop if seat is found and updated
+                    break 
             if not found:
                 print(f"Seat {seat_key} not found in layout.")
         self.save()
@@ -300,7 +327,7 @@ class BusAdmin(models.Model):
             raise ValidationError("The specified staff does not exist.")
 
     def __str__(self):
-        eta = self.estimated_arrival.strftime('%Y-%m-%d %H:%M:%S') if self.estimated_arrival else "N/A"
+      
         return f"Bus Admin: {self.user.full_name} | Bus: {self.bus.bus_number if self.bus else 'No Bus Assigned'}"
 
 
@@ -349,17 +376,34 @@ class BusReservation(models.Model):
     
    
 
+    def save(self, *args, **kwargs):
+        """
+        Custom save logic for image cleanup or validation.
+        """
+        try:
+            old_instance = BusReservation.objects.get(pk=self.pk)
+            if old_instance.image and old_instance.image != self.image:
+                if old_instance.image.storage.exists(old_instance.image.name):
+                    old_instance.image.delete(save=False)
+            if old_instance.document and old_instance.document != self.document:
+                if old_instance.document.storage.exists(old_instance.document.name):
+                    old_instance.document.delete(save=False)
+        except BusReservation.DoesNotExist:
+            pass  # New object, nothing to delete
+
+        super().save(*args, **kwargs)
+
     def delete(self, *args, **kwargs):
         """
-        Deletes associated image file before deleting the model.
+        Deletes associated images before deleting the reservation.
         """
         if self.image and self.image.storage.exists(self.image.name):
             self.image.delete(save=False)
+        if self.document and self.document.storage.exists(self.document.name):
+            self.document.delete(save=False)
         super().delete(*args, **kwargs)
-        
-    
-        
-       
 
     def __str__(self):
-        return f"Reservation {self.vechicle_number}"
+        return f"Reservation: {self.name} ({self.vechicle_number})"
+
+    

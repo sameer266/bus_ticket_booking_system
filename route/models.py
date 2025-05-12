@@ -109,8 +109,6 @@ class Schedule(models.Model):
 
        
         
-
-    
     def delete(self, *args, **kwargs):
         Trip = apps.get_model('route', 'Trip')
         BusAdmin = apps.get_model('bus', 'BusAdmin')

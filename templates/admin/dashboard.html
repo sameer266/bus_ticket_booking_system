@@ -126,7 +126,7 @@
                                             </span>
                                         </td>
                                         <td>{{ booking.booked_at|date:"d M, Y" }}</td>
-                                        <td>Rs. {{ booking.schedule.price }}</td>
+                                        <td>Rs. {{ booking.schedule.price | default:'0'}}</td>
                                     </tr>
                                     {% empty %}
                                     <tr>

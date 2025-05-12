@@ -5,8 +5,9 @@ from django.db.models.signals import post_save
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from decimal import Decimal
-from bus.models import Bus,SeatLayoutBooking
+from bus.models import Bus
 from route.models import Schedule
+from .tasks import release_unpaid_seat
 
 
 
@@ -43,47 +44,52 @@ class Booking(models.Model):
         return f"Booking #{self.id} - Seat: {self.seat} - Status: {self.booking_status}"
 
 
-# # ===== Signal: Update Seat Status on Booking =====
-# @receiver(post_save, sender=Booking)
-# def change_seat_status_when_booked(sender, instance, **kwargs):
-#     """
-#     Signal to update the seat status and assign a schedule when a booking is created or updated.
-#     """
+# ===== Signal: Update Seat Status on Booking =====
+@receiver(post_save, sender=Booking)
+def change_seat_status_when_booked(sender, instance, **kwargs):
+    """
+    Signal to update the seat status and assign a schedule when a booking is created or updated.
+    """
     
-#     # Update seat statuses based on booking status
-#     if instance.booking_status == "booked":
+    # # Update seat statuses based on booking status
+    # if instance.booking_status == "booked":
       
-#                 try:
-#                     bus_layout = SeatLayoutBooking.objects.get(schedule=instance.schedule)
-#                     bus_layout.mark_seat_booked(instance.seat)
+    #             try:
+    #                 bus_layout = SeatLayoutBooking.objects.get(schedule=instance.schedule)
+    #                 bus_layout.mark_seat_booked(instance.seat)
                     
-#                 except SeatLayoutBooking.DoesNotExist:
-#                     pass
+    #             except SeatLayoutBooking.DoesNotExist:
+    #                 pass
            
-#     elif instance.booking_status == "canceled":
+    # elif instance.booking_status == "canceled":
        
 
-#                 try:
-#                     bus_layout = SeatLayoutBooking.objects.get(schedule=instance.schedule)
-#                     bus_layout.mark_seat_available(instance.seat)
+    #             try:
+    #                 bus_layout = SeatLayoutBooking.objects.get(schedule=instance.schedule)
+    #                 bus_layout.mark_seat_available(instance.seat)
                     
-#                 except SeatLayoutBooking.DoesNotExist:
-#                     pass
+    #             except SeatLayoutBooking.DoesNotExist:
+    #                 pass
            
-#     elif instance.booking_status == "pending":
+    # elif instance.booking_status == "pending":
      
-#                 try:
-#                     bus_layout = SeatLayoutBooking.objects.get(schedule=instance.schedule)
-#                     bus_layout.mark_seat_booked(instance.seat)
-#                 except SeatLayoutBooking.DoesNotExist:
-#                     pass
+    #             try:
+    #                 bus_layout = SeatLayoutBooking.objects.get(schedule=instance.schedule)
+    #                 bus_layout.mark_seat_booked(instance.seat)
+    #             except SeatLayoutBooking.DoesNotExist:
+    #                 pass
                 
-#                 # Schedule task to release seat after 15 minutes if payment not completed
-#                 # release_unpaid_seat.apply_async(
-#                 #     args=[instance.id, seat_id],
-#                 #     countdown=900  # 15 minutes
-#                 # )
-           
+                # Schedule task to release seat after 15 minutes if payment not completed
+    if instance.booking_status == "pending":
+        
+        try:
+            print("------------")
+            release_unpaid_seat.apply_async(
+                        args=[instance.id, instance.schedule.id],
+                        countdown=30  # 15 minutes
+                    )
+        except Exception as e:
+            print("Error in redis " ,e)
 
 
 # ======== Bus Reservatiom Booking ==========
