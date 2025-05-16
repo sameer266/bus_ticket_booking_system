@@ -145,7 +145,6 @@ class Bus(models.Model):
     features = MultiSelectField(choices=FEATURE_CHOICES, null=True, blank=True)
     bus_image = models.ImageField(upload_to="bus_images/")
     total_seats = models.PositiveIntegerField(default=35)
-   
     is_active = models.BooleanField(default=True, help_text="Indicates if the bus is active")
     
         

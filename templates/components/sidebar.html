@@ -9,18 +9,20 @@
   <nav id="sidebar" class="sidebar" data-compact="false">
     <div class="sidebar-header">
       <div class="d-flex align-items-center justify-content-between">
-        <a href="" class="sidebar-brand text-decoration-none">
+        <a href={% url 'admin_dashboard' %} class="sidebar-brand text-decoration-none ">
           {% if system.name %}
-          <span class="sidebar-brand ms-2">{{ system.name }}</span>
+          <span class="sidebar-brand ms-5">{{ system.name }}</span>
           {% endif %}
           {% if system.image%}
-          <img src={{ system.image.url }} alt="Go Sewa" height="32">
+         
+          <img src={{ system.image.url }} alt="Go Sewa" height="32"> 
           {% endif %}
-        </a>
+          
+
         <button type="button" id="sidebarToggleBtn" class="btn btn-icon d-none d-lg-flex">
           <i class="bi bi-arrow-left-right"></i>
         </button>
-        <button type="button" id="closeMobileSidebar" class="btn btn-icon d-lg-none">
+        <button type="button" id="closeMobileSidebar" class="btn btn-icon d-lg-none float-end ms-2" >
           <i class="bi bi-x-lg"></i>
         </button>
       </div>

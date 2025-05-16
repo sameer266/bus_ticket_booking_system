@@ -55,7 +55,11 @@
                                     <th class="ps-3" style="width: 40%">Type Name</th>
                                     <th class="text-center d-none d-md-table-cell" style="width: 20%">Image</th>
                                     <th class="text-center d-none d-md-table-cell" style="width: 20%">Vehicles</th>
+
+                                    {%  if user.rol == 'admin' %}
                                     <th class="text-end pe-3" style="width: 20%">Actions</th>
+                                    {%endif%}
+                                    
                                 </tr>
                             </thead>
                             <tbody>
@@ -85,12 +89,15 @@
                                     <td class="text-center d-none d-md-table-cell">
                                         <div class="d-flex align-items-center justify-content-center gap-3">
                                             <span class="badge bg-primary rounded-pill px-3 py-2">{{ vehicle_type.vehicle_count }}</span>
+
                                             <a href="{% url 'vehicle_type_vehicles' vehicle_type.id %}" class="btn btn-sm btn-outline-primary rounded-pill" title="View vehicles">
                                                 <i class="bi bi-eye-fill"></i>
                                                 <span class="d-none d-xl-inline ms-1">View</span>
                                             </a>
                                         </div>
                                     </td>
+
+                                {% if user.role == 'admin' %}
                                     <td class="text-end pe-3">
                                         <div class="d-flex justify-content-end gap-2">
                                             <a href="{% url 'edit_vehicle_type' vehicle_type.id %}" class="btn btn-sm btn-outline-primary rounded-pill" title="Edit">
@@ -108,6 +115,9 @@
                                             </button>
                                         </div>
                                     </td>
+                                    {%endif%}
+
+
                                 </tr>
                                 {% empty %}
                                 <tr class="no-results-row">

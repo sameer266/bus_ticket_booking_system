@@ -363,6 +363,9 @@
                         </div>
                         {% endif %}
 
+
+                 
+
                         <div class="col-md-6">
                             <label class="form-label">Driver</label>
                             <select class="form-select" name="driver" id="edit_driver">
@@ -408,12 +411,12 @@
                             <div id="current_image_preview" class="mt-2"></div>
                         </div>
 
-                        {% if user.role == "admin" %}
+                       
                         <div class="col-md-6">
                             <label class="form-label" for="edit_commission">Commission Rate (%)*</label>
-                            <input type="number" class="form-control" name="commission_rate" id="edit_commission"placeholder="Enter commission percentage" min="0" max="100" step="0.1" required>
+                            <input type="number" class="form-control" name="commission_rate" id="edit_commission"placeholder="Enter commission percentage" min="0" max="100" step="0.1" required  {% if not user.role == "admin" %} readonly {%endif%}>
                         </div>
-                        {% endif %}
+                      
 
                         
                         <div class="col-md-6">

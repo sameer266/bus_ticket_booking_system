@@ -90,7 +90,9 @@ urlpatterns = [
     
     # ============ Notification =============
     path('api/user_notification/',views.UserNotificationApiView.as_view()),
-    path('api/user_notification/read/',views.UserNotificationApiView.as_view()),
+    path('api/user_notification/read/<notification_id>/',views.UserNotificationRead.as_view()),
+    
+
     
 ]
 

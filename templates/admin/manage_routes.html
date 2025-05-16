@@ -84,6 +84,8 @@
                                             <a href="{% url 'route_bus_list' route.id %}" class="btn btn-sm btn-icon btn-outline-primary me-2" title="View Buses">
                                                 <i class="bi bi-bus-front"></i>
                                             </a>
+
+                                            {% if user.role == "admin" %}
                                             <a href="{% url 'edit_route' route.id %}" class="btn btn-sm btn-icon btn-outline-warning me-2" title="Edit Route">
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
@@ -94,6 +96,8 @@
                                                     data-route-destination="{{ route.destination }}">
                                                 <i class="bi bi-trash"></i>
                                             </button>
+
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>

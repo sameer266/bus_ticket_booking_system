@@ -7,8 +7,14 @@
     
     <div class="admin-main-content" id="mainContent">
         <div class="admin-container py-4">
-            
+            {% if user.role == "admin" %}
             <h1 class="admin-title mb-4">Admin Dashboard</h1>
+            {% else %}
+            <h1 class="admin-title mb-4">Sub Admin Dashboard</h1>
+
+            {% endif %}
+            
+
 
             <!-- Stats Cards -->
             <div class="admin-stats-grid">

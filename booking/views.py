@@ -468,8 +468,10 @@ def bus_list(request):
         departure_time__gte=timezone.now(),
         bus__driver__isnull=False
     ).values_list("bus__driver__id", flat=True)
+    
 
     unassigned_drivers = drivers.exclude(id__in=set(assigned_driver_ids) | set(scheduled_driver_ids))
+    print(unassigned_drivers)
 
     # === Staff filtering ===
     assigned_staff_ids = Bus.objects.exclude(staff=None).values_list("staff__id", flat=True)
@@ -755,6 +757,7 @@ def vehicle_list(request):
         drivers = Driver.objects.all()
 
     vechicle_types = VechicleType.objects.all()
+    transportation_company=TransportationCompany.objects.all()
 
     reservation_json = json.dumps([
         {
@@ -780,6 +783,7 @@ def vehicle_list(request):
         'unassigned_drivers': drivers,
         'unassigned_staff': staffs,
         'vechicle_types': vechicle_types,
+        'transportation_company':transportation_company,
         'source':source,
         'reservation_json': reservation_json,
     }
@@ -789,6 +793,10 @@ def vehicle_list(request):
             try:
                 name = request.POST.get('name')
                 type_id = request.POST.get('type')
+                transportation_company_id=request.POST.get('transportation_company_id')
+                if transportation_company_id:
+                    transportation_company_obj=TransportationCompany.objects.get(id=transportation_company_id)
+
                 vechicle_number = request.POST.get('vechicle_number')
                 vechicle_model = request.POST.get('vechicle_model')
                 image = request.FILES.get('image')
@@ -799,6 +807,9 @@ def vehicle_list(request):
                 total_seats = request.POST.get('total_seats', 35)
                 price = request.POST.get('price')
                 source=request.POST.get('source')
+                
+                commission_rate = float(request.POST.get('commission_rate') or 0)
+                
                 if source:
                     source = source.lower()
                 else:
@@ -809,7 +820,8 @@ def vehicle_list(request):
                 driver_obj = Driver.objects.get(id=driver_id) if driver_id else None
                 staff_obj = Staff.objects.get(id=staff_id) if staff_id else None
 
-                BusReservation.objects.create(
+                bus_reserve= BusReservation.objects.create(
+                    transportation_company=transportation_company_obj,
                     name=name,
                     source=source,
                     type=type_obj,
@@ -822,8 +834,11 @@ def vehicle_list(request):
                     staff=staff_obj,
                     total_seats=total_seats,
                     price=price,
-                    transportation_company=transportation_company
+                   
                 )
+                
+                Commission.objects.create(rate=commission_rate,bus_reserve=bus_reserve)                
+                
                 return redirect('vehicle_reservation')
             except Exception as e:
                 print(f"Error creating reservation: {str(e)}")
@@ -862,8 +877,9 @@ def edit_vehicle(request, id):
         drivers = Driver.objects.all()
         
     
-
+    commission=Commission.objects.get(bus_reserve=reservation)
     vechicle_types = VechicleType.objects.all()
+    transportation_company=TransportationCompany.objects.all()
    
 
     if request.method == 'POST':
@@ -887,6 +903,14 @@ def edit_vehicle(request, id):
             reservation.total_seats = request.POST.get('total_seats', reservation.total_seats)
             reservation.price = request.POST.get('price', reservation.price)
 
+            transportation_company_id=request.POST.get('transportation_company_id')
+            if transportation_company_id:
+                transportation_company=TransportationCompany.objects.get(id=transportation_company_id)
+            
+            commission=Commission.objects.get(bus_reserve=reservation)
+            commission.rate=request.POST.get('commission_rate')
+            commission.save()
+            
             reservation.save()
             messages.success(request,f'Vehicle {reservation.vechicle_number} Updated Successfully  ')
             return redirect('vehicle_reservation')
@@ -905,6 +929,8 @@ def edit_vehicle(request, id):
         'vechicle_types': vechicle_types,
         'unassigned_drivers': drivers,
         'unassigned_staff': staffs,
+        'transportation_company':transportation_company,
+        'commission_rate':commission.rate
     })
     
 # ====== Delete Vehicle reservation ========

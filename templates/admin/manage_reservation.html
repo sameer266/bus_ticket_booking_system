@@ -27,9 +27,12 @@
                         <button id="addReservationBtn" class="btn btn-sm btn-primary">
                             <i class="bi bi-plus-lg me-1"></i> Add Vehicle
                         </button>
+
                         <a href="{% url 'vehicle_type_list' %}" class="btn btn-sm btn-outline-secondary">
                             <i class="bi bi-list-check me-1"></i> Manage Types
                         </a>
+
+                 
                     </div>
                 </div>
             </div>
@@ -108,12 +111,17 @@
                                     <th class="d-none d-lg-table-cell">Number</th>
                                     <th class="d-none d-xl-table-cell">Model</th>
                                     <th class="text-center">Seats</th>
+                                 
+                                    
                                     <th class="d-none d-lg-table-cell">Color</th>
                                     <th class="d-none d-xl-table-cell">Price</th>
                                     <th class="d-none d-xl-table-cell">Driver</th>
                                     <th class="d-none d-xl-table-cell">Staff</th>
                                     <th class="d-none d-xl-table-cell">Source</th>
+
+                                    {% if user.role == 'admin'%}
                                     <th class="text-end pe-3">Actions</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -180,6 +188,8 @@
                                     <td class="d-none d-xl-table-cell">
                                         <span class="badge bg-light text-dark">{{ reservation.source }}</span>
                                     </td>
+
+                                    {% if user.role == "admin" %}
                                     <td class="text-end pe-3">
                                         <div class="d-flex gap-2 justify-content-end">
                                             <a href="{% url 'vehicle_reservation_edit' reservation.id %}" 
@@ -196,6 +206,9 @@
                                     </button>
                                         </div>
                                     </td>
+
+                                    {% endif %}
+
                                 </tr>
                                 {% empty %}
                                 <tr>
@@ -302,6 +315,8 @@
                             <label class="form-label">Vehicle Model*</label>
                             <input type="text" class="form-control" name="vechicle_model" placeholder="e.g., Toyota HiAce">
                         </div>
+
+
                         <div class="col-md-6">
                             <label class="form-label">Image</label>
                             <input type="file" class="form-control" name="image" accept="image/*">
@@ -322,6 +337,29 @@
                                 <small class="text-muted ms-2">Preview</small>
                             </div>
                         </div>
+
+
+                                              <!-- cOMISSION -->
+                         <div class="col-md-6">
+                            <label class="form-label">Commission*</label>
+                            <input type="number" class="form-control" name="commission_rate" placeholder="e.g., 0.00"  required>
+                        </div>
+
+
+                        {% if user.role == "admin" %}
+                        <!-- tICKET Counter -->
+
+                        <div class="col-md-6">
+                            <label class="form-label">Ticket Counter*</label>
+                            <select class="form-select" name="transportation_company_id" required>
+                                <option value="">-- Select Counter --</option>
+                                {% for i in transportation_company %}
+                                <option value="{{ i.id }}">{{ i.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {%endif%}
+
                         <div class="col-md-6">
                             <label class="form-label">Driver*</label>
                             <select class="form-select" name="driver_id" required>
@@ -332,6 +370,10 @@
                             </select>
                             <div class="invalid-feedback">Please select a driver.</div>
                         </div>
+
+                    
+
+
                         <div class="col-md-6">
                             <label class="form-label">Staff</label>
                             <select class="form-select" name="staff_id">

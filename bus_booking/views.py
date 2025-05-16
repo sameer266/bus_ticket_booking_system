@@ -787,23 +787,40 @@ class BusLayoutApiView(APIView):
             return Response({"success": False, "error": str(e)}, status=400)
         
     # =========== Notification ==========
-    
 class UserNotificationApiView(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
     
     def get(self,request):
-        user=request.user
-        notification=Notification.objects.filter(user=user).order_by('-created_at')
-        serializer=NotificationSerializer(notification,many=True)
-        return Response({'success':True,'data':serializer.data},status=200)
-    
-    def post(self,request,id):
-        is_read=request.data.get('is_read')
-        notification=Notification.objects.get(id=id)
-        notification.is_read=is_read
-        notification.save()
-        return Response({'success':True,'message':'Nofication read success'},status=200)
-    
-    
-    
+        try:
+            user=request.user
+            notification=Notification.objects.filter(user=user,is_read=False).order_by('-created_at')
+            serializer=NotificationSerializer(notification,many=True)
+            return Response({'success':True,'data':serializer.data},status=200)
+        except Exception as e:
+            return Response({'success':False,'error':"Something went wrong in User notification"},status=400)
+        
+
+
+
+class UserNotificationRead(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, notification_id):
+        try:
+            if notification_id == "all":
+                notifications = Notification.objects.filter(user=request.user)
+                notifications.update(is_read=True)  
+            else:
+                notification = Notification.objects.get(id=notification_id, user=request.user)
+                notification.is_read = True
+                notification.save()
+                
+            return Response({'success': True}, status=200)
+        
+        except Notification.DoesNotExist:
+            return Response({'success': False, 'error': 'Notification not found'}, status=404)
+        
+        except Exception as e:
+            return Response({'success': False, 'error': 'Something went wrong'}, status=400)

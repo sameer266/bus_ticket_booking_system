@@ -258,6 +258,33 @@
                     </div>
                 </div>
                 
+
+                
+                                              <!-- cOMISSION -->
+                         <div class="col-md-6">
+                            <label class="form-label">Commission*</label>
+                            <input type="number" class="form-control" name="commission_rate" placeholder="e.g., 0.00"  value={{commission_rate}} {% if not user.role == 'admin'%}  readonly {%endif%}% required>
+                        </div>
+
+
+                        {% if user.role == "admin" %}
+                        <!-- tICKET Counter -->
+
+            <div class="col-md-6">
+    <label class="form-label">Ticket Counter*</label>
+    <select class="form-select" name="transportation_company_id" required>
+        <option value="">-- Select Counter --</option>
+        {% for i in transportation_company %}
+            <option value="{{ i.id }}" {% if i.id == reservation.transportation_company.id %}selected{% endif %}>
+                {{ i.company_name }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
+                        {%endif%}
+
+
                 <!-- Trip Details Section -->
                 <h4 class="section-header"><i class="bi bi-geo-alt"></i>Trip Details</h4>
                 <div class="row g-3">
