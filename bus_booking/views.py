@@ -8,7 +8,7 @@ from datetime import datetime
 from django.contrib import messages
 
 from custom_user.models import CustomUser,UserOtp
-from route.models import Route,Schedule,CustomerReview,Notification
+from route.models import Route,SubRoutes,SearchSubRoute,Schedule,CustomerReview,Notification
 from bus.models import Bus,BusReservation,VechicleType,SeatLayoutBooking
 from booking.models import Booking,BusReservationBooking
 from django.shortcuts import get_object_or_404
@@ -472,54 +472,62 @@ class AllSchedule(APIView):
 
 
 # ========= Filter Route ==========
+
 class FilterSchedule(APIView):
     def get(self, request):
         try:
-            # Get the query parameters
             print("Search", request.query_params)
             source = request.query_params.get('source')
             destination = request.query_params.get('destination')
-            departure_time = request.query_params.get('departure_time')  # Expecting a date string in format YYYY-MM-DD
+            departure_time = request.query_params.get('departure_time')  
 
-            # Check for missing parameters
-            if not source or not destination or not departure_time:
-                return Response({"success": False, "error": "Missing required parameters"}, status=400)
-
+            
+            # Parse date
             try:
-              
                 departure_date = datetime.strptime(departure_time, "%Y-%m-%d").date()
             except ValueError:
                 return Response({"success": False, "error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
+
+            # Find routes where main source/destination match
             route_objs = Route.objects.filter(
-                source__icontains=source, 
+                source__icontains=source,
                 destination__icontains=destination
             )
-            
-            print("Route",route_objs)
-          
+            if not route_objs.exists():
+                subroute_routes = SearchSubRoute.find_routes_with_subroute_order(source, destination)
+                if subroute_routes:
+                    route_objs = Route.objects.filter(id__in=[r.id for r in subroute_routes])
+
+            print("Filtered Routes:", route_objs)
+
             schedule = Schedule.objects.filter(
                 route__in=route_objs,
                 departure_time__date=departure_date
             )
-            print("Schedule",schedule)
+
+            print("Schedule:", schedule)
 
             if not schedule.exists():
-                return Response({"success": True, "data": [],"source": source,
-                "destination": destination,
-                "departure_date": departure_date}, status=200)
+                return Response({
+                    "success": True,
+                    "data": [],
+                    "source": source,
+                    "destination": destination,
+                    "departure_date": departure_date
+                }, status=200)
 
-        
             serializer = ScheduleSerializer(schedule, many=True)
             return Response({
                 "success": True,
                 "data": serializer.data,
                 "source": source,
                 "destination": destination,
-                "departure_date": departure_date  
+                "departure_date": departure_date
             }, status=200)
 
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
+
 
 from django.conf import settings
 
@@ -599,6 +607,7 @@ class VehicleListSource(APIView):
                         "id":vechicle.id,
                         "name":vechicle.name,
                         "type":vechicle.type.name,
+                        'fuel_type':vechicle.fuel_type,
                         "vechicle_number":vechicle.vechicle_number,
                         "vechicle_model":vechicle.vechicle_model,
                         "image":vechicle.image.url,
@@ -606,6 +615,7 @@ class VehicleListSource(APIView):
                         "driver":vechicle.driver.full_name,
                         "staff":vechicle.staff.full_name,
                         "total_seats":vechicle.total_seats,
+                        "price_range":vechicle.price_range,
                         "price":vechicle.price,
                         "source":vechicle.source,
                     }
@@ -637,6 +647,7 @@ class VehicleOneDetails(APIView):
                 'id':bus_reservation.id,
                 'name': bus_reservation.name,
                 'type': bus_reservation.type.name,
+                'fuel_type':bus_reservation.fuel_type,
                 'image': bus_reservation.image.url,
                 'vehicle_number': bus_reservation.vechicle_number,
                 'vehicle_model': bus_reservation.vechicle_model,
@@ -645,6 +656,8 @@ class VehicleOneDetails(APIView):
                 'staff': getattr(bus_reservation.staff, 'full_name', None),
                 'total_seats': bus_reservation.total_seats,
                 'price': bus_reservation.price,
+                'price_range': bus_reservation.price_range,
+                
             }
 
             return Response({'success': True, 'data': data}, status=200)
@@ -675,6 +688,7 @@ class VechicleReservationList(APIView):
                     "id":bus_reservation.id,
                     "name": bus_reservation.name,
                     "type": bus_reservation.type.name,
+                    "fuel_type":bus_reservation.fuel_type,
                     "vechicle_number": bus_reservation.vechicle_number,
                     "vechicle_model": bus_reservation.vechicle_model,
                     "image": bus_reservation.image.url if bus_reservation.image else None,
@@ -683,6 +697,8 @@ class VechicleReservationList(APIView):
                     "staff": bus_reservation.staff.full_name if bus_reservation.staff else None,
                     "total_seats": bus_reservation.total_seats,
                     "price": bus_reservation.price,
+                    "price_range": bus_reservation.price_range,
+                    
                     "source":bus_reservation.source
                 }
                 data_list.append(data)

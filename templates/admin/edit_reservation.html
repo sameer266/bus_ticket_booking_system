@@ -250,6 +250,21 @@
                         <label for="color" class="form-label">Color</label>
                         <input type="text" class="form-control" id="color" name="color" value="{{ reservation.color }}">
                     </div>
+
+                    <div class="col-md-6 form-group">
+                        <label for="fuel_type" class="form-label">Fuel Type</label>
+                        <select class="form-select" id="fuel_type" name="fuel_type" required>
+                            <option value="" disabled>Select fuel type</option>
+                            {% for fuel in fuel_types %}
+                                <option value="{{ fuel }}" {% if fuel == reservation.fuel_type %}selected{% endif %}>
+                                    {{ fuel }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+
+                        
                     
                     <div class="col-md-6 form-group">
                         <label for="total_seats" class="form-label">Total Seats</label>
@@ -294,6 +309,13 @@
                         <div class="invalid-feedback">Please enter a source location.</div>
                     </div>
                     
+
+                    <div class="col-md-6 form-group">
+                        <label for="price" class="form-label">Price  Range</label>
+                        <input type="txet" placeholder="1000-2000" class="form-control" id="price" name="price_range" value="{{ reservation.pricege_ran }}" required>
+                        <div class="invalid-feedback">Please enter a valid price range.</div>
+                    </div>
+
                     <div class="col-md-6 form-group">
                         <label for="price" class="form-label">Price (NRP)</label>
                         <input type="number" class="form-control" id="price" name="price" value="{{ reservation.price }}" step="0.01" required>

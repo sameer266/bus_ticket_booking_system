@@ -7,28 +7,75 @@ from django.utils import timezone
 import random
 
 
-# ======= Route ==========
-class Route(models.Model):
-    """
-    Represents a route with a source, destination, distance, and estimated travel time.
-    """
-    source = models.CharField(max_length=255, null=False, help_text="Starting point of the route")
-    image=models.ImageField(upload_to="route-img/",null=True,blank=True)
-    destination = models.CharField(max_length=255, null=False, help_text="Ending point of the route")
-    distance = models.DecimalField(max_digits=6, decimal_places=2, help_text="Distance in kilometers")
-    estimated_time = models.PositiveIntegerField(null=True,default=0, help_text="Estimated travel time in Hour")
+class SubRoutes(models.Model):
+    name=models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f"Subroutes {self.name}"
 
-    def delete(self,*args,**kwargs):
-        """ Delete the Image  """
+
+# ======== route ============
+class Route(models.Model):
+    MAX_SUBROUTES = 5
+
+    source = models.CharField(max_length=255, null=False)
+    image = models.ImageField(upload_to="route-img/", null=True, blank=True)
+    sub_routes = models.ManyToManyField(SubRoutes, blank=True)
+    destination = models.CharField(max_length=255, null=False)
+    distance = models.DecimalField(max_digits=6, decimal_places=2)
+    estimated_time = models.PositiveIntegerField(null=True, default=0)
+
+    def clean(self):
+        if self.pk and self.sub_routes.count() > self.MAX_SUBROUTES:
+            raise ValidationError(f"Maximum {self.MAX_SUBROUTES} sub-routes allowed per route.")
+
+    def delete(self, *args, **kwargs):
         if self.image:
             self.image.delete(save=False)
-        super().delete(*args,**kwargs)
-        
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f"{self.source} to {self.destination} - {self.distance} km"
 
+
+
+
+
+# ========== RouteSubRoute (Used for seacrhing the sub routes) ============
+class SearchSubRoute(models.Model):
+    route=models.ForeignKey(Route,on_delete=models.CASCADE)
+    subroute=models.ForeignKey(SubRoutes,on_delete=models.CASCADE)
+    order=models.PositiveBigIntegerField(null=True,blank=True)
     
+    class Meta:
+        ordering= ['order']
+        unique_together=('route','subroute') 
+           
+    def save(self,*args,**kwargs):
+        if self.order is None:
+            last_order=SearchSubRoute.objects.filter(route=self.route).aggregate(models.Max('order'))['order__max']
+            self.order=(last_order or  0) + 1
+        super().save(*args,**kwargs)
+    
+    def __str__(self):
+        return  f"{self.route} via {self.subroute} (Order {self.order})"
+    
+    @staticmethod
+    def find_routes_with_subroute_order(start_name ,end_name):
+        """Returns all parent routes where `start_name` appears before `end_name` in order."""
+        start_matches=SearchSubRoute.objects.filter(subroute__name=start_name)
+        valid_routes=[]
+        for start in start_matches:
+            try:
+                end=SearchSubRoute.objects.get(route=start.route,subroute__name=end_name)
+                if start.order<end.order:
+                    valid_routes.append(start.route)
+            except SearchSubRoute.DoesNotExist:
+                continue
+        return valid_routes
         
+        
+    
 # =========== Trip ==============
 class Trip(models.Model):
     """
@@ -91,7 +138,6 @@ class Schedule(models.Model):
         ("finished","Finished")
     )
     transportation_company=models.ForeignKey('custom_user.TransportationCompany',on_delete=models.CASCADE,null=True,blank=True)
-
     bus = models.ForeignKey('bus.Bus', on_delete=models.CASCADE)
     route = models.ForeignKey(Route, on_delete=models.CASCADE)
     departure_time = models.DateTimeField(null=True, blank=True, help_text="Time when bus starts")
@@ -100,6 +146,7 @@ class Schedule(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Ticket price")
     available_seats = models.PositiveIntegerField(default=0, help_text="Number of available seats")
     status=models.CharField(max_length=20,null=True,blank=True)
+    
 
     def save(self, *args, **kwargs):
         if not self.date:
@@ -150,10 +197,12 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
     if created:
         BusAdmin = apps.get_model('bus', 'BusAdmin')
         CustomUser = apps.get_model('custom_user', 'CustomUser')
+        Commission=apps.get_model('booking','Commission')
         
+        commission=Commission.objects.get(bus=instance.bus)
+        commission.schedule=instance
+        commission.save()
         
-       
-
         # Create BusAdmin if not exists
         bus_admin = BusAdmin.objects.filter(bus=instance.bus).first()
         if not bus_admin:
@@ -212,16 +261,16 @@ class CustomerReview(models.Model):
 # ==========Notification ============
 class Notification(models.Model):
     NOTIFICATION_TYPE_CHOICES = [
-        ('system', 'System'),         # For ads, offers
-        ('booking', 'Booking'),       # For seat booking or reservation
+        ('system', 'System'),
+        ('booking', 'Booking'),     
     ]
-
+    
     user = models.ForeignKey('custom_user.CustomUser', on_delete=models.CASCADE, related_name='notifications')
     title = models.CharField(max_length=255)
     message = models.TextField()
     type = models.CharField(max_length=10, choices=NOTIFICATION_TYPE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)  # To track read/unread notifications
+    is_read = models.BooleanField(default=False)  
 
 
     @staticmethod
@@ -236,3 +285,5 @@ class Notification(models.Model):
             
     def __str__(self):
         return f"{self.user.full_name} - {self.title}"
+    
+    

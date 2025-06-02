@@ -1,44 +1,9 @@
 from django.db import models
-from multiselectfield import MultiSelectField
 from django.core.exceptions import ValidationError
 from django.apps import apps
 from route.models import Schedule
-
-# Importing related models
 from custom_user.models import CustomUser,TransportationCompany
 
-
-
-# ========= Ticket Counter Model ===========
-class TicketCounter(models.Model):
-    """
-    Represents a ticket counter managed by a sub-admin.
-    """
-    user = models.OneToOneField(
-        'custom_user.CustomUser',
-        on_delete=models.CASCADE,
-        limit_choices_to={'role': 'sub_admin'},
-        related_name="ticket_counter"
-    )
-    counter_name = models.CharField(max_length=200, default="None", help_text="Name of Ticket Counter")
-    bank_account = models.CharField(
-        max_length=50, 
-        null=True, 
-        blank=True, 
-        help_text="Bank account number for payments"
-    )
-    bank_name = models.CharField(
-        max_length=100, 
-        null=True, 
-        blank=True, 
-        help_text="Name of the bank"
-    )
-    
-    location = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.counter_name} - {self.location}"
 
 
 # =========== Driver Model ===============
@@ -47,7 +12,6 @@ class Driver(models.Model):
     Represents a driver with their profile and license details.
     """
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
-    # ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.CASCADE,null=True,blank=True)
     full_name = models.CharField(max_length=255, null=False)
     driver_profile = models.ImageField(upload_to="driver_profile/",null=True,blank=True)
     license_image = models.ImageField(upload_to="driver_license/")
@@ -85,7 +49,6 @@ class Staff(models.Model):
     Represents a staff member with optional profile and staff card images.
     """
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
-    # ticket_counter=models.ForeignKey(TicketCounter,on_delete=models.Case,null=True,blank=False)
     full_name = models.CharField(max_length=255, null=False)
     staff_profile = models.ImageField(upload_to="staff_profile/", null=True, blank=True)
     staff_card = models.ImageField(upload_to="staff_card/", null=True, blank=True)
@@ -115,6 +78,9 @@ class Staff(models.Model):
     def __str__(self):
         return f"Staff: {self.full_name} - {self.phone_number}"
 
+# =========== Bus Featues =====
+class BusFeatures(models.Model):
+    name=models.CharField(max_length=50,unique=True)
 
 # ====== Bus Model =============
 class Bus(models.Model):
@@ -135,16 +101,16 @@ class Bus(models.Model):
         ("fan", "Fan"),
         ("wifi", "WiFi"),
     )
+    
+    
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
-
     driver = models.OneToOneField(Driver, on_delete=models.CASCADE, null=True, blank=True)
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, null=True, blank=True)
-   
     bus_number = models.CharField(max_length=20, unique=True, null=False, help_text="Example: BA 1 KHA 1234")
     bus_type = models.CharField(max_length=20, choices=VEHICLE_CHOICES, default="deluxe_bus")
-    features = MultiSelectField(choices=FEATURE_CHOICES, null=True, blank=True)
+    features = models.ManyToManyField(BusFeatures,blank=True)
     bus_image = models.ImageField(upload_to="bus_images/")
-    total_seats = models.PositiveIntegerField(default=35)
+    total_seats = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True, help_text="Indicates if the bus is active")
     
         
@@ -356,19 +322,24 @@ class BusReservation(models.Model):
     """
     Represents a reservation for a bus or vehicle.
     """
-   
+    FUEL_TYPE=[ ('Electric','Electric'),
+               ('Disel','Disel'),
+               ('Petrol','Petrol')
+       
+   ]
     transportation_company=models.ForeignKey(TransportationCompany,on_delete=models.CASCADE,null=True,blank=True)
-    
     name=models.CharField(max_length=100,default="None")
     type = models.ForeignKey(VechicleType, on_delete=models.CASCADE, null=True, blank=True)
     vechicle_number = models.CharField(max_length=100, default="None")
     vechicle_model=models.CharField(max_length=100,default="None")
+    fuel_type=models.CharField(max_length=50,choices=FUEL_TYPE,null=True,blank=True)
     image = models.ImageField(upload_to="vechicle_images/",null=True, blank=True)
     document=models.ImageField(upload_to="vechicle_document/",null=True,blank=True)
     color=models.CharField(max_length=100,null=True,blank=True)
     driver = models.ForeignKey(Driver, on_delete=models.CASCADE, null=True, blank=True)
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, null=True, blank=True)
     total_seats = models.PositiveIntegerField(default=35)
+    price_range=models.CharField(max_length=20,default="0-0")
     price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     source=models.CharField(max_length=200,null=True,blank=True)
     created_at=models.DateTimeField(auto_now_add=True,null=True,blank=True)

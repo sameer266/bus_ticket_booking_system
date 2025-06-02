@@ -1,0 +1,244 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block title %}Booking Earning Details | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <main class="dashboard-content px-3 px-md-4 py-4">
+        <div class="container-fluid">
+            <!-- Header -->
+            <div class="d-flex justify-content-between flex-wrap align-items-center mb-4 pb-2 border-bottom">
+                <h1 class="h3 fw-bold text-primary mb-3 mb-md-0">
+                    <i class="bi bi-graph-up-arrow me-2"></i> Booking Earning Details - {{ bus.bus_number|default:"N/A" }}
+                </h1>
+                <button onclick="history.back()" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2">
+                    <i class="bi bi-arrow-left"></i> Back to Summary
+                </button>
+            </div>
+
+            <!-- Date Filter Form -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <form id="filter-form" method="get" class="row g-3 align-items-end">
+                        <div class="col-md-3 col-sm-6">
+                            <input type="date" name="start_date" id="start_date" class="form-control form-control-sm" value="{{ start_date|default:'' }}" required>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <input type="date" name="end_date" id="end_date" class="form-control form-control-sm" value="{{ end_date|default:'' }}" required>
+                        </div>
+                        <div class="col-md-auto d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center gap-2">
+                                <i class="bi bi-search"></i> Search
+                            </button>
+                            {% if start_date or end_date %}
+                            <a href="{% url 'bus_earnings' bus.id %}" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-2">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                    <div id="form-error" class="text-danger mt-2" style="display: none;"></div>
+                </div>
+            </div>
+
+            <!-- Current Commission Rate Card -->
+            <div class="card border-0 shadow-sm mb-4 hover-shadow transition-all">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted fw-normal mb-2">Current Commission Rate</h6>
+                            <h3 class="mb-0 fw-bold text-indigo">{{ commission_rate|floatformat:2|default:"0.00" }}%</h3>
+                        </div>
+                        <div class="icon-circle bg-indigo-soft rounded-circle p-3">
+                            <i class="bi bi-percent fs-4 text-indigo"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Earnings Summary -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Total Paid</h6>
+                                    <h3 class="mb-0 fw-bold text-primary">NPR {{ total_earnings.total_paid|floatformat:2|default:"0.00" }}</h3>
+                                </div>
+                                <div class="icon-circle bg-primary-soft rounded-circle p-3">
+                                    <i class="bi bi-currency-exchange fs-4 text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Total Commission</h6>
+                                    <h3 class="mb-0 fw-bold text-indigo">NPR {{ total_earnings.total_commission|floatformat:2|default:"0.00" }}</h3>
+                                </div>
+                                <div class="icon-circle bg-indigo-soft rounded-circle p-3">
+                                    <i class="bi bi-percent fs-4 text-indigo"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100 border-0 shadow-sm hover-shadow transition-all">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Net Earnings</h6>
+                                    <h3 class="mb-0 fw-bold text-success">NPR {{ total_earnings.total_net|floatformat:2|default:"0.00" }}</h3>
+                                </div>
+                                <div class="icon-circle bg-success-soft rounded-circle p-3">
+                                    <i class="bi bi-wallet2 fs-4 text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earnings Table -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
+                    <h5 class="card-title mb-0">Earnings Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Transaction ID</th>
+                                    <th>Date</th>
+                                    <th>Passenger</th>
+                                    <th>Seat Number</th>
+                                    <th>Amount Paid</th>
+                                    <th>Rate</th>
+                                    <th>Commission</th>
+                                    <th>Net Earning</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for earning in earnings_list %}
+                                <tr>
+                                    <td>
+                                        {% if earning.transaction_id %}
+                                        {{ earning.transaction_id }}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>{{ earning.payment_date|date:"Y-m-d H:i" }}</div>
+                                    </td>
+                                    <td>{{ earning.passenger|default:"N/A" }}</td>
+                                    <td>{{ earning.seat_number|join:", "|default:"N/A" }}</td>
+                                    <td>NRP {{ earning.amount_paid|floatformat:2|default:"0.00" }}</td>
+                                    <td>{{ earning.commission_rate|floatformat:2|default:"0.00" }}%</td>
+                                    <td>NRP {{ earning.commission|floatformat:2|default:"0.00" }}</td>
+                                    <td>NRP {{ earning.net_earning|floatformat:2|default:"0.00" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">No earnings found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Responsive layout */
+    @media (min-width: 768px) {
+        .dashboard-content {
+            margin-left: 220px;
+            transition: margin-left 0.3s ease;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .dashboard-content {
+            margin-left: 0;
+        }
+    }
+
+   
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .card-body {
+            padding: 1rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filter-form');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const errorDiv = document.getElementById('form-error');
+
+    // Set max date for date inputs to today
+    const today = new Date().toISOString().split('T')[0];
+    startDateInput.setAttribute('max', today);
+    endDateInput.setAttribute('max', today);
+
+    // Ensure end date is not earlier than start date
+    startDateInput.addEventListener('change', function() {
+        endDateInput.setAttribute('min', this.value);
+        if (endDateInput.value && endDateInput.value < this.value) {
+            endDateInput.value = this.value;
+        }
+    });
+
+    endDateInput.addEventListener('change', function() {
+        startDateInput.setAttribute('max', this.value || today);
+    });
+
+    // Date filter form validation
+    filterForm.addEventListener('submit', function(event) {
+        if (!startDateInput.value || !endDateInput.value) {
+            event.preventDefault();
+            errorDiv.textContent = 'Please select both start date and end date.';
+            errorDiv.style.display = 'block';
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
+
+    // Clear error on input change
+    [startDateInput, endDateInput].forEach(input => {
+        input.addEventListener('input', () => {
+            errorDiv.style.display = 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

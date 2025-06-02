@@ -43,9 +43,11 @@
                             <th scope="col">Driver</th>
                             <th scope="col">Staff</th>
 
-                            {% if user.role == 'admin' %}
+                           
+                            {%if user.role == 'admin' %}
                             <th scope="col" class="text-center">Actions</th>
                             {%endif%}
+                           
                         </tr>
                     </thead>
                     <tbody>
@@ -66,7 +68,7 @@
                             <td class="text-center">
                                 <span class="badge bg-info rounded-pill">{{ vehicle.total_seats }}</span>
                             </td>
-                            <td class="text-center"><strong>${{ vehicle.price|floatformat:2 }}</strong></td>
+                            <td class="text-center"><strong>Rs {{ vehicle.price|floatformat:2 }}</strong></td>
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="color-swatch rounded-circle me-2" style="background-color: {{ vehicle.color|default:'#6c757d' }}; width: 18px; height: 18px; border: 1px solid rgba(0,0,0,0.2)"></div>
@@ -75,16 +77,23 @@
                             </td>
                             <td>{{ vehicle.driver.full_name|default:"N/A" }}</td>
                             <td>{{ vehicle.staff.full_name|default:"N/A" }}</td>
+
+                          {% if user.role == 'admin' %}
                             <td class="text-center">
                                 <div class="btn-action-group">
-                                    <a href="{% url 'vehicle_reservation_edit' vehicle.id %}" class="btn-action btn-edit" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit Vehicle">
-                                        <i class="fas fa-pencil-alt"></i>
+                                    <a href="{% url 'vehicle_reservation_edit' vehicle.id %}" class="btn-action btn-edit" title="Edit Vehicle">
+                                        <i class="bi bi-pencil-square"></i> Edit
                                     </a>
-                                    <a href="{% url 'delete_vehicle_reservation' vehicle.id %}" class="btn-action btn-delete" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete Vehicle">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
+                                    <button type="button" class="btn-action btn-delete" 
+                                            data-vehicle-id="{{ vehicle.id }}" 
+                                            data-vehicle-name="{{ vehicle.name }}"
+                                            data-delete-url="{% url 'delete_vehicle_reservation' vehicle.id %}"
+                                            title="Delete Vehicle">
+                                        <i class="bi bi-trash ms-3"></i> Delete
+                                    </button>
                                 </div>
                             </td>
+                            {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
@@ -93,9 +102,7 @@
                                     <i class="fas fa-car-side fa-3x text-muted mb-3"></i>
                                     <h5 class="text-muted">No vehicles found</h5>
                                     <p class="text-muted mb-3">There are no vehicles available for this type.</p>
-                                    <a href="{% url 'vehicle_reservation' %}" class="btn btn-primary">
-                                        <i class="fas fa-plus me-2"></i>Add First Vehicle
-                                    </a>
+                                   
                                 </div>
                             </td>
                         </tr>
@@ -182,51 +189,30 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-
-    @media (min-width: 768px) {
-        .main-content{
-            margin-left:200px  !important;
-            width: calc(100% - 200px) !important;
-            
-        }
-    
-    }
-  
-
-</style>
-
-{% endblock %}
-
-
-
-
 
 <script>
-    // Delete functionality
-    document.querySelectorAll('.btn-delete').forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Get the vehicle ID and name from the parent row
-            const row = this.closest('tr');
-            const vehicleName = row.getAttribute('data-vehicle-name');
-            
-            // Update the delete confirmation modal
-            document.getElementById('deleteVehicleName').textContent = vehicleName;
-            document.getElementById('deleteVehicleForm').action = this.getAttribute('href');
-            
-            // Show the delete confirmation modal
-            const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
-            deleteConfirmModal.show();
-        });
-    });
-
-    // Initialize tooltips
     document.addEventListener('DOMContentLoaded', function() {
+        // Delete functionality
+        document.querySelectorAll('.btn-delete').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Get the vehicle data from button attributes
+                const vehicleName = this.getAttribute('data-vehicle-name');
+                const deleteUrl = this.getAttribute('data-delete-url');
+                
+                // Update the delete confirmation modal
+                document.getElementById('deleteVehicleName').textContent = vehicleName;
+                document.getElementById('deleteVehicleForm').action = deleteUrl;
+                
+                // Show the delete confirmation modal
+                const deleteConfirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+                deleteConfirmModal.show();
+            });
+        });
+
+        // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
@@ -234,6 +220,15 @@
     });
 </script>
 
+{% endblock %}
 
-
-
+{% block extra_css %}
+<style>
+    @media (min-width: 768px) {
+        .main-content{
+            margin-left:200px  !important;
+            width: calc(100% - 200px) !important;
+        }
+    }
+</style>
+{% endblock %}

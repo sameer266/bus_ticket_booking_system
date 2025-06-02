@@ -4,47 +4,58 @@
 {% block title %}Vehicle Earnings Details | Go Sewa{% endblock %}
 
 {% block content %}
-<div class="dashboard-container" >
+<div class="dashboard-container">
     <main class="dashboard-content px-3 px-md-4 py-4">
         <div class="container-fluid">
             <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
-                <h1 class="h4 fw-bold text-primary">
-                    <i class="bi bi-graph-up-arrow me-2"></i> Vehicle Earnings Details - {{ reservation.first.bus_reserve.vechicle_number }}
+            <div class="d-flex justify-content-between align-items-center flex-wrap mb-4 pb-2 border-bottom">
+                <h1 class="h3 fw-bold text-primary mb-3 mb-md-0">
+                    <i class="bi bi-graph-up-arrow me-2"></i> Vehicle Earnings Details - {{ reservation.first.bus_reserve.vehicle_number|default:"N/A" }}
                 </h1>
-                <a href="{% url 'reservation_payment_details' %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-left"></i> Back to Payments
+                <a href="{% url 'reservation_payment_details' %}" class="btn btn-outline-primary btn-sm d-flex align-items-center">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Payments
                 </a>
             </div>
 
             <!-- Vehicle Info Card -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-bus-front text-primary me-2"></i> Vehicle Information
+            <div class="card border-0 shadow-sm mb-4 hover-shadow transition-all">
+                <div class="card-header bg-white py-3">
+                    <h5 class="card-title mb-0 fw-bold">
+                        <i class="bi bi-bus-front me-2 text-primary"></i> Vehicle Information
                     </h5>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <span class="text-muted">Vehicle Number:</span>
-                                <h5>{{ vehicle_number }}</h5>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4 col-sm-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Vehicle Number</h6>
+                                    <h5 class="mb-0 fw-bold">{{ vehicle_number|default:"N/A" }}</h5>
+                                </div>
+                                <div class="icon-circle bg-primary-soft rounded-circle p-3">
+                                    <i class="bi bi-bus-front fs-4 text-primary"></i>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <span class="text-muted">Vehicle Type:</span>
-                                <h5>{{ vehicle_type}}</h5>
+                        <div class="col-md-4 col-sm-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Vehicle Type</h6>
+                                    <h5 class="mb-0 fw-bold">{{ vehicle_type|default:"N/A" }}</h5>
+                                </div>
+                                <div class="icon-circle bg-primary-soft rounded-circle p-3">
+                                    <i class="bi bi-car-front fs-4 text-primary"></i>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <span class="text-muted">Commission Rate:</span>
-                                <div class="d-flex align-items-center" id="rateContainer">
-                                    <div id="currentRateDisplay">
-                                        <h5 class="mb-0">{{ commission_rate|default:"10" }}%</h5>
-                                    </div>
+                        <div class="col-md-4 col-sm-6">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted fw-normal mb-2">Commission Rate</h6>
+                                    <h5 class="mb-0 fw-bold text-indigo">{{ commission_rate|default:"10.00" }}%</h5>
+                                </div>
+                                <div class="icon-circle bg-indigo-soft rounded-circle p-3">
+                                    <i class="bi bi-percent fs-4 text-indigo"></i>
                                 </div>
                             </div>
                         </div>
@@ -53,41 +64,44 @@
             </div>
 
             <!-- Date Filter Form -->
-            <div class="mb-4">
-                <form id="filter-form" method="get" class="d-flex justify-content-start">
-                    <div class="d-flex">
-                        <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date|default:'' }}">
-                        <input type="date" name="end_date" id="end_date" class="form-control ms-2" value="{{ end_date|default:'' }}">
-                        <button type="submit" class="btn btn-primary ms-2">Search</button>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <form id="filter-form" method="get" class="d-flex flex-wrap gap-2">
+                        <input type="date" name="start_date" id="start_date" class="form-control form-control-sm" value="{{ start_date|default:'' }}">
+                        <input type="date" name="end_date" id="end_date" class="form-control form-control-sm" value="{{ end_date|default:'' }}">
+                        <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center gap-1">
+                            <i class="bi bi-search"></i> Search
+                        </button>
                         {% if start_date or end_date %}
-                        <a href="{{ request.path }}" class="btn btn-outline-secondary ms-2" id="clear-filters">
-                            <i class="bi bi-x-circle"></i> Clear Filters
+                        <a href="{{ request.path }}" class="btn btn-outline-danger btn-sm d-flex align-items-center gap-1">
+                            <i class="bi bi-x-circle"></i> Clear
                         </a>
                         {% endif %}
-                    </div>
-                </form>
+                    </form>
+                    <div id="form-error" class="text-danger mt-2" style="display: none;"></div>
+                </div>
             </div>
 
             <!-- Earnings Table -->
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Earnings Breakdown</h5>
-                    <div class="input-group search-group" style="max-width: 300px;">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap">
+                    <h5 class="card-title mb-0 fw-bold">Earnings Breakdown</h5>
+                    <div class="input-group input-group-sm" style="max-width: 250px;">
                         <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control search-input border-start-0" placeholder="Search..." id="earningsSearch">
+                        <input type="text" class="form-control border-start-0" placeholder="Search..." id="earningsSearch">
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped align-middle" id="earningsTable">
+                        <table class="table table-hover" id="earningsTable">
                             <thead class="table-light">
                                 <tr>
                                     <th>Reservation ID</th>
                                     <th>Date</th>
                                     <th>Customer</th>
                                     <th>Route</th>
-                                    <th>Price </th>
-                                    <th>Agreed Price </th>
+                                    <th>Price</th>
+                                    <th>Agreed Price</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -98,28 +112,28 @@
                                     <td>{{ vehicle.start_date|date:"Y-m-d" }}</td>
                                     <td>
                                         {% if vehicle.user %}
-                                            {{ vehicle.user.full_name }}
+                                        {{ vehicle.user.full_name|default:"N/A" }}
                                         {% else %}
-                                            <em class="text-muted">N/A</em>
+                                        <span class="text-muted">N/A</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ vehicle.source }} to {{ vehicle.destination }}</td>
-                                    <td>NRP {{ vehicle.bus_reserve.price|floatformat:2 }}</td>
-                                    <td>NRP {{ vehicle.agreed_price|floatformat:2 }}</td>
+                                    <td>{{ vehicle.source|default:"N/A" }} to {{ vehicle.destination|default:"N/A" }}</td>
+                                    <td>NRP {{ vehicle.bus_reserve.price|floatformat:2|default:"0.00" }}</td>
+                                    <td>NRP {{ vehicle.agreed_price|floatformat:2|default:"0.00" }}</td>
                                     <td>
-                                        <a href={% url 'vehicle_details_payment' vehicle.id %} class="btn btn-icon btn-outline-primary" title="View Details">
+                                        <a href="{% url 'vehicle_details_payment' vehicle.id %}" class="btn btn-outline-primary btn-sm" title="View Details">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="8" class="text-center py-4">
+                                    <td colspan="7" class="text-center py-4">
                                         <div class="empty-state">
-                                            <div class="empty-icon bg-light-blue">
-                                                <i class="bi bi-calendar-x text-blue"></i>
+                                            <div class="icon-circle bg-primary-soft rounded-circle p-3 d-inline-block mb-3">
+                                                <i class="bi bi-calendar-x fs-4 text-primary"></i>
                                             </div>
-                                            <h5 class="mt-3">No earnings found</h5>
+                                            <h5 class="mb-2 fw-bold">No Earnings Found</h5>
                                             <p class="text-muted">There are no bookings for this vehicle in the selected date range.</p>
                                         </div>
                                     </td>
@@ -128,105 +142,141 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center flex-wrap">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">Previous</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                            {% endif %}
+                            {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a></li>
+                            {% endif %}
+                            {% endfor %}
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">Next</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled"><span class="page-link">Next</span></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
-
-            <!-- Pagination -->
-            {% if page_obj.has_other_pages %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Previous">«</a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled"><span class="page-link">«</span></li>
-                    {% endif %}
-                    {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ num }}</a></li>
-                    {% endif %}
-                    {% endfor %}
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="Next">»</a>
-                    </li>
-                    {% else %}
-                    <li class="page-item disabled"><span class="page-link">»</span></li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
         </div>
     </main>
 </div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-   
+    /* Responsive layout */
     @media (min-width: 768px) {
-        .dashboard-container {
-          margin-left: 180px;
-          width: calc(100% - 180px);
+        .dashboard-content {
+            margin-left: 220px;
+            transition: margin-left 0.3s ease;
+        }
+    }
 
+    @media (max-width: 767.98px) {
+        .dashboard-content {
+            margin-left: 0;
+        }
+    }
+
+    /* Typography and colors */
+    
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .card-body {
+            padding: 1rem;
+        }
+
+        .table th, .table td {
+            padding: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .input-group-sm .form-control, .input-group-sm .input-group-text {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
         }
     }
 </style>
 {% endblock %}
 
-{% block javascript %}
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% block extra_js %}
 <script>
-    $(document).ready(function() {
-        // Handle page refresh - clear URL parameters
-        if (performance.navigation.type === 1) {
-            // 1 is the code for page refresh
-            window.history.replaceState({}, '', window.location.pathname);
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('filter-form');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const errorDiv = document.getElementById('form-error');
+    const earningsSearch = document.getElementById('earningsSearch');
+
+    // Set max date for date inputs to today
+    const today = new Date().toISOString().split('T')[0];
+    startDateInput.setAttribute('max', today);
+    endDateInput.setAttribute('max', today);
+
+    // Ensure end date is not earlier than start date
+    startDateInput.addEventListener('change', function() {
+        endDateInput.setAttribute('min', this.value);
+        if (endDateInput.value && endDateInput.value < this.value) {
+            endDateInput.value = this.value;
         }
-        
-        // Form validation - ensure both dates are provided
-        $("#filter-form").submit(function(event) {
-            var startDate = $("#start_date").val();
-            var endDate = $("#end_date").val();
-            
-            if (!startDate || !endDate) {
-                event.preventDefault();
-                alert("Please select both start date and end date.");
-            }
-        });
-        
-        // Set max date for date inputs to today
-        var today = new Date().toISOString().split('T')[0];
-        $("#start_date").attr('max', today);
-        $("#end_date").attr('max', today);
-        
-        // Ensure end date is not earlier than start date
-        $("#start_date").change(function() {
-            $("#end_date").attr('min', $(this).val());
-        });
-        
-        $("#end_date").change(function() {
-            $("#start_date").attr('max', $(this).val());
-        });
+    });
 
-        // Clear filters button
-        $("#clear-filters").click(function(e) {
-            e.preventDefault();
-            window.location.href = window.location.pathname;
-        });
+    endDateInput.addEventListener('change', function() {
+        startDateInput.setAttribute('max', this.value || today);
+    });
 
-        // Search functionality for earnings table
-        $("#earningsSearch").on('input', function() {
-            const searchTerm = $(this).val().toLowerCase();
-            
-            $("#earningsTable tbody tr").each(function() {
-                const rowText = $(this).text().toLowerCase();
-                $(this).toggle(rowText.includes(searchTerm));
-            });
+    // Form validation
+    filterForm.addEventListener('submit', function(event) {
+        if (!startDateInput.value || !endDateInput.value) {
+            event.preventDefault();
+            errorDiv.textContent = 'Please select both start date and end date.';
+            errorDiv.style.display = 'block';
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
+
+    // Clear error on input change
+    [startDateInput, endDateInput].forEach(input => {
+        input.addEventListener('input', () => {
+            errorDiv.style.display = 'none';
         });
     });
+
+    // Search functionality for earnings table
+    earningsSearch.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#earningsTable tbody tr');
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // Clear filters
+    document.getElementById('clear-filters')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = window.location.pathname;
+    });
+});
 </script>
-{% endblock %}
 {% endblock %}

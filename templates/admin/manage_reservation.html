@@ -114,6 +114,7 @@
                                  
                                     
                                     <th class="d-none d-lg-table-cell">Color</th>
+                                    <th class="d-none d-xl-table-cell">Price range</th>
                                     <th class="d-none d-xl-table-cell">Price</th>
                                     <th class="d-none d-xl-table-cell">Driver</th>
                                     <th class="d-none d-xl-table-cell">Staff</th>
@@ -160,6 +161,15 @@
                                             {{ reservation.color|default:"N/A" }}
                                         </span>
                                     </td>
+
+                                    <td class="d-none d-xl-table-cell text-nowrap">
+                                        {% if reservation.price_range %}
+                                        Rs {{ reservation.price_range }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+
                                     <td class="d-none d-xl-table-cell text-nowrap">
                                         {% if reservation.price %}
                                         Rs {{ reservation.price|floatformat:2 }}
@@ -305,6 +315,16 @@
                             </select>
                             <div class="invalid-feedback">Please select a vehicle type.</div>
                         </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Fuel Type*</label>
+                            <select class="form-select" name="fuel_type" required>
+                                <option value="">-- Select Fuel Type --</option>
+                                <option value="Petrol">Petrol</option>
+                                <option value="Diesel">Diesel</option>
+                                <option value="Electric">Electric</option>
+                            </select>
+                        </div>
                         
                         <div class="col-md-6">
                             <label class="form-label">Vehicle Number*</label>
@@ -393,6 +413,16 @@
                             <input type="number" class="form-control" name="total_seats" value="35" min="1" required>
                             <div class="invalid-feedback">Please provide valid seat count.</div>
                         </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Price Range *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rs</span>
+                                <input type="text" class="form-control" name="price_range" placeholder="1000 - 2000" step="0.01" required>
+                            </div>
+                        </div>
+
+
                         <div class="col-md-6">
                             <label class="form-label">Price (Rs)*</label>
                             <div class="input-group">

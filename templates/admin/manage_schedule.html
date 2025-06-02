@@ -44,6 +44,7 @@
                 <div class="card-body">
                     <form id="dateFilterForm" method="GET" action="{% url 'schedule_list' %}">
                         <div class="row g-3 align-items-center">
+
                             <div class="col-12 col-md-6">
                                 <div class="date-picker-wrapper position-relative">
                                     <input type="date" id="customDatePicker" name="date" class="form-control" 
@@ -53,13 +54,23 @@
                                     </label>
                                 </div>
                             </div>
+
+                            <div class="col-12 col-md-6 d-flex justify-content-center">
+                                <a href="{% url 'schedule_list' %}" class="btn btn-outline-primary me-2 w-50">
+                                    <i class="bi bi-calendar-range me-1"></i>
+                                    All Schedules
+                                </a>
+                            </div>
+                                    
                             <div class="col-12 col-md-6">
                                 <div class="date-selector d-flex flex-wrap gap-2 justify-content-md-end">
+                                   
                                     {% for i in "0123"|make_list %}
                                     {% with day_offset=forloop.counter0 %}
                                     <button type="button" class="btn date-btn {% if forloop.first and not selected_date_str %}btn-primary active{% else %}btn-outline-secondary{% endif %}" 
                                             data-date-offset="{{ day_offset }}">
                                         <span class="date-label">
+                                            
                                             {% if day_offset == 0 %}Today
                                             {% elif day_offset == 1 %}Tomorrow
                                             {% elif day_offset == 2 %}In 2 days
@@ -145,6 +156,9 @@
                                     {% if user.role == 'admin' %}
                                     <th>Company</th>
                                     {% endif %}
+                                    {% if request.path == '/schedules-management/' and not request.GET.date %}
+                                    <th>Date</th>
+                                    {% endif %}
                                     <th>Status</th>
                                     <th class="d-none d-md-table-cell">Departure</th>
                                     <th class="d-none d-md-table-cell">Arrival</th>
@@ -183,6 +197,10 @@
                                     {% if user.role == "admin" %}
                                     <td>{{ schedule.transportation_company }}</td>
                                     {% endif %}
+
+                                                                        {% if request.path == '/schedules-management/' and not request.GET.date %}
+                                    <td>{{schedule.date}}</td>
+                                    {%endif%}
                                     <td>
                                         <span class="badge rounded-pill {% if schedule.status == 'ongoing' %}bg-success{% elif schedule.status == 'upcoming' %}bg-primary{% else %}bg-secondary{% endif %}">
                                             <i class="bi {% if schedule.status == 'ongoing' %}bi-play-circle{% elif schedule.status == 'upcoming' %}bi-clock{% else %}bi-check-circle{% endif %} me-1"></i>
@@ -421,50 +439,7 @@
 
 {% block extra_css %}
 <style>
-    .route-icon {
-        transition: all 0.3s ease;
-        font-size: 1.25rem;
-    }
-    
-    tr:hover .route-icon {
-        transform: scale(1.05);
-    }
-    
-    .table-responsive {
-        border-radius: 8px;
-        overflow-x: auto;
-    }
-    
-    .schedule-count {
-        font-weight: 500;
-    }
-    
-    .input-group-text {
-        background-color: #f8f9fa;
-    }
-    
-    .animate__fadeIn {
-        animation-duration: 0.4s;
-    }
-    
-    .modal-content {
-        border-radius: 12px;
-    }
-    
-    .modal-header, .modal-footer {
-        border-color: #e9ecef;
-    }
-    
-    .btn:focus, .form-control:focus, .form-select:focus {
-        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-    }
-    
-    .toast-container {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 1060;
-    }
+   
     
     @media (max-width: 767.98px) {
         .main-content {
@@ -531,14 +506,14 @@
 
     @media (min-width: 992px) {
         .main-content {
-            margin-left: 100px;
-            width: calc(100% - 100px);
+            margin-left: 120px !important;
+            width: calc(100% - 110px);
         }
     }
 </style>
 {% endblock %}
-
 {% block extra_js %}
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Bootstrap components
@@ -572,8 +547,6 @@ document.addEventListener('DOMContentLoaded', function() {
         toast.show();
         toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
     }
-
-
 
     // Date handling utilities
     function formatDateForInput(date) {
@@ -733,11 +706,11 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             headers: { 'X-CSRFToken': '{{ csrf_token }}' },
             success: function(response) {
-                document.querySelector(`.schedule-row[data-schedule-id="${scheduleId}"]`).remove();
+                $(`.schedule-row[data-schedule-id="${scheduleId}"]`).remove();
                 
-                const visibleRows = document.querySelectorAll('.schedule-row:not([style*="display: none"])').length;
-                document.getElementById('scheduleCounter').textContent = visibleRows;
-                document.getElementById('no-schedules-row').style.display = visibleRows === 0 ? 'table-row' : 'none';
+                const visibleRows = $('.schedule-row:visible').length;
+                $('#scheduleCounter').text(visibleRows);
+                $('#no-schedules-row').toggle(visibleRows === 0);
                 
                 showToast('Schedule deleted successfully', 'success');
             },
@@ -748,44 +721,42 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Filter schedules
+    // Filter schedules with jQuery
     function filterSchedules() {
-        const searchInput = document.getElementById('searchSchedules');
-        const routeFilter = document.getElementById('routeFilter');
-        const timeFilter = document.getElementById('timeFilter');
-        
-        const searchTerm = searchInput.value.toLowerCase();
-        const selectedRouteId = routeFilter.value;
-        const selectedTimeRange = timeFilter.value;
+        const searchTerm = $('#searchSchedules').val().toLowerCase();
+        const selectedRouteId = $('#routeFilter').val();
+        const selectedTimeRange = $('#timeFilter').val();
 
-        const scheduleRows = document.querySelectorAll('.schedule-row');
         let visibleCount = 0;
 
-        scheduleRows.forEach(row => {
-            const searchText = row.dataset.searchText.toLowerCase();
-            const routeId = row.dataset.routeId;
-            const status = row.dataset.status;
+        $('.schedule-row').each(function() {
+            const $row = $(this);
+            const searchText = $row.data('search-text').toLowerCase();
+            const routeId = $row.data('route-id');
+            const status = $row.data('status');
 
             const matchesSearch = searchText.includes(searchTerm);
-            const matchesRoute = !selectedRouteId || routeId === selectedRouteId;
+            const matchesRoute = !selectedRouteId || routeId == selectedRouteId;
             const matchesTime = !selectedTimeRange || status === selectedTimeRange;
 
             if (matchesSearch && matchesRoute && matchesTime) {
-                row.style.display = 'table-row';
+                $row.show();
                 visibleCount++;
             } else {
-                row.style.display = 'none';
+                $row.hide();
             }
         });
 
-        document.getElementById('scheduleCounter').textContent = visibleCount;
-        document.getElementById('no-schedules-row').style.display = visibleCount === 0 ? 'table-row' : 'none';
+        $('#scheduleCounter').text(visibleCount);
+        $('#no-schedules-row').toggle(visibleCount === 0);
     }
 
-    // Initialize filters
-    document.getElementById('searchSchedules').addEventListener('input', filterSchedules);
-    document.getElementById('routeFilter').addEventListener('change', filterSchedules);
-    document.getElementById('timeFilter').addEventListener('change', filterSchedules);
+    // Initialize filters with jQuery
+    $('#searchSchedules').on('input', filterSchedules);
+    $('#routeFilter').on('change', filterSchedules);
+    $('#timeFilter').on('change', filterSchedules);
+
+    // Initial filter to show all data
     filterSchedules();
 
     // Responsive layout

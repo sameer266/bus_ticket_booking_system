@@ -139,7 +139,6 @@ class UserBookingPaymentView(APIView):
                 count = len(seat)
                 schedule_obj.available_seats -= count
                
-                
                 print("Schedule",schedule_obj)
                 bus_layout_obj = SeatLayoutBooking.objects.get(schedule=schedule_obj)
                 schedule_obj.save()
@@ -217,9 +216,8 @@ class UserPayment(APIView):
         try:
         
             user=request.user
-            total_amount=request.data.get('amount')
             booking_id=request.data.get('booking_id')
-            transaction_id = request.data.get('transaction_id')
+          
             try:
                 booking_obj= Booking.objects.get(id=booking_id)
             except Booking.DoesNotExist:
@@ -227,11 +225,11 @@ class UserPayment(APIView):
             
          
             
-            Payment.objects.create(user=user,  payment_status="completed", transaction_id=transaction_id, booking=booking_obj)
+            Payment.objects.create(user=user,  payment_status="completed",  booking=booking_obj)
             booking_obj.booking_status = "booked"
             booking_obj.save()
             
-            message=f"Thank you ! Your seat has been booked on bus {booking_obj.schedule.bus.bus_number}. Have a safe journey !"
+            message=f"Thank you ! Your seat {booking_obj.seat} has been booked on bus {booking_obj.schedule.bus.bus_number}. Have a safe journey !"
             Notification.objects.create(type="booking",user=request.user,title="Booking",message=message)
 
             return Response({'success':True,'message':"Successfully payment"},status=200)

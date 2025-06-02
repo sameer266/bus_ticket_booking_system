@@ -1,0 +1,146 @@
+{% extends "components/base.html" %}
+
+{% block title %}Bus Features | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <main class="dashboard-content px-3 px-md-4 py-4">
+        <div class="container-fluid">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap mb-4 pb-2 border-bottom">
+                <h3 class="fw-bold mb-3 mb-md-0">Bus Features Management</h3>
+                <a href="{% url 'add_bus_feature' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i> Add New Feature
+                </a>
+            </div>
+
+            <!-- Features Table Card -->
+            <div class="card border-0 shadow-sm rounded-8 hover-shadow transition-all">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0">Available Bus Features</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if bus_features %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle" id="featuresTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col">Feature Name</th>
+                                        <th scope="col" class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for feature in bus_features %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-bold">{{ feature.name|default:"N/A" }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'edit_busfeature' feature.id %}" class="btn btn-outline-primary btn-sm me-2" title="Edit Feature">
+                                                <i class="bi bi-pencil-square me-1"></i> Edit
+                                            </a>
+                                            <a href="{% url 'delete_bus_feature' feature.id %}" class="btn btn-outline-danger btn-sm" title="Delete Feature">
+                                                <i class="bi bi-trash3 me-1"></i> Delete
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 empty-state">
+                            <div class="icon-circle bg-primary-soft rounded-circle p-3 d-inline-block mb-3">
+                                <i class="bi bi-list-ul fs-4"></i>
+                            </div>
+                            <h5 class="fw-bold mb-2">No Bus Features Available</h5>
+                            <p class="text-muted">Add features to customize your bus offerings.</p>
+                            <a href="{% url 'add_bus_feature' %}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus-circle me-1"></i> Add Your First Feature
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <div class="text-center mt-4">
+                <a href="javascript:history.back()" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Container */
+    .container-fluid {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* Table */
+    .table th {
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+    }
+
+    .table td {
+        font-size: 0.875rem;
+        vertical-align: middle;
+    }
+
+    /* Buttons */
+    .btn-sm {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    .btn-outline-primary, .btn-outline-danger {
+        border-width: 1px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary:hover, .btn-outline-danger:hover {
+        transform: translateY(-1px);
+    }
+
+    /* Empty state */
+    .empty-state {
+        padding: 2rem;
+    }
+
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bg-primary-soft {
+        background-color: rgba(13, 110, 253, 0.15);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 576px) {
+        .table th, .table td {
+            padding: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .empty-state {
+            padding: 1rem;
+        }
+    }
+</style>
+{% endblock %}

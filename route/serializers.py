@@ -3,7 +3,7 @@
 # ==========================
 from .models import Route, Schedule, Trip, CustomerReview,Notification
 from custom_user.models import CustomUser,TransportationCompany
-from bus.models import Bus, TicketCounter, Driver, Staff, BusReservation, BusLayout, VechicleType,SeatLayoutBooking
+from bus.models import Bus, Driver, Staff, BusReservation, BusLayout, VechicleType,SeatLayoutBooking
 from rest_framework import serializers
 from booking.models import Booking, Payment, Commission,  BusReservationBooking
 
@@ -205,13 +205,6 @@ class UserBookingSerilaizer(serializers.ModelSerializer):
 # Admin Dashboard Serializers
 # ==========================
 
-# Serializer for TicketCounter model
-class TicketCounterSerializer(serializers.ModelSerializer):
-    user = CustomUserReviewSerializer()
-
-    class Meta:
-        model = TicketCounter
-        fields = '__all__'
 
 # Serializer for Driver model
 class DriverSerializer(serializers.ModelSerializer):

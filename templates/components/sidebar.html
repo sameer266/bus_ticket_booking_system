@@ -1,10 +1,10 @@
-<!-- components/sidebar.html -->
+<!-- ========== SIDEBAR COMPONENT START ========== -->
 <div class="wrapper">
-  <!-- Mobile Toggle Button - Visible only on small screens -->
+  <!-- ========== MOBILE TOGGLE BUTTON START ========== -->
   <button type="button" id="mobileSidebarToggle" class="btn btn-success d-lg-none mobile-toggle-btn">
     <i class="bi bi-list"></i>
   </button>
-  
+
   <!-- Sidebar -->
   <nav id="sidebar" class="sidebar" data-compact="false">
     <div class="sidebar-header">
@@ -14,189 +14,381 @@
           <span class="sidebar-brand ms-5">{{ system.name }}</span>
           {% endif %}
           {% if system.image%}
-         
-          <img src={{ system.image.url }} alt="Go Sewa" height="32"> 
-          {% endif %}
-          
 
-        <button type="button" id="sidebarToggleBtn" class="btn btn-icon d-none d-lg-flex">
-          <i class="bi bi-arrow-left-right"></i>
-        </button>
-        <button type="button" id="closeMobileSidebar" class="btn btn-icon d-lg-none float-end ms-2" >
-          <i class="bi bi-x-lg"></i>
-        </button>
+          <img src={{ system.image.url }} alt="Go Sewa" height="32">
+          {% endif %}
+
+
+
+          <button type="button" id="closeMobileSidebar" class="btn btn-icon d-lg-none float-end ms-2">
+            <i class="bi bi-x-lg"></i>
+          </button>
       </div>
     </div>
 
     <div class="sidebar-content">
       <ul class="nav flex-column">
         {% if user.role == 'admin' %}
-          <!-- Admin Menu Items -->
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="/admin-dashboard/">
-              <i class="bi bi-speedometer2 menu-icon"></i>
-              <span class="menu-text">Dashboard</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/admin-profile/' %}active{% endif %}" href={% url 'admin_profile' %}>
-              <i class="bi bi-person menu-icon"></i>
-              <span class="menu-text">Profile</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/admin-ticket-counter/' %}active{% endif %}" href={% url 'transportation_company_list' %}>
-              <i class="bi bi-ticket-perforated menu-icon"></i>
-              <span class="menu-text">Ticket Counter</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/users-management/' %}active{% endif %}" href={% url 'manage_users'%}>
-              <i class="bi bi-people menu-icon"></i>
-              <span class="menu-text">User Management</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/driver-staff/' %}active{% endif %}" href={% url 'manage_driver_and_staff'%}>
-              <i class="bi bi-person-badge menu-icon"></i>
-              <span class="menu-text">Driver & Staff</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/buses-management/' %}active{% endif %}" href={%url 'bus_list'%}>
-              <i class="bi bi-bus-front menu-icon"></i>
-              <span class="menu-text">Bus Management</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/reservations/' %}active{% endif %}" href={% url 'vehicle_reservation' %}>
-              <i class="bi bi-calendar2-check menu-icon"></i>
-              <span class="menu-text">Vehicle Management</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/routes-management/' %}active{% endif %}" href={% url 'route_list_add' %}>
-              <i class="bi bi-map menu-icon"></i>
-              <span class="menu-text">Route Management</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/schedules-management/' %}active{% endif %}" href={% url 'schedule_list' %}>
-              <i class="bi bi-calendar3 menu-icon"></i>
-              <span class="menu-text">Schedule</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/booking-management/' %}active{% endif %}" href={% url 'booking_list' %}>
-              <i class="bi bi-journal-check menu-icon"></i>
-              <span class="menu-text">Booking Management</span>
-            </a>
-          </li>
+        <!-- Admin Menu Items -->
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="/admin-dashboard/">
+            <i class="bi bi-speedometer2 menu-icon"></i>
+            <span class="menu-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/admin-profile/' %}active{% endif %}" href={% url 'admin_profile'
+            %}>
+            <i class="bi bi-person menu-icon"></i>
+            <span class="menu-text">Profile</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/admin-ticket-counter/' %}active{% endif %}" href={%
+            url 'transportation_company_list' %}>
+            <i class="bi bi-ticket-perforated menu-icon"></i>
+            <span class="menu-text">Ticket Counter</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/users-management/' %}active{% endif %}" href={% url 'manage_users'
+            %}>
+            <i class="bi bi-people menu-icon"></i>
+            <span class="menu-text">User Management</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/driver-staff/' %}active{% endif %}" href={%
+            url 'manage_driver_and_staff' %}>
+            <i class="bi bi-person-badge menu-icon"></i>
+            <span class="menu-text">Driver & Staff</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/buses-management/' %}active{% endif %}" href={%url 'bus_list' %}>
+            <i class="bi bi-bus-front menu-icon"></i>
+            <span class="menu-text">Bus Management</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/reservations/' %}active{% endif %}" href={%
+            url 'vehicle_reservation' %}>
+            <i class="bi bi-calendar2-check menu-icon"></i>
+            <span class="menu-text">Vehicle Management</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/routes-management/' %}active{% endif %}" href={%
+            url 'route_list_add' %}>
+            <i class="bi bi-map menu-icon"></i>
+            <span class="menu-text">Route Management</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/schedules-management/' %}active{% endif %}" href={%
+            url 'schedule_list' %}>
+            <i class="bi bi-calendar3 menu-icon"></i>
+            <span class="menu-text">Schedule</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/booking-management/' %}active{% endif %}" href={%
+            url 'booking_list' %}>
+            <i class="bi bi-journal-check menu-icon"></i>
+            <span class="menu-text">Booking Management</span>
+          </a>
+        </li>
 
-          <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#accountEarningsMenu" role="button" aria-expanded="false" aria-controls="accountEarningsMenu">
-              <i class="bi bi-credit-card menu-icon"></i>
-              <span class="menu-text">Account & Earning</span>
-            </a>
-            <div class="collapse {% if request.path == '/payment-details/' or request.path == '/payment-details/reserve/' %}show{% endif %}" id="accountEarningsMenu">
-              <ul class="nav flex-column ms-3">
-                <li class="nav-item">
-                  <a class="nav-link {% if request.path == '/bus-payment/' %}active{% endif %}" href={% url 'bus_payments_details'%}>Bus</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link {% if request.path == '/reservation-payment/' %}active{% endif %}" href={% url 'reservation_payment_details'%}>Vehicle Reserve</a>
-                </li>
-              </ul>
-            </div>
-          </li>
-          
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/reports/' %}active{% endif %}" href={% url 'report_analysis' %}>
-              <i class="bi bi-graph-up menu-icon"></i>
-              <span class="menu-text">Reports & Analytics</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/notification/' %}active{% endif %}" href={% url 'all_notification' %}>
-              <i class="bi bi-bell menu-icon"></i>
-              <span class="menu-text">Notifications</span>
-            </a>
-          </li>
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-bs-toggle="collapse" href="#accountEarningsMenu" role="button"
+            aria-expanded="false" aria-controls="accountEarningsMenu">
+            <i class="bi bi-credit-card menu-icon"></i>
+            <span class="menu-text">Account & Earning</span>
+            <i class="bi bi-chevron-down ms-auto submenu-icon"></i>
+          </a>
 
+          <div
+            class="collapse {% if request.path == '/bus-bookings-payment/' or request.path == '/reservation-payment/' %}show{% endif %}"
+            id="accountEarningsMenu">
+            <ul class="nav flex-column submenu">
+              <li class="nav-item">
+                <a class="nav-link submenu-link {% if request.path == '/bus-bookings-payment/' %}active{% endif %}"
+                  href={% url 'bus_payments_details' %}>
+                  <i class="bi bi-bus-front submenu-icon"></i>
+                  <span>Bus Payments</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link submenu-link {% if request.path == '/reservation-payment/' %}active{% endif %}"
+                  href={% url 'reservation_payment_details' %}>
+                  <i class="bi bi-calendar2-check submenu-icon"></i>
+                  <span>Vehicle Reserve</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+          <style>
+            .submenu {
+              padding-left: 2.5rem;
+            }
+
+            .submenu-link {
+              padding: 0.5rem 1rem !important;
+              font-size: 0.9rem;
+            }
+
+            .submenu-icon {
+              font-size: 0.9rem;
+              margin-right: 0.5rem;
+            }
+
+            .nav-link .submenu-icon {
+              transition: transform 0.3s;
+            }
+
+            .nav-link[aria-expanded="true"] .submenu-icon {
+              transform: rotate(-180deg);
+            }
+          </style>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/payments/' %}active{% endif %}" href={% url 'payment_list' %}>
+            <i class="bi bi-cash menu-icon"></i>
+            <span class="menu-text">Payments</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/reports/' %}active{% endif %}" href={% url 'report_analysis' %}>
+            <i class="bi bi-graph-up menu-icon"></i>
+            <span class="menu-text">Reports & Analytics</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/notification/' %}active{% endif %}" href={% url 'all_notification'
+            %}>
+            <i class="bi bi-bell menu-icon"></i>
+            <span class="menu-text">Notifications</span>
+          </a>
+        </li>
+
+         <!-- Sub Admin Menu Items -->
         {% elif user.role == 'sub_admin' %}
-          <!-- Sub Admin Menu Items -->
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="/admin-dashboard/">
-              <i class="bi bi-speedometer2 menu-icon"></i>
-              <span class="menu-text">Dashboard</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/admin-profile/' %}active{% endif %}" href="/admin-profile/">
-              <i class="bi bi-person menu-icon"></i>
-              <span class="menu-text">Profile</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/driver-staff/' %}active{% endif %}" href="/driver-staff/">
-              <i class="bi bi-person-badge menu-icon"></i>
-              <span class="menu-text">Driver & Staff</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/buses-management' %}active{% endif %}" href={%url 'bus_list'%}>
-              <i class="bi bi-bus-front menu-icon"></i>
-              <span class="menu-text">Bus Management</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/reservations/' %}active{% endif %}" href={% url 'vehicle_reservation' %}>
-              <i class="bi bi-calendar2-check menu-icon"></i>
-              <span class="menu-text">Vehicle Management</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/routes-management/' %}active{% endif %}" href={% url 'route_list_add' %}>
-              <i class="bi bi-map menu-icon"></i>
-              <span class="menu-text">Route Management</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/schedules-management/' %}active{% endif %}" href={% url 'schedule_list' %}>
-              <i class="bi bi-calendar3 menu-icon"></i>
-              <span class="menu-text">Schedule</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.path == '/booking-management/' %}active{% endif %}" href="/booking-management/">
-              <i class="bi bi-journal-check menu-icon"></i>
-              <span class="menu-text">Booking Management</span>
-            </a>
-          </li>
+       
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/admin-dashboard/' %}active{% endif %}" href="/admin-dashboard/">
+            <i class="bi bi-speedometer2 menu-icon"></i>
+            <span class="menu-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/admin-profile/' %}active{% endif %}" href="/admin-profile/">
+            <i class="bi bi-person menu-icon"></i>
+            <span class="menu-text">Profile</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/driver-staff/' %}active{% endif %}" href="/driver-staff/">
+            <i class="bi bi-person-badge menu-icon"></i>
+            <span class="menu-text">Driver & Staff</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/buses-management' %}active{% endif %}" href={%url 'bus_list' %}>
+            <i class="bi bi-bus-front menu-icon"></i>
+            <span class="menu-text">Bus Management</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/reservations/' %}active{% endif %}" href={%
+            url 'vehicle_reservation' %}>
+            <i class="bi bi-calendar2-check menu-icon"></i>
+            <span class="menu-text">Vehicle Management</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/routes-management/' %}active{% endif %}" href={%
+            url 'route_list_add' %}>
+            <i class="bi bi-map menu-icon"></i>
+            <span class="menu-text">Route Management</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/schedules-management/' %}active{% endif %}" href={%
+            url 'schedule_list' %}>
+            <i class="bi bi-calendar3 menu-icon"></i>
+            <span class="menu-text">Schedule</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.path == '/booking-management/' %}active{% endif %}"
+            href="/booking-management/">
+            <i class="bi bi-journal-check menu-icon"></i>
+            <span class="menu-text">Booking Management</span>
+          </a>
+        </li>
 
-          <li class="nav-item">
-            <a class="nav-link collapsed" data-bs-toggle="collapse" href="#accountEarningsMenu" role="button" aria-expanded="false" aria-controls="accountEarningsMenu">
-              <i class="bi bi-credit-card menu-icon"></i>
-              <span class="menu-text">Account & Earning</span>
-            </a>
-            <div class="collapse {% if request.path == '/payment-details/' or request.path == '/payment-details/reserve/' %}show{% endif %}" id="accountEarningsMenu">
-              <ul class="nav flex-column ms-3">
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-bs-toggle="collapse" href="#accountEarningsMenu" role="button"
+            aria-expanded="false" aria-controls="accountEarningsMenu">
+            <i class="bi bi-credit-card menu-icon"></i>
+            <span class="menu-text">Account & Earning</span>
+            <i class="bi bi-chevron-down ms-auto submenu-icon"></i>
+          </a>
+
+          <div
+            class="collapse {% if request.path == '/bus-bookings-payment/' or request.path == '/reservation-payment/' %}show{% endif %}"
+            id="accountEarningsMenu">
+            <ul class="nav flex-column submenu">
+              <li class="nav-item">
+                <a class="nav-link submenu-link {% if request.path == '/bus-bookings-payment/' %}active{% endif %}"
+                  href={% url 'bus_payments_details' %}>
+                  <i class="bi bi-bus-front submenu-icon"></i>
+                  <span>Bus Payments</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link submenu-link {% if request.path == '/reservation-payment/' %}active{% endif %}"
+                  href={% url 'reservation_payment_details' %}>
+                  <i class="bi bi-calendar2-check submenu-icon"></i>
+                  <span>Vehicle Reserve</span>
+                </a>
+              </li>
+
+            </ul>
+          </div>
+          <style>
+            .submenu {
+              padding-left: 2.5rem;
+            }
+
+            .submenu-link {
+              padding: 0.5rem 1rem !important;
+              font-size: 0.9rem;
+            }
+
+            .submenu-icon {
+              font-size: 0.9rem;
+              margin-right: 0.5rem;
+            }
+
+            .nav-link .submenu-icon {
+              transition: transform 0.3s;
+            }
+
+            .nav-link[aria-expanded="true"] .submenu-icon {
+              transform: rotate(-180deg);
+            }
+          </style>
+        </li>
+
+        {% endif %}
+
+         {% comment %} <!-- BUS Admin -->
+            {% if user.role == 'bus_admin' %}
+
+              <li class="nav-item">
+                <a class="nav-link {% if request.path == '/bus-dashboard/' %}active{% endif %}" href={% url 'bus_dashboard' user.bus.id %}>
+                  <i class="bi bi-speedometer2 menu-icon"></i>
+                  <span class="menu-text">Dashboard</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if request.path == '/bus-profile/' %}active{% endif %}" href={% url 'bus_profile' user.bus.id %}>
+                  <i class="bi bi-bus-front menu-icon"></i>
+                  <span class="menu-text">Bus Profile</span>
+                </a>  
+              </li>
+
+              <li class="nav-item">
+                <a class="nav-link submenu-link {% if request.path == '/bus-earnings/' %}active{% endif %}"
+                  href={% url 'bus_earnings' user.bus.id %}>
+                  <i class="bi bi-graph-up submenu-icon"></i>
+                  <span>Bus Earnings</span>
+                </a>
+              </li>
+
+              
                 <li class="nav-item">
-                  <a class="nav-link {% if request.path == '/bus-payment/' %}active{% endif %}" href={% url 'bus_payments_details'%}>Bus</a>
+                <a class="nav-link submenu-link {% if request.path == '/bus-schedule/' %}active{% endif %}"
+                  href={% url 'bus_schedule' user.bus.id %}>
+                  <i class="bi bi-calendar3-week submenu-icon"></i>
+                  <span>Bus Schedule</span>
+                </a>
+              </li>
+
+              
+        <li class="nav-item">
+          <a class="nav-link collapsed" data-bs-toggle="collapse" href="#accountEarningsMenu" role="button"
+            aria-expanded="false" aria-controls="accountEarningsMenu">
+            <i class="bi bi-credit-card menu-icon"></i>
+            <span class="menu-text">Account & Earning</span>
+            <i class="bi bi-chevron-down ms-auto submenu-icon"></i>
+          </a>
+
+          <div
+            class="collapse {% if request.path == '/bus-bookings-payment/' or request.path == '/reservation-payment/' %}show{% endif %}"
+            id="accountEarningsMenu">
+            <ul class="nav flex-column submenu">
+              <li class="nav-item">
+                <a class="nav-link submenu-link {% if request.path == '/bus-bookings-payment/' %}active{% endif %}"
+                  href={% url 'bus_payments_details' %}>
+                  <i class="bi bi-bus-front submenu-icon"></i>
+                  <span>Bus Payments</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link submenu-link {% if request.path == '/reservation-payment/' %}active{% endif %}"
+                  href={% url 'reservation_payment_details' %}>
+                  <i class="bi bi-calendar2-check submenu-icon"></i>
+                  <span>Vehicle Reserve</span>
+                </a>
+              </li>
+
+            </ul>
+          </div>
+          <style>
+            .submenu {
+              padding-left: 2.5rem;
+            }
+
+            .submenu-link {
+              padding: 0.5rem 1rem !important;
+              font-size: 0.9rem;
+            }
+
+            .submenu-icon {
+              font-size: 0.9rem;
+              margin-right: 0.5rem;
+            }
+
+            .nav-link .submenu-icon {
+              transition: transform 0.3s;
+            }
+
+            .nav-link[aria-expanded="true"] .submenu-icon {
+              transform: rotate(-180deg);
+            }
+          </style>
+        </li>
+               <li class="nav-item">
+                <a class="nav-link submenu-link {% if request.path == '/bus-expenses/' %}active{% endif %}"
+                  href={% url 'bus_expenses' user.bus.id %}>
+                  <i class="bi bi-cash-coin submenu-icon"></i>
+                  <span>Payments</span>
+                </a>
                 </li>
-                <li class="nav-item">
-                  <a class="nav-link {% if request.path == '/reservation-payment/' %}active{% endif %}" href={% url 'reservation_payment_details'%}>Vehicle Reserve</a>
-                </li>
-              </ul>
-            </div>
-          </li>
-      {% endif %}
+              {% endif %} {% endcomment %}
       </ul>
     </div>
 
+
+
     {% if user.role == "admin" %}
     <div class="sidebar-footer">
-      <a href={% url 'system_settings' %} class="settings-link nav-link {% if request.path == '/settings/' %}active{% endif %}">
+      <a href={% url 'system_settings' %}
+        class="settings-link nav-link {% if request.path == '/settings/' %}active{% endif %}">
         <i class="bi bi-gear"></i>
         <span class="settings-text">Settings</span>
       </a>
@@ -238,7 +430,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   }
 
   .mobile-toggle-btn i {
@@ -252,7 +444,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0, 0, 0, 0.5);
     z-index: 1029;
     display: none;
     transition: opacity 0.3s;
@@ -265,6 +457,7 @@
   }
 
   .sidebar {
+    font-weight: 800 !important;
     width: var(--sidebar-width);
     background: white;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
@@ -421,11 +614,11 @@
       transform: translateX(-100%);
       z-index: 1035;
     }
-    
+
     .sidebar.show {
       transform: translateX(0);
     }
-    
+
     /* Restore text visibility in mobile view */
     .sidebar[data-compact="true"] .menu-text,
     .sidebar[data-compact="true"] .settings-text,
@@ -433,12 +626,12 @@
       opacity: 1;
       width: auto;
     }
-    
+
     .sidebar[data-compact="true"] .menu-icon,
     .sidebar[data-compact="true"] .settings-link i {
       margin-right: 1rem;
     }
-    
+
     /* Reset compact width in mobile view */
     .sidebar[data-compact="true"] {
       width: var(--sidebar-width);
@@ -465,50 +658,42 @@
 </style>
 
 <script>
-  $(document).ready(function() {
+  $(document).ready(function () {
     // Toggle sidebar compact mode for desktop
-    $("#sidebarToggleBtn").on("click", function() {
+    $("#sidebarToggleBtn").on("click", function () {
       const sidebar = $("#sidebar");
       const isCompact = sidebar.attr("data-compact") === "true";
       sidebar.attr("data-compact", !isCompact);
-      
+
       // Update content margin
 
     });
-    
+
     // Mobile sidebar toggle
-    $("#mobileSidebarToggle").on("click", function() {
+    $("#mobileSidebarToggle").on("click", function () {
       $("#sidebar").addClass("show");
       $("#sidebarOverlay").addClass("show");
     });
-    
+
     // Close mobile sidebar
-    $("#closeMobileSidebar, #sidebarOverlay").on("click", function() {
+    $("#closeMobileSidebar, #sidebarOverlay").on("click", function () {
       $("#sidebar").removeClass("show");
       $("#sidebarOverlay").removeClass("show");
     });
-    
+
     // Handle window resize
-    $(window).on("resize", function() {
+    $(window).on("resize", function () {
       if ($(window).width() > 991.98) {
         // Close sidebar overlay when resizing to desktop
         $("#sidebarOverlay").removeClass("show");
         $("#sidebar").removeClass("show");
       }
     });
-    
-    // Initialize sidebar state based on screen size
-    function initSidebar() {
-      if ($(window).width() <= 991.98) {
-        $("#sidebar").attr("data-compact", "false");
-      }
-    }
-    
-    // Run on page load
-    initSidebar();
-    
+
+
+
     // Handle collapsible submenus
-    $(".nav-link[data-bs-toggle='collapse']").on("click", function() {
+    $(".nav-link[data-bs-toggle='collapse']").on("click", function () {
       const isExpanded = $(this).attr("aria-expanded") === "true";
       $(this).attr("aria-expanded", !isExpanded);
     });

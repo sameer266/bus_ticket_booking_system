@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from custom_user.models import CustomUser, UserOtp,System,TransportationCompany
-from bus.models import Bus, BusAdmin, Driver, Staff, TicketCounter, BusReservation, BusLayout, VechicleType,SeatLayoutBooking
+from bus.models import Bus,BusFeatures, BusAdmin, Driver, Staff,  BusReservation, BusLayout, VechicleType,SeatLayoutBooking
 from booking.models import Booking, Payment, Commission, BusReservationBooking
-from route.models import Route, Schedule, Trip, CustomerReview,Notification
+from route.models import SubRoutes,Route,SearchSubRoute, Schedule, Trip, CustomerReview,Notification
 
 # ========================= Custom User =========================
 class CustomUserAdmin(UserAdmin):
@@ -33,13 +33,6 @@ class UserOtpAdmin(admin.ModelAdmin):
 
 admin.site.register(UserOtp, UserOtpAdmin)
 
-# ========================= Ticket Counter =========================
-class TicketCounterAdmin(admin.ModelAdmin):
-    list_display = ('user', 'counter_name', 'location','bank_account','bank_name','created_at')
-    search_fields = ('counter_name', 'location')
-    list_filter = ('location',)
-
-admin.site.register(TicketCounter, TicketCounterAdmin)
 
 # ========================= Bus Admin =========================
 class BusAdminAdmin(admin.ModelAdmin):
@@ -48,6 +41,8 @@ class BusAdminAdmin(admin.ModelAdmin):
     list_filter = ('source', 'destination', 'last_updated')
 
 admin.site.register(BusAdmin, BusAdminAdmin)
+
+
 
 # ========================= Driver =========================
 class DriverAdmin(admin.ModelAdmin):
@@ -63,11 +58,24 @@ class StaffAdmin(admin.ModelAdmin):
 
 admin.site.register(Staff, StaffAdmin)
 
+
+# ================== Bus Features ==================
+class BusFeaturesAdmin(admin.ModelAdmin):
+    list_display=('name',)
+
+admin.site.register(BusFeatures,BusFeaturesAdmin)
+    
 # ========================= Bus =========================
 class BusAdminModel(admin.ModelAdmin):
-    list_display = ('id', 'driver', 'staff', 'bus_number', 'bus_type', 'total_seats', 'features', 'is_active')
+    list_display = ('id', 'driver', 'staff', 'bus_number', 'bus_type', 'bus_image', 'total_seats', 'is_active', 'display_features')
     search_fields = ('bus_number', 'bus_type')
-   
+
+    def display_features(self, obj):
+        return ", ".join([feature.name for feature in obj.features.all()])
+
+    display_features.short_description = 'Features'
+    
+
 admin.site.register(Bus, BusAdminModel)
 
 # ========================= Vechicle Type =========================
@@ -82,7 +90,6 @@ class BusReservationAdmin(admin.ModelAdmin):
     list_display = ('id','name','type','image','vechicle_number', 'vechicle_model','color','driver', 'staff', 'total_seats','price','source')
     search_fields = ('vechicle_number', 'user__email', 'driver__full_name', 'staff__full_name')
 
-
 admin.site.register(BusReservation, BusReservationAdmin)
 
 
@@ -93,30 +100,38 @@ class BusReservationBookingAdmin(admin.ModelAdmin):
 admin.site.register(BusReservationBooking,BusReservationBookingAdmin)
     
     
-# # ========================= Seat =========================
-# class SeatAdmin(admin.ModelAdmin):
-#     list_display = ('id','seat_number', 'status', 'bus')
-#     list_filter = ('status', 'bus')
-#     search_fields = ('seat_number', 'bus__bus_number')
-
-# admin.site.register(Seat, SeatAdmin)
 
 # ========================= Booking =========================
 class BookingAdmin(admin.ModelAdmin):
     list_display = ('user', 'seat', 'bus', 'schedule', 'booking_status', 'booked_at')
-
-
-
 admin.site.register(Booking, BookingAdmin)
+
+
+# =============== Sub Routes ============
+class SubRouteAdmin(admin.ModelAdmin):
+    list_display=('id','name')
+admin.site.register(SubRoutes,SubRouteAdmin)
 
 # ========================= Route =========================
 class RouteAdmin(admin.ModelAdmin):
-    list_display = ('id','image','source', 'destination', 'distance', 'estimated_time')
+    list_display = ('id','image','source', 'destination','display_sub_routes', 'distance', 'estimated_time')
     search_fields = ('source', 'destination')
     list_filter = ('source', 'destination')
     ordering = ('source',)
+    
+    def display_sub_routes(self, obj):
+        return ", ".join([sub_route.name for sub_route in obj.sub_routes.all()])
 
+    display_sub_routes.short_description = 'Sub Routes'
+    
 admin.site.register(Route, RouteAdmin)
+
+
+# ============= SearchSubRoute =================
+class SearchSubRouteAdmin(admin.ModelAdmin):
+    list_display=('id','route','subroute','order')
+
+admin.site.register(SearchSubRoute,SearchSubRouteAdmin)
 
 # ========================= Schedule =========================
 class ScheduleAdmin(admin.ModelAdmin):

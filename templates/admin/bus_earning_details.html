@@ -4,13 +4,13 @@
 {% block title %}Bus Earning Details | Go Sewa{% endblock %}
 
 {% block content %}
-<div class="dashboard-container" >
+<div class="dashboard-container">
     <main class="dashboard-content px-3 px-md-4 py-4">
         <div class="container-fluid">
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                 <h1 class="h4 fw-bold text-primary">
-                    <i class="bi bi-graph-up-arrow me-2"></i> Booking Earning Details - {{ bus.bus_number }} 
+                    <i class="bi bi-graph-up-arrow me-2"></i> Bus Earning Details - {{ bus.bus_number }} 
                 </h1>
                 <a href="{% url 'bus_payments_details' %}" class="btn btn-outline-secondary btn-sm">
                     <i class="bi bi-arrow-left"></i> Back to Summary
@@ -33,52 +33,69 @@
                 </form>
             </div>
 
-            <!-- Earnings Table -->
+       
+
+            <!-- Schedule Earnings Table -->
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Earnings Breakdown</h5>
+                    <h5 class="card-title mb-0">Schedule-wise Earnings Breakdown</h5>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped align-middle">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Transaction Id</th>
-                                    <th>Date</th>
-                                    <th>Passenger</th>
-                                    <th>Amount Paid</th>
-                                    <th>Rate</th>
-                                    <th>Commission</th>
+                                    <th>Schedule</th>
+                                    <th>Route</th>
+                                    <th>Date & Time</th>
+                                  
+                                    <th>Total Transactions</th>
+                                    <th>Total Paid</th>
+                                    <th>Total Commission</th>
                                     <th>Net Earning</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for earning in earnings_list %}
+                                {% for earning in schedule_earnings %}
                                 <tr>
                                     <td>
-                                        {% if earning.transaction_id %}
-                                            {{ earning.transaction_id }}
-                                        {% else %}
-                                            <em class="text-muted">N/A</em>
-                                        {% endif %}
+                                        <strong>{{ earning.schedule.id }}</strong>
                                     </td>
-                                    <td>{{ earning.payment_date|date:"Y-m-d H:i" }}</td>
-                                    <td>{{ earning.passenger }}</td>
-                                    <td>NRP {{ earning.amount_paid|floatformat:2 }}</td>
-                                    <td>{{ earning.commission_rate|floatformat:2 }} %</td>
-                                    <td>NRP {{ earning.commission|floatformat:2 }}</td>
-                                    <td class="fw-bold text-success">NRP {{ earning.net_earning|floatformat:2 }}</td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary view-booking" 
-                                                data-booking-id="{{ earning.booking_id }}">
-                                                <i class="bi bi-eye-fill"></i>
-                                        </button>
+                                        {{ earning.schedule.route.source }} 
+                                        <i class="bi bi-arrow-right mx-2"></i> 
+                                        {{ earning.schedule.route.destination }}
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ earning.schedule.departure_date|date:"Y-m-d" }}</strong><br>
+                                            <small class="text-muted">{{ earning.schedule.departure_time }}</small>
+                                        </div>
+                                    </td>
+                                
+                                    <td>
+                                        <span class="badge bg-secondary">{{ earning.transactions }}</span>
+                                    </td>
+                                    <td>NPR {{ earning.total_paid|floatformat:2 }}</td>
+                                    <td>NPR {{ earning.total_commission|floatformat:2 }}</td>
+                                    <td class="fw-bold text-success">NPR {{ earning.total_net|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'schedule_payment_details' earning.schedule.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye-fill"></i> View Details
+                                        </a>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="8" class="text-center py-4">No earnings found for this bus.</td>
+                                    <td colspan="9" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                            <h5>No earnings found</h5>
+                                            <p>No earnings data available for this bus in the selected period.</p>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -90,117 +107,9 @@
     </main>
 </div>
 
-<!-- Booking Details Modal -->
-<div class="modal fade" id="bookingDetailsModal" tabindex="-1" aria-labelledby="bookingDetailsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="bookingDetailsModalLabel">
-                    <i class="bi bi-info-circle me-2"></i>Booking Details
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <div class="text-center mb-4" id="loadingSpinner">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading booking details...</p>
-                </div>
-                
-                <div id="bookingDetailsContent" class="d-none">
-                    <div class="row g-4">
-                        <!-- Trip Details -->
-                        <div class="col-md-6">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="bi bi-map me-2"></i>Trip Information</h6>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="list-group list-group-flush">
-                                        <li class="list-group-item d-flex justify-content-between px-0">
-                                            <span class="text-muted">Route:</span>
-                                            <span class="fw-medium" id="route"></span>
-                                        </li>
-                                        <li class="list-group-item d-flex justify-content-between px-0">
-                                            <span class="text-muted">Bus Number:</span>
-                                            <span class="fw-medium" id="busNumber"></span>
-                                        </li>
-                                        <li class="list-group-item d-flex justify-content-between px-0">
-                                            <span class="text-muted">Booking Status:</span>
-                                            <span class="fw-medium" id="bookingStatus"></span>
-                                        </li>
-                                        <li class="list-group-item d-flex justify-content-between px-0">
-                                            <span class="text-muted">Booked At:</span>
-                                            <span class="fw-medium" id="bookedAt"></span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Passenger Details -->
-                        <div class="col-md-6">
-                            <div class="card border-0 shadow-sm h-100">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="bi bi-person me-2"></i>Passenger Information</h6>
-                                </div>
-                                <div class="card-body">
-                                    <ul class="list-group list-group-flush">
-                                        <li class="list-group-item d-flex justify-content-between px-0">
-                                            <span class="text-muted">Name:</span>
-                                            <span class="fw-medium" id="passengerName"></span>
-                                        </li>
-                                        <li class="list-group-item d-flex justify-content-between px-0">
-                                            <span class="text-muted">Phone:</span>
-                                            <span class="fw-medium" id="passengerPhone"></span>
-                                        </li>
-                                        <li class="list-group-item d-flex justify-content-between px-0">
-                                            <span class="text-muted">Total Seats:</span>
-                                            <span class="fw-medium" id="totalSeats"></span>
-                                        </li>
-                                        <li class="list-group-item d-flex justify-content-between px-0">
-                                            <span class="text-muted">Seat Numbers:</span>
-                                            <span class="fw-medium" id="seatNumbers"></span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Payment Information -->
-                        <div class="col-12">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-header bg-light">
-                                    <h6 class="mb-0"><i class="bi bi-credit-card me-2"></i>Payment Information</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
-                                        <h5 class="mb-0">Total Fare:</h5>
-                                        <h5 class="mb-0 text-success fw-bold" id="totalPrice"></h5>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="errorMessage" class="alert alert-danger d-none">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    Failed to load booking details. Please try again.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block extra_css %}
-
 <style>
 @media (min-width: 768px) {
     .dashboard-container {
@@ -208,94 +117,56 @@
     }
 }
 
-</style>
+.card {
+    transition: transform 0.2s ease-in-out;
+}
 
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.85em;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+</style>
 {% endblock %}
 
-
+{% block extra_js %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Date filter form validation
-        document.getElementById('filter-form').addEventListener('submit', function(event) {
-            var startDate = document.getElementById('start_date').value;
-            var endDate = document.getElementById('end_date').value;
-            
-            if (!startDate || !endDate) {
-                event.preventDefault();
-                alert("Please select both start date and end date.");
-            }
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    // Date filter form validation
+    document.getElementById('filter-form').addEventListener('submit', function(event) {
+        var startDate = document.getElementById('start_date').value;
+        var endDate = document.getElementById('end_date').value;
         
-        // Set max date for date inputs to today
-        var today = new Date().toISOString().split('T')[0];
-        document.getElementById('start_date').setAttribute('max', today);
-        document.getElementById('end_date').setAttribute('max', today);
-        
-        // Ensure end date is not earlier than start date
-        document.getElementById('start_date').addEventListener('change', function() {
-            document.getElementById('end_date').setAttribute('min', this.value);
-        });
-        
-        document.getElementById('end_date').addEventListener('change', function() {
-            document.getElementById('start_date').setAttribute('max', this.value);
-        });
-        
-        // Modal functionality for booking details
-        const bookingModal = new bootstrap.Modal(document.getElementById('bookingDetailsModal'));
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const bookingDetailsContent = document.getElementById('bookingDetailsContent');
-        const errorMessage = document.getElementById('errorMessage');
-        
-        // Add click event to all view buttons
-        document.querySelectorAll('.view-booking').forEach(button => {
-            button.addEventListener('click', function() {
-                const bookingId = this.getAttribute('data-booking-id');
-                
-                // Reset modal state
-                loadingSpinner.classList.remove('d-none');
-                bookingDetailsContent.classList.add('d-none');
-                errorMessage.classList.add('d-none');
-                
-                // Show modal
-                bookingModal.show();
-                
-                // Fetch booking details
-                fetch(`/booking-details/${bookingId}`)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        // Hide loading spinner
-                        console.log(data)
-                        loadingSpinner.classList.add('d-none');
-                        
-                        // Fill in the booking details
-                        document.getElementById('route').textContent = `${data.source} to ${data.destination}`;
-                        document.getElementById('busNumber').textContent = data.bus_number;
-                        document.getElementById('bookingStatus').textContent = data.booking_status;
-                        document.getElementById('bookedAt').textContent = new Date(data.booked_at).toLocaleString();
-                        
-                        document.getElementById('passengerName').textContent = data.user;
-                        document.getElementById('passengerPhone').textContent = data.user_phone;
-                        document.getElementById('totalSeats').textContent = data.total_seat;
-                        document.getElementById('seatNumbers').textContent = Array.isArray(data.seat) ? data.seat.join(', ') : data.seat;
-                        
-                        document.getElementById('totalPrice').textContent = `NPR ${data.total_price}`;
-                        
-                        // Show the details content
-                        bookingDetailsContent.classList.remove('d-none');
-                    })
-                    .catch(error => {
-                        console.error('Error fetching booking details:', error);
-                        loadingSpinner.classList.add('d-none');
-                        errorMessage.classList.remove('d-none');
-                    });
-            });
-        });
+        if (!startDate || !endDate) {
+            event.preventDefault();
+            alert("Please select both start date and end date.");
+        }
     });
+    
+    // Set max date for date inputs to today
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').setAttribute('max', today);
+    document.getElementById('end_date').setAttribute('max', today);
+    
+    // Ensure end date is not earlier than start date
+    document.getElementById('start_date').addEventListener('change', function() {
+        document.getElementById('end_date').setAttribute('min', this.value);
+    });
+    
+    document.getElementById('end_date').addEventListener('change', function() {
+        document.getElementById('start_date').setAttribute('max', this.value);
+    });
+});
 </script>
-
-
+{% endblock %}

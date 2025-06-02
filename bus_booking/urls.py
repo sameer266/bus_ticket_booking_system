@@ -37,6 +37,9 @@ urlpatterns = [
     # ================== Admin Dashboard ==================
     path('', include('booking.urls')),
     
+    # ============= Bus Admin Dashboard ===========
+    path('',include('bus.urls')),
+    
   
     
 

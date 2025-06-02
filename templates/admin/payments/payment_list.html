@@ -1,0 +1,470 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block title %}Payment Transactions | Go Sewa{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <main class="dashboard-content px-3 px-md-4 py-4">
+        <div class="container-fluid">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                <h1 class="h4 fw-bold">
+                    <i class="bi bi-credit-card me-2"></i> Payment Transactions
+                </h1>
+                
+            </div>
+
+            <!-- Filters Section -->
+            <div class="mb-4">
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body">
+                        <form id="filter-form" method="get" class="row g-3 align-items-end">
+                            <div class="col-md-2">
+                                <label for="start_date" class="form-label text-muted fw-medium">
+                                    <i class="bi bi-calendar-event me-1"></i>Start Date
+                                </label>
+                                <input type="date" name="start_date" id="start_date" class="form-control shadow-sm" value="{{ start_date|default:'' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="end_date" class="form-label text-muted fw-medium">
+                                    <i class="bi bi-calendar-check me-1"></i>End Date
+                                </label>
+                                <input type="date" name="end_date" id="end_date" class="form-control shadow-sm" value="{{ end_date|default:'' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="payment_method" class="form-label text-muted fw-medium">
+                                    <i class="bi bi-wallet2 me-1"></i>Payment Method
+                                </label>
+                                <select name="payment_method" id="payment_method" class="form-select shadow-sm">
+                                    <option value="">All Methods</option>
+                                    {% for method_key, method_name in payment_methods %}
+                                    <option value="{{ method_key }}" {% if payment_method == method_key %}selected{% endif %}>
+                                        {{ method_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="payment_status" class="form-label text-muted fw-medium">
+                                    <i class="bi bi-check-circle me-1"></i>Status
+                                </label>
+                                <select name="payment_status" id="payment_status" class="form-select shadow-sm">
+                                    <option value="">All Status</option>
+                                    {% for status_key, status_name in payment_statuses %}
+                                    <option value="{{ status_key }}" {% if payment_status == status_key %}selected{% endif %}>
+                                        {{ status_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label for="search" class="form-label text-muted fw-medium">
+                                    <i class="bi bi-search me-1"></i>Search
+                                </label>
+                                <input type="text" name="search" id="search" class="form-control shadow-sm" 
+                                       placeholder="Transaction ID, User, Bus..." value="{{ search_query|default:'' }}">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary shadow-sm w-100">
+                                    <i class="bi bi-search me-1"></i>Filter
+                                </button>
+                                {% if start_date or end_date or payment_method or payment_status or search_query %}
+                                <a href="{% url 'payment_list' %}" class="btn btn-outline-danger shadow-sm w-100 mt-2">
+                                    <i class="bi bi-x-circle me-1"></i>Clear
+                                </a>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            {% if total_stats %}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-cash-stack fs-1 mb-2"></i>
+                            <h5 class="card-title">Total Amount</h5>
+                            <h3 class="mb-0">NPR {{ total_stats.total_amount|floatformat:2|default:'0.00' }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-warning text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-percent fs-1 mb-2"></i>
+                            <h5 class="card-title">Total Commission</h5>
+                            <h3 class="mb-0">NPR {{ total_stats.total_commission|floatformat:2|default:'0.00' }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-graph-up fs-1 mb-2"></i>
+                            <h5 class="card-title">Net Amount</h5>
+                            <h3 class="mb-0">NPR {{ total_stats.net_amount|floatformat:2|default:'0.00' }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-list-ol fs-1 mb-2"></i>
+                            <h5 class="card-title">Total Transactions</h5>
+                            <h3 class="mb-0">{{ total_stats.total_count|default:0 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status Summary -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-start border-success border-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-check-circle-fill text-success fs-2 me-3"></i>
+                                <div>
+                                    <h5 class="mb-0">{{ total_stats.completed_count|default:0 }}</h5>
+                                    <small class="text-muted">Completed</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-start border-warning border-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-clock-fill text-warning fs-2 me-3"></i>
+                                <div>
+                                    <h5 class="mb-0">{{ total_stats.pending_count|default:0 }}</h5>
+                                    <small class="text-muted">Pending</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm border-start border-danger border-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-x-circle-fill text-danger fs-2 me-3"></i>
+                                <div>
+                                    <h5 class="mb-0">{{ total_stats.failed_count|default:0 }}</h5>
+                                    <small class="text-muted">Failed</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Payments Table -->
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-gradient-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center text-primary">
+                            <i class="bi bi-table fs-5 me-2"></i>
+                            <h5 class="card-title mb-0 fw-bold ">Payment Transactions</h5>
+                        </div>
+                        {% if is_paginated %}
+                        <small class="badge bg-light text-gray-500">
+                            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class=" text-gray-500 border-0 px-4 py-3">
+                                        <i class="bi bi-hash me-1"></i>Transaction ID
+                                    </th>
+                                    <th class=" text-gray-500 border-0 py-3">
+                                        <i class="bi bi-calendar3 me-1"></i>Date
+                                    </th>
+                                    <th class=" text-gray-500 border-0 py-3">
+                                        <i class="bi bi-person-fill me-1"></i>Customer
+                                    </th>
+                                    <th class=" text-gray-500 border-0 py-3">
+                                        <i class="bi bi-bus-front me-1"></i>Bus
+                                    </th>
+                                    <th class=" text-gray-500 border-0 py-3">
+                                        <i class="bi bi-credit-card me-1"></i>Seat Number
+                                    </th>
+                                    <th class=" text-gray-500 border-0 py-3">
+                                        <i class="bi bi-wallet2 me-1"></i>Method
+                                    </th>
+                                    <th class=" text-gray-500 border-0 py-3">
+                                        <i class="bi bi-cash me-1"></i>Amount
+                                    </th>
+                                    <th class=" text-gray-500 border-0 py-3">
+                                        <i class="bi bi-percent me-1"></i>Commission
+                                    </th>
+                                    <th class=" text-gray-500 border-0 py-3">
+                                        <i class="bi bi-check-circle me-1"></i>Status
+                                    </th>
+                                   
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payment in payments %}
+                                <tr class="transaction-row">
+                                    <td class="px-4 py-3">
+                                        {% if payment.transaction_id %}
+                                            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill font-monospace">
+                                                {{ payment.transaction_id }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted fst-italic">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-medium">{{ payment.created_at|date:"M d, Y" }}</span>
+                                            <small class="text-muted">{{ payment.created_at|date:"g:i A" }}</small>
+                                        </div>
+                                    </td>
+                                    <td class="py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-info-subtle text-dark me-2">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                            <div>
+                                                <span class="fw-medium d-block">{{ payment.user.full_name|default:'N/A' }}</span>
+                                                <small class="text-muted">{{ payment.user.email|default:'N/A' }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-3">
+                                        {% if payment.booking.bus %}
+                                            <span class="badge text-dark px-2 py-1">
+                                                {{ payment.booking.bus.bus_number }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="py-3">
+                                        {% if payment.booking.seat %}
+                                            <span class="badge bg-secondary-subtle text-secondary px-2 py-1">
+                                                {{ payment.booking.seat| join:", " }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="badge {% if payment.payment_method == 'khalti' %}bg-purple-subtle text-purple{% elif payment.payment_method == 'esewa' %}bg-green-subtle text-green{% else %}bg-secondary-subtle text-secondary{% endif %} px-2 py-1">
+                                            {{ payment.get_payment_method_display }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="fw-bold text-gray-500">
+                                            NPR {{ payment.booking.schedule.price|floatformat:2|default:'0.00' }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3">
+                                        <span class="text-dark fw-medium">
+                                            NPR {{ payment.commission_deducted|floatformat:2 }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3">
+                                        {% if payment.payment_status == 'completed' %}
+                                            <span class="badge bg-success-subtle text-dark px-2 py-1">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Completed
+                                            </span>
+                                        {% elif payment.payment_status == 'pending' %}
+                                            <span class="badge  text-dark px-2 py-1">
+                                                <i class="bi bi-clock-fill me-1"></i>Pending
+                                            </span>
+                                        {% elif payment.payment_status == 'failed' %}
+                                            <span class="badge  text-dark px-2 py-1">
+                                                <i class="bi bi-x-circle-fill me-1"></i>Failed
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="text-center py-5">
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                                            <h4 class="text-muted">No payments found</h4>
+                                            <p class="text-muted">No payment transactions match your current filters.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Payment pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if payment_method %}&payment_method={{ payment_method }}{% endif %}{% if payment_status %}&payment_status={{ payment_status }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </main>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media (min-width: 768px) {
+    .dashboard-container {
+        margin-left: 250px;
+    }
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.85em;
+}
+
+.table th {
+    font-weight: 600;
+    color: #495057;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.avatar-circle {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.transaction-row:hover {
+    background-color: #f8f9fa;
+}
+
+.bg-purple-subtle {
+    background-color: #e2e3ff !important;
+}
+
+.text-purple {
+    color: #6f42c1 !important;
+}
+
+.bg-green-subtle {
+    background-color: #d1e7dd !important;
+}
+
+.text-green {
+    color: #198754 !important;
+}
+
+.empty-state {
+    padding: 2rem;
+}
+
+.pagination .page-link {
+    color: #495057;
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set max date for date inputs to today
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').setAttribute('max', today);
+    document.getElementById('end_date').setAttribute('max', today);
+    
+    // Ensure end date is not earlier than start date
+    document.getElementById('start_date').addEventListener('change', function() {
+        document.getElementById('end_date').setAttribute('min', this.value);
+    });
+    
+    document.getElementById('end_date').addEventListener('change', function() {
+        document.getElementById('start_date').setAttribute('max', this.value);
+    });
+    
+    // Auto submit form on select changes
+    document.getElementById('payment_method').addEventListener('change', function() {
+        if (this.value !== '') {
+            document.getElementById('filter-form').submit();
+        }
+    });
+    
+    document.getElementById('payment_status').addEventListener('change', function() {
+        if (this.value !== '') {
+            document.getElementById('filter-form').submit();
+        }
+    });
+    
+    // Search form submission on Enter
+    document.getElementById('search').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('filter-form').submit();
+        }
+    });
+});
+</script>
+{% endblock %}

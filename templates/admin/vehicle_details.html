@@ -3,7 +3,7 @@
 {% block title %}Vehicle Booking Details{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid py-4 dashboard-content">
     <div class="row justify-content-center">
         <div class="col-12 col-lg-10 col-xl-8">
             <!-- Header with booking reference -->
@@ -151,7 +151,7 @@
                                             <ul class="list-group list-group-flush">
                                                 <li class="list-group-item px-0 d-flex justify-content-between">
                                                     <span class="fw-bold">Capacity:</span>
-                                                    <span>{{ vehicle_booking.bus_reserve.bus.capacity }} seats</span>
+                                                    <span>{{ vehicle_booking.bus_reserve.total_seats  }} seats</span>
                                                 </li>
                                                 <li class="list-group-item px-0 d-flex justify-content-between">
                                                     <span class="fw-bold">Driver:</span>
@@ -213,22 +213,37 @@
 </div>
 
 <style>
+
+    /* Responsive layout */
+    @media (min-width: 768px) {
+        .dashboard-content {
+       
+            margin: 0 auto;
+            max-width: 1400px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .dashboard-content {
+            margin: 0 auto;
+            padding: 1rem;
+            width: 95%;
+        }
+    }
+
+    /* Enhanced card styles */
     .card {
-        border-radius: 0.5rem;
-        overflow: hidden;
+        transition: transform 0.2s ease;
     }
-    .card-header {
-        border-bottom: none;
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
-    .list-group-item {
-        border-left: none;
-        border-right: none;
-    }
-    .list-group-item:first-child {
-        border-top: none;
-    }
-    .list-group-item:last-child {
-        border-bottom: none;
-    }
+
+   
+
 </style>
 {% endblock %}

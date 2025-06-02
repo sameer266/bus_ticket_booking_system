@@ -80,16 +80,18 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
     #                 pass
                 
                 # Schedule task to release seat after 15 minutes if payment not completed
+                
+                
     if instance.booking_status == "pending":
-        
         try:
             print("------------")
             release_unpaid_seat.apply_async(
                         args=[instance.id, instance.schedule.id],
-                        countdown=30  # 15 minutes
+                        countdown=600
                     )
         except Exception as e:
             print("Error in redis " ,e)
+            pass
 
 
 # ======== Bus Reservatiom Booking ==========
@@ -121,7 +123,6 @@ def create_commission_on_reservation(sender, instance, created, **kwargs):
     """
     if created  or instance.status=='booked':
       
-        
         commission_obj = Commission.objects.create(
             bus_reserve=instance.bus_reserve,
             commission_type='bus_reservation',
@@ -131,8 +132,7 @@ def create_commission_on_reservation(sender, instance, created, **kwargs):
         commission_obj.total_commission = commission_obj.calculate_commission(instance.bus_reserve.price)
         commission_obj.save()
     
-   
-
+from django.utils.timezone import now
 # ===== Payment Model =====
 class Payment(models.Model):
     """
@@ -161,17 +161,27 @@ class Payment(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     
+
+    def generate_transaction_id(self):
+        """Generate a unique transaction ID"""
+        if self.booking and self.booking.schedule and self.booking.bus:
+            timestamp = now().strftime('%Y%m%d%H%M')
+            schedule_id = str(self.booking.schedule.id).zfill(4)
+            bus_id = str(self.booking.bus.id).zfill(4)
+            user_id = str(self.user.id).zfill(4)
+            return f"TXN--{timestamp}-S{schedule_id}-B{bus_id}-U{user_id}"
+        return None
+
     
     def save(self,*args,**kwargs):
+        if not self.transaction_id:
+            self.transaction_id = self.generate_transaction_id()
+            
         if self.payment_status=="completed":
-            print("bus",self.booking.bus)
-            print(" In def save"  )
-           
             commission = Commission.objects.get(bus=self.booking.bus)
             self.commission_deducted = (commission.rate / Decimal('100.00')) * self.booking.schedule.price
 
         super().save(*args,**kwargs)
-            
             
     def __str__(self):
         return f"Payment #{self.id} - {self.booking.schedule.price} - {self.payment_status}"

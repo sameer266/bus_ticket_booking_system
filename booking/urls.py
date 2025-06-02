@@ -50,6 +50,14 @@ urlpatterns = [
   path('route-buslist/<int:id>/', views.route_bus_list, name="route_bus_list"),
   path('route_bus_details/<int:id>/', views.BusDetails.as_view(), name="route_bus_details"),
 
+
+# ========== Bus Features ==========
+  path('bus-features/',views.bus_featurelist,name='busfeature_lists'),
+  path('add-bus-features/',views.add_bus_feature,name="add_bus_feature"),
+  path('edit-bus-features/<int:feature_id>/',views.edit_bus_feature,name='edit_busfeature'),
+  path('delete-bus-feature/<int:feature_id>/',views.delete_bus_feature,name="delete_bus_feature"),
+  
+  
   # ======== Bus Management ==========
   path('buses-management/', views.bus_list, name='bus_list'),
   path('add-bus/', views.create_bus, name='create_bus'),
@@ -68,6 +76,7 @@ urlpatterns = [
 
   # ======== Booking Management ==========
   path('booking-management/', views.booking_management, name='booking_list'),
+  path('booking-status-update/<int:booking_id>/',views.booking_status_update,name="update_booking_status"),
   path('booking-reservation/update/<int:id>/', views.reservationBooking_update, name="update_reservation"),
   path('booking-resevation/delete/<int:id>/',views.delete_vehicle_reservation_booking,name="delete_reservation"),
 
@@ -79,7 +88,8 @@ urlpatterns = [
 
   # ======== Payment Management ==========
   path('bus-bookings-payment/', views.bus_payment_details, name='bus_payments_details'),
-  path('bus-earning-details/<int:bus_id>/', views.bus_earning_details, name='bus_earnings'),
+  path('bus-earning-details/<int:bus_id>/', views.bus_earning_details_schedule, name='bus_earnings'),
+  path('bus-earning-payment/<int:schedule_id>/',views.bus_earning_payment,name="schedule_payment_details"),
   
   
   
@@ -88,7 +98,8 @@ urlpatterns = [
   path('reservation-details/<int:id>/',views.vehicle_details_payment,name="vehicle_details_payment"),
   
   
-  # ================ Udpate Rate ===============
+  # ================ Paymant adn trasctions ===============
+  path('payments/',views.payment_list,name="payment_list"),
 
 
 
