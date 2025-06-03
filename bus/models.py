@@ -161,7 +161,7 @@ class SeatLayoutBooking(models.Model):
                 for seat in row:
                    
                     if isinstance(seat, dict) and seat["seat"] == seat_key:
-                        if seat["status"] == "booked":
+                        if seat["status"] == "booked" or seat['status'] =="unavailable":
                             seat["status"] = "available"
                             found = True
                             print(f"Seat {seat_key} is now available.")

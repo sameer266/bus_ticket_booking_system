@@ -1610,12 +1610,17 @@ def change_bus_availability(request):
             
             if status == 'available':
                 print("=======")
+                
                 seat_booking.mark_seat_available(seat_numbers)
+                schedule.available_seats+=1
+                
             elif status == 'unavailable':
                 print("--------")
                 seat_booking.mark_seat_unavailable(seat_numbers)
-         
+                schedule.available_seats-=1
                 
+            schedule.save()
+            
             return JsonResponse({'success': True, 'status': status})
             
         except json.JSONDecodeError:
