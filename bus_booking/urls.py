@@ -38,7 +38,7 @@ urlpatterns = [
     path('', include('booking.urls')),
     
     # ============= Bus Admin Dashboard ===========
-    path('',include('bus.urls')),
+    path('bus-admin/',include('bus.urls')),
     
   
     

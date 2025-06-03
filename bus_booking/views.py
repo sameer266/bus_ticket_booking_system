@@ -44,14 +44,17 @@ def login_view(request):
         
             
         if user:
+            login(request,user)
+            print(user)
             if user.role=="admin" or user.role=="sub_admin":
-                login(request,user)
-                print(user)
                 return redirect('admin_dashboard')
+            
+            elif user.role=="bus_admin":
+                return redirect('bus_admin_dashboard')
             else:
                 error_message = "Invalid User"
             return render(request, 'pages/login.html', {'error_message': error_message})
-                
+        
         else:
             error_message = "Invalid phone number or password"
             return render(request, 'pages/login.html', {'message': error_message})

@@ -135,7 +135,7 @@ admin.site.register(SearchSubRoute,SearchSubRouteAdmin)
 
 # ========================= Schedule =========================
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ('id','bus', 'route','available_seats', 'departure_time', 'arrival_time', 'date', 'price')
+    list_display = ('id','bus', 'route','available_seats', 'departure_time', 'arrival_time', 'date', 'price','original_price')
     search_fields = ('bus__bus_number', 'route__source', 'route__destination')
     list_filter = ('route', 'departure_time', 'date')
     ordering = ('date',)

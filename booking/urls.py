@@ -73,6 +73,9 @@ urlpatterns = [
   # ======== Bus Details from Schedule ==========
   path('bus-list/<int:id>/', views.schedule_bus_details, name='bus_details'),
   path('booking-details/<int:id>/', views.booking_details, name='booking_details'),
+  
+  # ========== Change availability ==========
+  path('change-bus-availability/',views.change_bus_availability,name="change_bus_availability"),
 
   # ======== Booking Management ==========
   path('booking-management/', views.booking_management, name='booking_list'),

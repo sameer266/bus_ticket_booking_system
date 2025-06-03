@@ -143,6 +143,7 @@ class Schedule(models.Model):
     departure_time = models.DateTimeField(null=True, blank=True, help_text="Time when bus starts")
     arrival_time = models.DateTimeField(null=True, blank=True, help_text="Expected arrival time")
     date = models.DateTimeField(null=True, blank=True, help_text="Date and time of the journey (Y-M-D H:M:S)", editable=False)
+    original_price=models.DecimalField(max_digits=8,decimal_places=2)
     price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Ticket price")
     available_seats = models.PositiveIntegerField(default=0, help_text="Number of available seats")
     status=models.CharField(max_length=20,null=True,blank=True)
@@ -206,13 +207,14 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
         # Create BusAdmin if not exists
         bus_admin = BusAdmin.objects.filter(bus=instance.bus).first()
         if not bus_admin:
+            print("+;'ad'")
             new_user, _ = CustomUser.objects.get_or_create(
                 email=f"busadmin_{instance.bus.bus_number.lower().replace(' ', '_')}@example.com",
-                defaults={
-                    "password": "DefaultPassword123",
-                    "phone": random.randint(9000000000, 9999999999),
-                    "role": "bus_admin",
-                },
+                
+                password= "Sameer123",
+                phone= random.randint(9000000000, 9999999999),
+                role="bus_admin",
+                
             )
             print("Sinal-------sd")
             BusAdmin.objects.create(

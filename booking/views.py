@@ -96,7 +96,7 @@ def admin_dashboard(request):
     
     chart_data['revenue'] = {
         'labels': [day.strftime('%a') for day in last_7_days],
-        'data': revenue_data
+        'data': [float(x) for x in revenue_data]
     }
 
     # Booking status
@@ -107,7 +107,7 @@ def admin_dashboard(request):
     )
     chart_data['booking_status'] = {
         'labels': ['Booked', 'Pending', 'Cancelled'],
-        'data': [booking_status['booked'], booking_status['pending'], booking_status['cancelled']]
+        'data': [int(booking_status['booked']), int(booking_status['pending']), int(booking_status['cancelled'])]
     }
 
     # Top routes (by bookings)
@@ -118,7 +118,7 @@ def admin_dashboard(request):
     )
     chart_data['routes'] = {
         'labels': [f"{r['schedule__route__source']} to {r['schedule__route__destination']}" for r in top_routes],
-        'data': [r['count'] for r in top_routes]
+        'data': [int(r['count']) for r in top_routes]
     }
 
     # Monthly trips (last 6 months)
@@ -133,7 +133,7 @@ def admin_dashboard(request):
             scheduled_departure__lt=month_end,
             status='completed'
         ).count()
-        monthly_trips.append(trips_count)
+        monthly_trips.append(int(trips_count))
     
     chart_data['monthly_trips'] = {
         'labels': [month for month in last_6_months],
@@ -627,7 +627,7 @@ def create_bus(request):
             staff = Staff.objects.get(id=staff_id) if staff_id else None
                        
             commission_rate = float(request.POST.get('commission_rate') or 0)
-
+            
             print(total_seats)
             # Create bus
             bus = Bus.objects.create(
@@ -1338,124 +1338,131 @@ class BusDetails(APIView):
 
 
 def schedule_list(request):
-    Schedule.update_all_status()
-    user = request.user
-    transportation_company = getattr(user, "transportation_company", None)
+    
+    try:
+        
+        Schedule.update_all_status()
+        user = request.user
+        transportation_company = getattr(user, "transportation_company", None)
+        
+        if request.method == "POST":
+            try:
+                # Get form data
+                route_id = request.POST.get("route")
+                bus_id = request.POST.get("bus")
+                departure_input = request.POST.get("departure_time")
+                arrival_input = request.POST.get("arrival_time")
+                price = request.POST.get("price")
+                original_price=request.POST.get('original_price')
 
-    if request.method == "POST":
-        try:
-            # Get form data
-            route_id = request.POST.get("route")
-            bus_id = request.POST.get("bus")
-            departure_input = request.POST.get("departure_time")
-            arrival_input = request.POST.get("arrival_time")
-            price = request.POST.get("price")
+                # Validate route and bus
+                route = Route.objects.get(id=route_id)
+                bus = Bus.objects.get(id=bus_id)
 
-            # Validate route and bus
-            route = Route.objects.get(id=route_id)
-            bus = Bus.objects.get(id=bus_id)
+                # Parse datetime fields
+                departure_time = datetime.strptime(departure_input, "%Y-%m-%dT%H:%M")
+                arrival_time = datetime.strptime(arrival_input, "%Y-%m-%dT%H:%M")
 
-            # Parse datetime fields
-            departure_time = datetime.strptime(departure_input, "%Y-%m-%dT%H:%M")
-            arrival_time = datetime.strptime(arrival_input, "%Y-%m-%dT%H:%M")
+                if arrival_time <= departure_time:
+                    raise ValueError("Arrival time must be after departure time")
 
-            if arrival_time <= departure_time:
-                raise ValueError("Arrival time must be after departure time")
+                # Make timezone-aware
+                tz = timezone.get_current_timezone()
+                departure_time = timezone.make_aware(departure_time, tz)
+                arrival_time = timezone.make_aware(arrival_time, tz)
 
-            # Make timezone-aware
-            tz = timezone.get_current_timezone()
-            departure_time = timezone.make_aware(departure_time, tz)
-            arrival_time = timezone.make_aware(arrival_time, tz)
+                # Check for overlapping schedules for the same bus
+                overlap_exists = Schedule.objects.filter(
+                    bus=bus,
+                    departure_time__lte=arrival_time,
+                    arrival_time__gte=departure_time,
+                ).exists()
 
-            # Check for overlapping schedules for the same bus
-            overlap_exists = Schedule.objects.filter(
-                bus=bus,
-                departure_time__lte=arrival_time,
-                arrival_time__gte=departure_time,
-            ).exists()
+                if overlap_exists:
+                    messages.error(request, "A schedule already exists for this bus with overlapping times.")
+                    return redirect("schedule_list")
 
-            if overlap_exists:
-                messages.error(request, "A schedule already exists for this bus with overlapping times.")
+                # Create schedule and store the reference
+                schedule = Schedule.objects.create(
+                    route=route,
+                    bus=bus,
+                    available_seats=bus.total_seats,
+                    departure_time=departure_time,
+                    arrival_time=arrival_time,
+                    price=price,
+                    original_price=original_price,
+                    transportation_company=transportation_company
+                )
+
+                # Bus layout booking
+                bus_layout = BusLayout.objects.get(bus=bus)
+                SeatLayoutBooking.objects.create(
+                    schedule=schedule,
+                    layout_data=bus_layout.layout_data
+                )
+                
+                messages.success(request, "Schedule created successfully!")
                 return redirect("schedule_list")
 
-            # Create schedule and store the reference
-            schedule = Schedule.objects.create(
-                route=route,
-                bus=bus,
-                available_seats=bus.total_seats,
-                departure_time=departure_time,
-                arrival_time=arrival_time,
-                price=price,
-                transportation_company=transportation_company
-            )
+            except Exception as e:
+                messages.error(request, f"Error creating schedule: {str(e)}")
+                return redirect("schedule_list")
 
-            # Bus layout booking
-            bus_layout = BusLayout.objects.get(bus=bus)
-            SeatLayoutBooking.objects.create(
-                schedule=schedule,
-                layout_data=bus_layout.layout_data
-            )
-            
-            messages.success(request, "Schedule created successfully!")
-            return redirect("schedule_list")
+        # Handle GET (list, search, filter)
+        selected_date_str = request.GET.get('date')
+        search_query = request.GET.get('search', '').strip()
+        route_id = request.GET.get('route')
+        time_range = request.GET.get('time_range', '').strip()
 
-        except Exception as e:
-            messages.error(request, f"Error creating schedule: {str(e)}")
-            return redirect("schedule_list")
+        schedules = Schedule.objects.all().order_by('-date')
+        if transportation_company:
+            schedules = schedules.filter(transportation_company=transportation_company)
 
-    # Handle GET (list, search, filter)
-    selected_date_str = request.GET.get('date')
-    search_query = request.GET.get('search', '').strip()
-    route_id = request.GET.get('route')
-    time_range = request.GET.get('time_range', '').strip()
-
-    schedules = Schedule.objects.all().order_by('-date')
-    if transportation_company:
-        schedules = schedules.filter(transportation_company=transportation_company)
-
-    # Apply date filter if provided
-    if selected_date_str:
-        try:
-            selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
-            schedules = schedules.filter(departure_time__date=selected_date)
-        except ValueError:
+        # Apply date filter if provided
+        if selected_date_str:
+            try:
+                selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+                schedules = schedules.filter(departure_time__date=selected_date)
+            except ValueError:
+                selected_date = None
+                messages.warning(request, "Invalid date format, showing all schedules")
+        else:
             selected_date = None
-            messages.warning(request, "Invalid date format, showing all schedules")
-    else:
-        selected_date = None
 
-    # Apply other filters
-    filters = Q()
-    if search_query:
-        filters &= (
-            Q(route__source__icontains=search_query) |
-            Q(route__destination__icontains=search_query) |
-            Q(bus__bus_number__icontains=search_query) |
-            Q(price__icontains=search_query)
-        )
-    if time_range:
-        filters &= Q(status=time_range)
-    if route_id:
-        filters &= Q(route_id=route_id)
+        # Apply other filters
+        filters = Q()
+        if search_query:
+            filters &= (
+                Q(route__source__icontains=search_query) |
+                Q(route__destination__icontains=search_query) |
+                Q(bus__bus_number__icontains=search_query) |
+                Q(price__icontains=search_query)
+            )
+        if time_range:
+            filters &= Q(status=time_range)
+        if route_id:
+            filters &= Q(route_id=route_id)
 
-    if filters:
-        schedules = schedules.filter(filters).distinct()
+        if filters:
+            schedules = schedules.filter(filters).distinct()
 
-    all_routes = Route.objects.all()
-    all_buses = Bus.objects.filter(transportation_company=transportation_company) if transportation_company else Bus.objects.all()
+        all_routes = Route.objects.all()
+        all_buses = Bus.objects.filter(transportation_company=transportation_company) if transportation_company else Bus.objects.all()
 
-    context = {
-        'schedules': schedules,
-        'all_routes': all_routes,
-        'all_buses': all_buses,
-        'selected_date': selected_date.isoformat() if selected_date else '',
-        'search_query': search_query,
-        'route_id': int(route_id) if route_id else None,
-        'time_range': time_range,
-    }
+        context = {
+            'schedules': schedules,
+            'all_routes': all_routes,
+            'all_buses': all_buses,
+            'selected_date': selected_date.isoformat() if selected_date else '',
+            'search_query': search_query,
+            'route_id': int(route_id) if route_id else None,
+            'time_range': time_range,
+        }
+    except Exception as e:
+        print(e)
 
     return render(request, "admin/manage_schedule.html", context)
-
+    
 
 def schedule_edit(request, id):
     user = request.user
@@ -1486,6 +1493,7 @@ def schedule_edit(request, id):
         schedule.bus = bus
         schedule.departure_time = departure_time
         schedule.arrival_time = arrival_time
+        schedule.original_price=request.POST.get('original_price')
         schedule.price = request.POST.get("price")
         schedule.save()
         
@@ -1508,24 +1516,19 @@ def schedule_delete(request, id):
     return redirect("schedule_list")
 
 
-
-
-
-
 # ======= Bus  details schedule =========
 def schedule_bus_details(request, id):
         print(id)
         schedule = Schedule.objects.get(id=id)
-        bus=schedule.bus
+        bus = schedule.bus
         layout = get_object_or_404(SeatLayoutBooking, schedule=schedule)
 
-        total_booked=bus.total_seats-schedule.available_seats
-        
-        
+        total_booked = bus.total_seats - schedule.available_seats
+
         seat_layout_with_bookings = []
         booked_seats = {}
         booked_seat = 0
-        
+
         for booking in Booking.objects.filter(schedule=schedule):
             for seat in booking.seat:
                 booked_seats[seat] = {
@@ -1560,10 +1563,8 @@ def schedule_bus_details(request, id):
             'seat_layout': seat_layout_with_bookings,
             'total_amount': total_amount,
             'booked_seat': booked_seat,
-            'total_booked':total_booked,
+            'total_booked': total_booked,
         })
- 
-        
         
         
 # ======= Bookinglist of one User ==============
@@ -1588,9 +1589,43 @@ def booking_details(request, id):
     
     return JsonResponse(data)
 
+
+    # ========= Change Bus availability ==========
+def change_bus_availability(request):
+        try:
+            # Parse JSON data from request body
+            data = json.loads(request.body.decode('utf-8'))
+            schedule_id = data.get('schedule_id')
+            seat = data.get('seat_number') 
+            seat_numbers=[]
+            seat_numbers.append(seat)
+            print(seat_numbers)
+
+            status = data.get('status')
+
+            print(data)  
+            schedule = Schedule.objects.get(id=schedule_id)
+            
+            seat_booking = SeatLayoutBooking.objects.get(schedule=schedule)
+            
+            if status == 'available':
+                print("=======")
+                seat_booking.mark_seat_available(seat_numbers)
+            elif status == 'unavailable':
+                print("--------")
+                seat_booking.mark_seat_unavailable(seat_numbers)
+         
+                
+            return JsonResponse({'success': True, 'status': status})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid JSON data'}, status=400)
+        except Schedule.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Schedule not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
         
-
-
+        
 # ========== Booking Management  =================
 def booking_management(request):
     user=request.user

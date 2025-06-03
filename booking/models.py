@@ -269,7 +269,7 @@ class Commission(models.Model):
         related_name="commission",
         help_text="Bus associated with commission"
     )
-    schedule=models.ForeignKey(Schedule,on_delete=models.CASCADE,null=True,blank=True)
+    schedule=models.ForeignKey(Schedule,on_delete=models.SET_NULL,null=True,blank=True)
     bus_reserve = models.ForeignKey(
         'bus.BusReservation',
         on_delete=models.CASCADE,

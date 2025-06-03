@@ -1,0 +1,232 @@
+{% extends 'components/base.html' %}
+
+{% block title %}Bus Admin Profile{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <main class="dashboard-content px-3 px-md-4 py-4">
+        <div class="container-fluid">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap mb-4 pb-2 border-bottom">
+                <h3 class="fw-bold mb-3 mb-md-0 text-primary">My Profile</h3>
+            
+            </div>
+
+            <!-- Profile Overview -->
+            <div class="row g-4 mb-5">
+                <!-- Profile Card -->
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-8 modern-card bg-gradient-primary text-white">
+                        <div class="card-body p-4 text-center">
+                            <div class="profile-avatar mb-3">
+                                <i class="bi bi-person-circle fs-1"></i>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-white">{{ user.full_name }}</h4>
+                            <p class="text-white-50 mb-2">{{ user.email|default:'N/A' }}</p>
+                            <span class="badge bg-white bg-opacity-20 text-white">Bus Admin</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Personal Info -->
+                <div class="col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-8 modern-card">
+                        <div class="card-header bg-white py-3">
+                            <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-person-fill me-2"></i>Personal Information</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-circle bg-primary-soft p-2 me-3">
+                                            <i class="bi bi-person text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">Full Name</small>
+                                            <span class="fw-medium">{{ user.get_full_name|default:'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-circle bg-primary-soft p-2 me-3">
+                                            <i class="bi bi-envelope text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">Email</small>
+                                            <span class="fw-medium">{{ user.email|default:'N/A' }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-circle bg-primary-soft p-2 me-3">
+                                            <i class="bi bi-person-badge text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">Role</small>
+                                            <span class="fw-medium">Bus Admin</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="icon-circle bg-primary-soft p-2 me-3">
+                                            <i class="bi bi-shield-check text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block">Account Status</small>
+                                            <span class="fw-medium badge bg-success bg-opacity-10 text-success">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Active
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bus Details -->
+            <div class="card border-0 shadow-sm rounded-8 modern-card mb-5">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-bus-front-fill me-2"></i>Bus Details</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if bus %}
+                        <div class="row g-4">
+                            <div class="col-lg-4">
+                                <div class="position-relative">
+                                    {% if bus.bus_image %}
+                                        <img src="{{ bus.bus_image.url }}" alt="{{ bus.name }} image" class="img-fluid w-100 rounded-8" style="object-fit: cover; min-height: 200px;">
+                                    {% else %}
+                                        <div class="bg-light w-100 d-flex align-items-center justify-content-center rounded-8" style="min-height: 200px;">
+                                            <i class="bi bi-image text-muted fs-3"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="d-flex justify-content-start mt-2">
+                                        <div class="bg-dark bg-opacity-75 text-white px-3 py-2 rounded-3">
+                                            <i class="bi bi-tag-fill me-1"></i> {{ bus.bus_type|default:'N/A' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-8">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-primary-soft p-2 me-3">
+                                                <i class="bi bi-bus-front text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Bus Name</small>
+                                                <span class="fw-medium">{{ bus.name|default:'N/A' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-primary-soft p-2 me-3">
+                                                <i class="bi bi-123 text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Bus Number</small>
+                                                <span class="fw-medium">{{ bus.bus_number|default:'N/A' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-circle bg-primary-soft p-2 me-3">
+                                                <i class="bi bi-chair text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Total Seats</small>
+                                                <span class="fw-medium">{{ bus.total_seats|default:'N/A' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-exclamation-circle text-muted fs-3 mb-2"></i>
+                            <p class="text-muted">No bus assigned to this account</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-container {
+        min-height: calc(100vh - 60px); /* Adjust based on header/footer height */
+    }
+    .dashboard-content {
+        margin-left: 260px; /* Match sidebar width */
+        width: calc(100% - 260px);
+        transition: margin-left 0.3s;
+    }
+    @media (max-width: 991.98px) {
+        .dashboard-content {
+            margin-left: 0;
+            width: 100%;
+        }
+    }
+
+    /* Modern Card Styles */
+    .modern-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .modern-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+    }
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+    }
+    .icon-circle {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .rounded-8 {
+        border-radius: 8px !important;
+    }
+
+    /* Profile Avatar */
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+
+    /* Typography and Spacing */
+    h3, h5 {
+        letter-spacing: 0.5px;
+    }
+    .mb-5 {
+        margin-bottom: 3rem !important;
+    }
+    .text-white-50 {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.4em 0.8em;
+    }
+</style>
+{% endblock %}

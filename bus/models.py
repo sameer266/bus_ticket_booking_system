@@ -174,6 +174,29 @@ class SeatLayoutBooking(models.Model):
                 print(f"Seat {seat_key} not found in layout.")
         self.save()
 
+    def mark_seat_unavailable(self, seat_keys):
+        """
+        Mark the seats as unavailable in the seat layout.
+        Accepts a list of seat keys.
+        """
+        for seat_key in seat_keys:
+            found = False
+            for row in self.layout_data:
+                for seat in row:
+                    if isinstance(seat, dict) and seat["seat"] == seat_key:
+                        if seat["status"] in ["available", "booked"]:
+                            seat["status"] = "unavailable"
+                            found = True
+                            print(f"Seat {seat_key} is now unavailable.")
+                        else:
+                            print(f"Seat {seat_key} is already unavailable.")
+                        break
+                if found:
+                    break
+            if not found:
+                print(f"Seat {seat_key} not found in layout.")
+        self.save()
+
     def mark_seat_booked(self, seat_keys):
         """
         Mark the seats as booked in the seat layout.
@@ -285,11 +308,7 @@ class BusAdmin(models.Model):
 
         super().save(*args, **kwargs)
 
-    def clean(self):
-        if self.driver and not Driver.objects.filter(id=self.driver.id).exists():
-            raise ValidationError("The specified driver does not exist.")
-        if self.staff and not Staff.objects.filter(id=self.staff.id).exists():
-            raise ValidationError("The specified staff does not exist.")
+   
 
     def __str__(self):
       

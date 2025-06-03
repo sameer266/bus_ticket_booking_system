@@ -142,7 +142,7 @@ class UserBookingPaymentView(APIView):
                 print("Schedule",schedule_obj)
                 bus_layout_obj = SeatLayoutBooking.objects.get(schedule=schedule_obj)
                 schedule_obj.save()
-                print("_Sa-sad",bus_layout_obj)
+                print("Byus_layot",bus_layout_obj)
 
                 bus_layout_obj.mark_seat_booked(seat)
                 total_price = schedule_obj.price * count
