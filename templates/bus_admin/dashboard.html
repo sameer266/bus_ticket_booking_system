@@ -103,9 +103,9 @@
                                     <tbody>
                                         {% for booking in recent_bookings %}
                                         <tr>
-                                            <td>#{{ booking.id|stringformat:"05d" }}</td>
-                                            <td>{{ booking.user.username|default:'N/A' }}</td>
-                                            <td>{{ booking.seat_number|default:'N/A' }}</td>
+                                            <td>#{{ booking.id }}</td>
+                                            <td>{{ booking.user.full_name|default:'N/A' }}</td>
+                                            <td>{{ booking.seat|join:',' }}</td>
                                             <td>{{ booking.booked_at|date:'M d, Y' }}</td>
                                             <td>
                                                 <span class="badge confirmed">

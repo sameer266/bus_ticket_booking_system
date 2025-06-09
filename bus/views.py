@@ -122,24 +122,24 @@ def schedule_list(request):
             return redirect('bus_admin_dashboard')
 
 def booking_management(request):
-                try:
-                    # Get the current user and bus_admin
-                    user = request.user
-                    bus_admin = get_object_or_404(BusAdmin, user=user)
-                    admin_bus = bus_admin.bus
+    try:
+        # Get the current user and bus_admin
+        user = request.user
+        bus_admin = get_object_or_404(BusAdmin, user=user)
+        admin_bus = bus_admin.bus
 
-                    # Get bookings for the admin's bus
-                    booking_data = Booking.objects.filter(bus=admin_bus).order_by('-booked_at')
+        # Get bookings for the admin's bus
+        booking_data = Booking.objects.filter(bus=admin_bus).order_by('-booked_at')
                         
-                    booking_paginator = Paginator(booking_data, 10) 
-                    page_number_booking = request.GET.get('page')
-                    booking_page = booking_paginator.get_page(page_number_booking)
+        booking_paginator = Paginator(booking_data, 10) 
+        page_number_booking = request.GET.get('page')
+        booking_page = booking_paginator.get_page(page_number_booking)
 
-                    return render(request, 'bus_admin/booking.html', {
+        return render(request, 'bus_admin/booking.html', {
                         'booking_data': booking_page,
                     })
-                except Exception as e:
-                    return render(request, 'bus_admin/booking.html', {'error': str(e)})
+    except Exception as e:
+        return render(request, 'bus_admin/booking.html', {'error': str(e)})
                 
                 
 @login_required 

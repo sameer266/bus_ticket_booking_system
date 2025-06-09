@@ -9,9 +9,12 @@
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                 <h1 class="h2 fw-bold text-primary"><i class="bi bi-clock-history me-2"></i>Bus Schedules</h1>
+
+                {% if user.role != 'bus_admin' %}
                 <button id="addScheduleBtn" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
                     <i class="bi bi-plus-lg me-1"></i> New Schedule
                 </button>
+                {% endif %}
             </div>
 
             <!-- Messages -->
@@ -25,11 +28,13 @@
             {% endif %}
 
             <!-- Mobile Action Button -->
+            {% if user.role != 'bus_admin' %}
             <div class="d-md-none mb-4">
                 <button id="mobileAddScheduleBtn" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
                     <i class="bi bi-plus-lg me-1"></i> Add New Schedule
                 </button>
             </div>
+            {% endif %}
 
             <!-- Date Selector Card -->
             <div class="card border-0 shadow-sm modern-card mb-4">
@@ -145,6 +150,7 @@
                                     <th>Status</th>
                                     <th class="d-none d-md-table-cell">Departure</th>
                                     <th class="d-none d-md-table-cell">Arrival</th>
+                                    <th class="d-none d-md-table-cell">Shift</th>
                                     <th class="d-none d-md-table-cell">Original Price</th>
                                     <th class="d-none d-md-table-cell">Price</th>
                                     <th class="text-end pe-3">Actions</th>
@@ -170,8 +176,6 @@
                                                     <div class="text-muted d-md-none small">
                                                         {{ schedule.departure_time|date:"h:i A" }} - {{ schedule.arrival_time|date:"h:i A" }}
                                                     </div>
-                                                    
-                                                 
                                                     <div class="text-muted d-md-none small">NPR {{ schedule.price }}</div>
                                                 </div>
                                             </div>
@@ -181,7 +185,7 @@
                                             <div class="text-muted small">{{ schedule.bus.bus_type }}</div>
                                         </td>
                                         {% if user.role == "admin" %}
-                                            <td>{{ schedule.transportation_company }}</td>
+                                            <td>{{ schedule.bus.transportation_company }}</td>
                                         {% endif %}
                                         {% if request.path == '/schedules-management/' and not request.GET.date %}
                                             <td>{{ schedule.departure_time|date:"d M, Y" }}</td>
@@ -201,8 +205,13 @@
                                             <div class="text-muted small">{{ schedule.arrival_time|date:"M d, Y" }}</div>
                                         </td>
                                         <td class="d-none d-md-table-cell">
-                                            {% if schedule.original_price %}
-                                                <strong class="text-success">NPR {{ schedule.original_price }}</strong>
+                                            <span class="badge bg-secondary">
+                                                {{ schedule.shift | capfirst }}
+                                            </span>
+                                        </td>
+                                        <td class="d-none d-md-table-cell">
+                                            {% if schedule.sale_price %}
+                                                <strong class="text-success">NPR {{ schedule.sale_price }}</strong>
                                             {% else %}
                                                 <span class="text-muted">N/A</span>
                                             {% endif %}
@@ -218,9 +227,10 @@
                                                         data-bus-id="{{ schedule.bus.id }}"
                                                         data-departure="{{ schedule.departure_time|date:'c' }}"
                                                         data-arrival="{{ schedule.arrival_time|date:'c' }}"
-                                                        data-original-price="{{ schedule.original_price|default:'' }}"
+                                                        data-original-price="{{ schedule.sale_price|default:'' }}"
                                                         data-price="{{ schedule.price }}"
                                                         data-status="{{ schedule.status }}"
+                                                        data-shift="{{ schedule.shift }}"
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#editScheduleModal">
                                                     <i class="bi bi-pencil-square"></i>
@@ -245,9 +255,11 @@
                                                 <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
                                                 <h5>No schedules found</h5>
                                                 <p>Add a new bus schedule or adjust filters.</p>
+                                                {% if user.role != 'bus_admin' %}
                                                 <button id="emptyAddScheduleBtn" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
                                                     <i class="bi bi-plus-circle me-1"></i> Add Schedule
                                                 </button>
+                                                {% endif %}
                                             </div>
                                         </td>
                                     </tr>
@@ -266,9 +278,11 @@
     <div class="modal-dialog modal-lg modal-dialog-centered modal-fullscreen-md-down">
         <div class="modal-content">
             <div class="modal-header bg-white">
+                {% if user.role != 'bus_admin' %}
                 <h5 class="modal-title text-primary" id="addScheduleModalLabel">
                     <i class="bi bi-clock-history me-2"></i> Add New Schedule
                 </h5>
+                {% endif %}
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -311,14 +325,14 @@
                             <label class="form-label fw-bold text-primary">Original Price (NPR) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">NPR</span>
-                                <input type="number" class="form-control" name="original_price" placeholder="e.g., 500" min="0" step="1" required>
+                                <input type="number" class="form-control" name="sale_price" placeholder="e.g., 500" min="0" step="1" required>
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
                             <label class="form-label fw-bold text-primary">Price (NPR) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">NPR</span>
-                                <input type="number" class="form-control" name="price" placeholder="e.g., 500" min="0" step="1" required>
+                                <input type="number" class="form-control" name="price" placeholder="e.g., 450" min="0" step="1" required>
                             </div>
                         </div>
                     </div>
@@ -375,7 +389,15 @@
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
-                            <label class="form-label fw-bold text-primary">Arrival Date & Time <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold text-primary">Shift <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="shift" id="edit_shift" readonly>
+                                <span class="input-group-text"><i class="bi bi-hourglass-split"></i></span>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-labe
+System: l fw-bold text-primary">Arrival Date & Time <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
                                 <input type="datetime-local" class="form-control" name="arrival_time" id="edit_arrival_datetime" required>
@@ -385,7 +407,7 @@
                             <label class="form-label fw-bold text-primary">Original Price (NPR) <span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">NPR</span>
-                                <input type="number" class="form-control" name="original_price" id="edit_original_price" min="0" step="1" required>
+                                <input type="number" class="form-control" name="sale_price" id="edit_sale_price" min="0" step="1" required>
                             </div>
                         </div>
                         <div class="col-12 col-md-6">
@@ -645,7 +667,7 @@ $(document).ready(function() {
         $(`#${formId}`).on('submit', function(e) {
             const departureInput = $(this).find('[name="departure_time"]');
             const arrivalInput = $(this).find('[name="arrival_time"]');
-            const originalPriceInput = $(this).find('[name="original_price"]');
+            const originalPriceInput = $(this).find('[name="sale_price"]');
             const priceInput = $(this).find('[name="price"]');
 
             let isValid = true;
@@ -708,9 +730,10 @@ $(document).ready(function() {
         $('#edit_bus').val(data.busId);
         $('#edit_departure_datetime').val(formatDatetimeLocal(new Date(data.departure)));
         $('#edit_arrival_datetime').val(formatDatetimeLocal(new Date(data.arrival)));
-        $('#edit_original_price').val(data.originalPrice || '');
+        $('#edit_sale_price').val(data.originalPrice || '');
         $('#edit_price').val(data.price);
         $('#edit_status').val(data.status);
+        $('#edit_shift').val(data.shift || ''); // Updated to use shift
 
         $('#editScheduleForm').attr('action', `/schedules/edit/${data.scheduleId}/`);
     });

@@ -12,7 +12,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class SystemSerializer(serializers.ModelSerializer):
     class Meta:
         model=System
-        fields='__all__'
+        fields=['email','phone']
 
 
 

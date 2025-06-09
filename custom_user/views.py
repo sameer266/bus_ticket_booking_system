@@ -136,6 +136,7 @@ class UserBookingPaymentView(APIView):
                 seat = request.data.get('seat')  
                 schedule_id = request.data.get('schedule_id')
                 schedule_obj = Schedule.objects.get(id=schedule_id)
+                boarding_point=request.data.get('boarding_point')
                 count = len(seat)
                 schedule_obj.available_seats -= count
                
@@ -153,6 +154,7 @@ class UserBookingPaymentView(APIView):
                     user=user,
                     seat=seat,
                     bus=schedule_obj.bus,
+                    boarding_point=boarding_point,
                  
                     schedule=schedule_obj
                 )
@@ -190,6 +192,7 @@ class UserBookingPaymentView(APIView):
                     'destination': booking_obj.schedule.route.destination,
                     'booking_status': booking_obj.booking_status,
                     'seat': booking_obj.seat,
+                    'boarding_point':booking_obj.boarding_point,
                     'booked_at': booking_obj.booked_at,
                     'total_price': total_price,
                     'total_seat': count,

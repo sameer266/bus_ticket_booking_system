@@ -102,6 +102,14 @@
                                 </div>
                                 {% endif %}
                             </div>
+
+                            <div class="col-12">
+                                <label for="description" class="form-label fw-medium">Description</label>
+                                <textarea class="form-control rounded-3" id="description" name="description" rows="3" placeholder="Enter a brief description of the route">{{ route.description }}</textarea>
+                                <small class="text-muted">Optional: Provide additional details about the route</small>
+                                <div class="invalid-feedback">Please provide a valid description.</div>
+                            </div>
+                            
                         </div>
                         <div class="mt-4 text-end">
                             <a href="{% url 'route_list_add' %}" class="btn btn-outline-secondary rounded-3 me-2">Cancel</a>

@@ -3,27 +3,11 @@
 
 {% block extra_css %}
 <style>
-
-    /* Custom CSS for the improved bluish theme */
-:root {
-    --primary-color: #3a86ff;
-    --primary-light: #e9f0ff;
-    --primary-dark: #2563eb;
-    --primary-gradient: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    --gray-100: #f8f9fa;
-    --gray-200: #e9ecef;
-    --gray-300: #dee2e6;
-    --gray-500: #adb5bd;
-
-}
-
-
 /* Step indicators for form */
 .step-indicators {
     display: flex;
     justify-content: space-between;
     align-items: center;
-   
 }
 
 .step {
@@ -131,7 +115,6 @@
     animation-delay: 0.4s;
 }
 
-
 @media (min-width: 992px) {
     #page-content-wrapper {
         margin-left: 250px !important;
@@ -140,26 +123,24 @@
 </style>
 {% endblock %}
 
-
-
-
 {% block content %}
 <!-- Toast Container for Notifications -->
 <div class="toast-container"></div>
 
 <!-- Page Content -->
-<div id="page-content-wrapper" class="bg-light" >
-    <div class="container-fluid py-4" >
+<div id="page-content-wrapper" class="bg-light">
+    <div class="container-fluid py-4">
         <div class="row justify-content-center">
-            <div class="col-12" >
+            <div class="col-12">
                 <!-- Page Header -->
-                <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between mb-4 px-3 px-sm-0">
-                    <h1 class="h3 mb-2 mb-sm-0 text-primary fw-bold">
+                <div class="d-flex flex-column flex-sm-row mb-4 px-3 px-sm-0">
+                    <h1 class="h3 mb-2 mb-sm-0 text-primary fw-bold me-sm-4">
                         <i class="bi bi-building me-2"></i>Transportation Companies
                     </h1>
-                    <button type="button" class="btn btn-primary shadow-sm mt-2 mt-sm-0" id="addCompanyBtn">
+                    <button type="button" class="btn btn-primary shadow-sm mt-2 mt-sm-0 me-sm-4" id="addCompanyBtn">
                         <i class="bi bi-plus-circle me-2"></i>Add Company
                     </button>
+                    <a href="{% url 'add_agent' %}" class="btn btn-primary shadow-sm mt-2 mt-sm-0"><i class="bi bi-person-plus-fill me-2"></i>Add Agent</a>
                 </div>
 
                 <!-- Display Messages -->
@@ -206,7 +187,6 @@
                             </div>
                         </div>
                     </div>
-                  
                 </div>
 
                 <!-- Filter Options -->
@@ -214,7 +194,6 @@
                     <button class="btn btn-sm btn-outline-primary active filter-btn" data-filter="all">
                         <i class="bi bi-grid-3x3-gap me-1"></i>All
                     </button>
-                   
                 </div>
 
                 <!-- No Results Message -->
@@ -275,6 +254,17 @@
                                     <div class="small text-muted">{{ company.user.email|default:"" }}</div>
                                 </div>
                             </div>
+                            {% if company.agent %}
+                            <div class="mb-2 d-flex align-items-center">
+                                <div class="avatar-circle bg-success text-white me-2">
+                                    {{ company.agent.name|slice:":1"|default:"?" }}
+                                </div>
+                                <div>
+                                    <div class="fw-medium">{{ company.agent.name }}</div>
+                                    <div class="small text-muted">{{ company.agent.phone }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
                             {% if company.bank_name and company.account_number %}
                             <div class="mt-2 small bank-info">
                                 <i class="bi bi-bank text-secondary me-1"></i> {{ company.bank_name }}
@@ -309,7 +299,7 @@
                 <!-- Companies Table (Desktop/Tablet View) -->
                 <div class="card shadow mb-4 border-0 rounded-3 d-none d-md-block">
                     <div class="card-header py-3 bg-primary bg-gradient text-white d-flex justify-content-between align-items-center">
-                        <h6 class="m-0 font-weight-bold">
+                        <h6 class="m-0 font-weight-bold text-white">
                             <i class="bi bi-list-ul me-2"></i>All Transportation Companies
                         </h6>
                         <span class="badge bg-light text-primary" id="companiesCount">{{ companies|length }} Companies</span>
@@ -332,6 +322,9 @@
                                         </th>
                                         <th class="text-primary">
                                             <i class="bi bi-person me-1"></i>Phone-number
+                                        </th>
+                                        <th class="text-primary">
+                                            <i class="bi bi-person-check me-1"></i>Agent
                                         </th>
                                         <th class="text-primary">
                                             <i class="bi bi-bank me-1"></i>Bank Details
@@ -357,10 +350,22 @@
                                         <td>
                                             {% if company.user.phone %}
                                                 <div class="d-flex align-items-center">
-                                                    <div class="avatar-circle  me-2">
+                                                    <div class="avatar-circle me-2">
                                                         {{ company.user.phone }}
                                                     </div>
-                                                   
+                                                </div>
+                                            {% else %}
+                                                <span class="badge bg-light text-secondary">Not assigned</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if company.agent %}
+                                                <div class="d-flex align-items-center">
+                                                 
+                                                    <div>
+                                                        <div class="fw-medium">{{ company.agent.name }}</div>
+                                                        <div class="small text-muted">{{ company.agent.phone }}</div>
+                                                    </div>
                                                 </div>
                                             {% else %}
                                                 <span class="badge bg-light text-secondary">Not assigned</span>
@@ -397,7 +402,7 @@
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="7" class="text-center py-5">
+                                        <td colspan="8" class="text-center py-5">
                                             <div class="empty-state">
                                                 <i class="bi bi-building display-4 text-secondary"></i>
                                                 <p class="mt-3 text-secondary">No transportation companies found</p>
@@ -448,6 +453,11 @@
                             <div class="step-number">3</div>
                             <div class="step-title d-none d-sm-block">Bank Details</div>
                         </div>
+                        <div class="step-line"></div>
+                        <div class="step" data-step="4">
+                            <div class="step-number">4</div>
+                            <div class="step-title d-none d-sm-block">Agent</div>
+                        </div>
                     </div>
                     
                     <!-- Step 1: Company Details -->
@@ -458,22 +468,20 @@
                             <div class="invalid-feedback">Please enter a company name</div>
                         </div>
                         <div class="form-floating mb-3">
-                            <input type="text" class="form-control" id="vatNumber" name="vat_number" placeholder="VAT Number">
-                            <label for="vatNumber">VAT Number  <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="vatNumber" name="vat_number" placeholder="VAT Number" required>
+                            <label for="vatNumber">VAT Number <span class="text-danger">*</span></label>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-floating mb-3">
                                     <select class="form-select" id="country" name="country" required>
                                         <option value="" selected disabled>Select a country</option>
-
-                                        <option value="Nepal" selected >Nepal</option>
+                                        <option value="Nepal" selected>Nepal</option>
                                         <option value="Pakistan">Pakistan</option>
                                         <option value="India">India</option>
                                         <option value="Bangladesh">Bangladesh</option>
                                         <option value="Bhutan">Bhutan</option>
                                         <option value="Sri Lanka">Sri Lanka</option>
-                                        <!-- Add more countries as needed -->
                                     </select>
                                     <label for="country">Country <span class="text-danger">*</span></label>
                                     <div class="invalid-feedback">Please select a country</div>
@@ -527,7 +535,7 @@
                             <label for="gender">Gender <span class="text-danger">*</span></label>
                             <div class="invalid-feedback">Please select a gender</div>
                         </div>
-                        <div class="d-flex justify-content-between gap-2 mt-4">
+                        <div class="d-flex justify-content-end gap-2 mt-4">
                             <button type="button" class="btn btn-light prev-step" data-step="2">
                                 <i class="bi bi-arrow-left me-2"></i>Previous
                             </button>
@@ -537,70 +545,93 @@
                         </div>
                     </div>
                     
-                <!-- Step 3: Bank Details -->
-                <div class="form-step d-none" id="step3">
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="bankName" name="bank_name" placeholder="Bank Name">
-                        <label for="bankName">Bank Name</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="accountName" name="account_name" placeholder="Account Name">
-                        <label for="accountName">Account Name</label>
-                    </div>
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="accountNumber" name="account_number" placeholder="Account Number">
-                        <label for="accountNumber">Account Number</label>
-                    </div>
-                 
-                    <div class="mb-3">
-                        <label for="qrImage" class="form-label">QR Code Image (Optional)</label>
-                        <input type="file" class="form-control" id="qrImage" name="qr_image" accept="image/*">
-                        <div id="qrPreview" class="mt-2 d-none">
-                            <img src="" alt="QR Preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
-                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="removeQR">
-                                <i class="bi bi-x-circle"></i> Remove
+                    <!-- Step 3: Bank Details -->
+                    <div class="form-step d-none" id="step3">
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="bankName" name="bank_name" placeholder="Bank Name" required>
+                            <label for="bankName">Bank Name <span class="text-danger">*</span></label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="accountName" name="account_name" placeholder="Account Name" required>
+                            <label for="accountName">Account Name <span class="text-danger">*</span></label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" id="accountNumber" name="account_number" placeholder="Account Number" required>
+                            <label for="accountNumber">Account Number <span class="text-danger">*</span></label>
+                        </div>
+                        <div class="mb-3">
+                            <label for="qrImage" class="form-label">QR Code Image (Optional)</label>
+                            <input type="file" class="form-control" id="qrImage" name="qr_image" accept="image/*">
+                            <div id="qrPreview" class="mt-2 d-none">
+                                <img src="" alt="QR Preview" class="img-thumbnail" style="max-width: 150px; max-height: 150px;">
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="removeQR">
+                                    <i class="bi bi-x-circle"></i> Remove
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-text text-muted mb-3">
+                            <i class="bi bi-info-circle me-1"></i> Bank details are optional but recommended for smoother transactions.
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-light prev-step" data-step="3">
+                                <i class="bi bi-arrow-left me-2"></i>Previous
+                            </button>
+                            <button type="button" class="btn btn-primary next-step" data-step="3">
+                                Next <i class="bi bi-arrow-right ms-2"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="form-text text-muted mb-3">
-                        <i class="bi bi-info-circle me-1"></i> Bank details are optional but recommended for smoother transactions.
+
+                    <!-- Step 4: Agent -->
+                    <div class="form-step d-none" id="step4">
+                        <div class="mb-3">
+                            <label for="agentSelect" class="form-label fw-semibold">Assign Agent</label>
+                            <select class="form-select" id="agentSelect" name="agent_id">
+                                <option value="" selected>Select an agent to assign</option>
+                                {% for agent in agents %}
+                                    <option value="{{ agent.id }}">{{ agent.name }} ({{ agent.phone }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text text-muted mt-1">
+                                <i class="bi bi-info-circle me-1"></i> Agent selection is optional.
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between gap-2 mt-4">
+                            <button type="button" class="btn btn-light prev-step" data-step="4">
+                                <i class="bi bi-arrow-left me-2"></i>Previous
+                            </button>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-save me-2"></i>Save Company
+                            </button>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-between gap-2 mt-4">
-                        <button type="button" class="btn btn-light prev-step" data-step="3">
-                            <i class="bi bi-arrow-left me-2"></i>Previous
-                        </button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-save me-2"></i>Save Company
-                        </button>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 </div>
 
 <!-- QR Code Preview Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
-<div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-        <div class="modal-header bg-primary bg-gradient text-white">
-            <h5 class="modal-title" id="qrModalLabel">
-                <i class="bi bi-qr-code me-2"></i>QR Code
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body text-center p-4">
-            <img src="" alt="QR Code" id="qrModalImage" class="img-fluid" style="max-height: 300px;">
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-primary" id="downloadQR">
-                <i class="bi bi-download me-2"></i>Download
-            </button>
-            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary bg-gradient text-white">
+                <h5 class="modal-title" id="qrModalLabel">
+                    <i class="bi bi-qr-code me-2"></i>QR Code
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <img src="" alt="QR Code" id="qrModalImage" class="img-fluid" style="max-height: 300px;">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="downloadQR">
+                    <i class="bi bi-download me-2"></i>Download
+                </button>
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
-</div>
 </div>
 
 <!-- Delete Confirmation Modal -->
@@ -618,7 +649,6 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                <!-- Use a proper form for delete action -->
                 <form id="deleteCompanyForm" method="POST" action="">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">
@@ -629,342 +659,329 @@
         </div>
     </div>
 </div>
-
 {% endblock %}
 
-
-
-
 {% block extra_js %}
-
 <script>
 $(document).ready(function() {
-// Calculate unique locations and admins for stats cards
-function updateStats() {
-    let locations = new Set();
-    let admins = new Set();
-    
-    $('.company-row').each(function() {
-        const locationText = $(this).find('td:nth-child(3)').text().trim();
-        const adminText = $(this).find('td:nth-child(4) .fw-medium').text().trim();
+    // Calculate unique locations and admins for stats cards
+    function updateStats() {
+        let locations = new Set();
+        let admins = new Set();
         
-        if (locationText) {
-            locations.add(locationText);
-        }
+        $('.company-row').each(function() {
+            const locationText = $(this).find('td:nth-child(3)').text().trim();
+            const adminText = $(this).find('td:nth-child(4) .fw-medium').text().trim();
+            
+            if (locationText) {
+                locations.add(locationText);
+            }
+            
+            if (adminText && adminText !== 'Not assigned') {
+                admins.add(adminText);
+            }
+        });
         
-        if (adminText && adminText !== 'Not assigned') {
-            admins.add(adminText);
-        }
-    });
-    
-    $('#uniqueLocations').text(locations.size);
-    $('#uniqueAdmins').text(admins.size);
-    $('#companiesCount').text($('.company-row:visible').length + ' Companies');
-}
-
-// Initialize stats
-updateStats();
-
-// Enhanced search functionality
-$('#searchCompany').on('input', function() {
-    const searchTerm = $(this).val().toLowerCase();
-    let resultsFound = false;
-    
-    // For table rows (desktop)
-    $('.company-row').each(function() {
-        const rowText = $(this).text().toLowerCase();
-        const isVisible = rowText.includes(searchTerm);
-        $(this).toggle(isVisible);
-        
-        if (isVisible) resultsFound = true;
-    });
-    
-    // For cards (mobile)
-    $('.company-card').each(function() {
-        const cardText = $(this).text().toLowerCase();
-        const isVisible = cardText.includes(searchTerm);
-        $(this).toggle(isVisible);
-        
-        if (isVisible) resultsFound = true;
-    });
-    
-    // Show/hide no results message
-    $('#noResults').toggleClass('d-none', resultsFound);
-    updateStats();
-});
-
-// Clear search
-$('#clearSearchBtn').on('click', function() {
-    $('#searchCompany').val('').trigger('input');
-});
-
-// Filtering functionality
-$('.filter-btn').on('click', function() {
-    $('.filter-btn').removeClass('active');
-    $(this).addClass('active');
-    
-    const filter = $(this).data('filter');
-    
-    // For table rows (desktop)
-    $('.company-row').each(function() {
-        const hasAdmin = $(this).data('has-admin');
-        const hasBank = $(this).data('has-bank');
-        
-        let isVisible = true;
-        
-        if (filter === 'has-admin') {
-            isVisible = hasAdmin === true;
-        } else if (filter === 'no-admin') {
-            isVisible = hasAdmin === false;
-        } else if (filter === 'has-bank') {
-            isVisible = hasBank === true;
-        }
-        
-        $(this).toggle(isVisible);
-    });
-    
-    // For cards (mobile)
-    $('.company-card').each(function() {
-        const hasAdmin = $(this).data('has-admin');
-        const hasBank = $(this).data('has-bank');
-        
-        let isVisible = true;
-        
-        if (filter === 'has-admin') {
-            isVisible = hasAdmin === true;
-        } else if (filter === 'no-admin') {
-            isVisible = hasAdmin === false;
-        } else if (filter === 'has-bank') {
-            isVisible = hasBank === true;
-        }
-        
-        $(this).toggle(isVisible);
-    });
-    
-    updateStats();
-});
-
-// Sorting functionality
-$('.sortable').on('click', function() {
-    const sortBy = $(this).data('sort');
-    const tableBody = $('#companiesTable tbody');
-    const rows = tableBody.find('tr').toArray();
-    
-    // Toggle sort direction
-    const currentDirection = $(this).data('direction') === 'asc' ? 'desc' : 'asc';
-    $(this).data('direction', currentDirection);
-    
-    // Update sort icons
-    $('.sortable .sort-icon').removeClass('text-primary');
-    $(this).find('.sort-icon').addClass('text-primary');
-    
-    rows.sort(function(a, b) {
-        let aValue, bValue;
-        
-        if (sortBy === 'name') {
-            aValue = $(a).find('td:nth-child(2)').text().toLowerCase();
-            bValue = $(b).find('td:nth-child(2)').text().toLowerCase();
-        } else if (sortBy === 'location') {
-            aValue = $(a).find('td:nth-child(3)').text().toLowerCase();
-            bValue = $(b).find('td:nth-child(3)').text().toLowerCase();
-        }
-        
-        if (currentDirection === 'asc') {
-            return aValue.localeCompare(bValue);
-        } else {
-            return bValue.localeCompare(aValue);
-        }
-    });
-    
-    // Reappend sorted rows
-    $.each(rows, function(index, row) {
-        tableBody.append(row);
-    });
-});
-
-// QR Code preview in modal
-$('.qr-preview').on('click', function() {
-    const qrSrc = $(this).data('qr-src');
-    $('#qrModalImage').attr('src', qrSrc);
-});
-
-// Download QR code
-$('#downloadQR').on('click', function() {
-    const imgSrc = $('#qrModalImage').attr('src');
-    const link = document.createElement('a');
-    link.href = imgSrc;
-    link.download = 'qr-code.png';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-});
-
-// Multi-step form functionality
-const nextButtons = $('.next-step');
-const prevButtons = $('.prev-step');
-const steps = $('.step');
-const formSteps = $('.form-step');
-const form = $('#companyForm');
-let currentStep = 1;
-
-function updateStepIndicators(stepNumber) {
-    steps.each(function() {
-        const stepNum = parseInt($(this).data('step'));
-        $(this).removeClass('active completed');
-        
-        if (stepNum === stepNumber) {
-            $(this).addClass('active');
-        } else if (stepNum < stepNumber) {
-            $(this).addClass('completed');
-        }
-    });
-}
-
-function showStep(stepNumber) {
-    formSteps.addClass('d-none');
-    $('#step' + stepNumber).removeClass('d-none');
-    updateStepIndicators(stepNumber);
-    currentStep = stepNumber;
-}
-
-nextButtons.on('click', function() {
-    const step = parseInt($(this).data('step'));
-    const currentFormStep = $('#step' + step);
-    const inputs = currentFormStep.find('input[required], select[required]');
-    let isValid = true;
-
-    inputs.each(function() {
-        if (!$(this).val().trim()) {
-            $(this).addClass('is-invalid');
-            isValid = false;
-        } else {
-            $(this).removeClass('is-invalid');
-        }
-    });
-
-    if (isValid && step < 3) {
-        showStep(step + 1);
+        $('#uniqueLocations').text(locations.size);
+        $('#uniqueAdmins').text(admins.size);
+        $('#companiesCount').text($('.company-row:visible').length + ' Companies');
     }
-});
 
-prevButtons.on('click', function() {
-    const step = parseInt($(this).data('step'));
-    if (step > 1) {
-        showStep(step - 1);
+    // Initialize stats
+    updateStats();
+
+    // Enhanced search functionality
+    $('#searchCompany').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        let resultsFound = false;
+        
+        // For table rows (desktop)
+        $('.company-row').each(function() {
+            const rowText = $(this).text().toLowerCase();
+            const isVisible = rowText.includes(searchTerm);
+            $(this).toggle(isVisible);
+            
+            if (isVisible) resultsFound = true;
+        });
+        
+        // For cards (mobile)
+        $('.company-card').each(function() {
+            const cardText = $(this).text().toLowerCase();
+            const isVisible = cardText.includes(searchTerm);
+            $(this).toggle(isVisible);
+            
+            if (isVisible) resultsFound = true;
+        });
+        
+        // Show/hide no results message
+        $('#noResults').toggleClass('d-none', resultsFound);
+        updateStats();
+    });
+
+    // Clear search
+    $('#clearSearchBtn').on('click', function() {
+        $('#searchCompany').val('').trigger('input');
+    });
+
+    // Filtering functionality
+    $('.filter-btn').on('click', function() {
+        $('.filter-btn').removeClass('active');
+        $(this).addClass('active');
+        
+        const filter = $(this).data('filter');
+        
+        // For table rows (desktop)
+        $('.company-row').each(function() {
+            const hasAdmin = $(this).data('has-admin');
+            const hasBank = $(this).data('has-bank');
+            
+            let isVisible = true;
+            
+            if (filter === 'has-admin') {
+                isVisible = hasAdmin === true;
+            } else if (filter === 'no-admin') {
+                isVisible = hasAdmin === false;
+            } else if (filter === 'has-bank') {
+                isVisible = hasBank === true;
+            }
+            
+            $(this).toggle(isVisible);
+        });
+        
+        // For cards (mobile)
+        $('.company-card').each(function() {
+            const hasAdmin = $(this).data('has-admin');
+            const hasBank = $(this).data('has-bank');
+            
+            let isVisible = true;
+            
+            if (filter === 'has-admin') {
+                isVisible = hasAdmin === true;
+            } else if (filter === 'no-admin') {
+                isVisible = hasAdmin === false;
+            } else if (filter === 'has-bank') {
+                isVisible = hasBank === true;
+            }
+            
+            $(this).toggle(isVisible);
+        });
+        
+        updateStats();
+    });
+
+    // Sorting functionality
+    $('.sortable').on('click', function() {
+        const sortBy = $(this).data('sort');
+        const tableBody = $('#companiesTable tbody');
+        const rows = tableBody.find('tr').toArray();
+        
+        // Toggle sort direction
+        const currentDirection = $(this).data('direction') === 'asc' ? 'desc' : 'asc';
+        $(this).data('direction', currentDirection);
+        
+        // Update sort icons
+        $('.sortable .sort-icon').removeClass('text-primary');
+        $(this).find('.sort-icon').addClass('text-primary');
+        
+        rows.sort(function(a, b) {
+            let aValue, bValue;
+            
+            if (sortBy === 'name') {
+                aValue = $(a).find('td:nth-child(2)').text().toLowerCase();
+                bValue = $(b).find('td:nth-child(2)').text().toLowerCase();
+            } else if (sortBy === 'location') {
+                aValue = $(a).find('td:nth-child(3)').text().toLowerCase();
+                bValue = $(b).find('td:nth-child(3)').text().toLowerCase();
+            }
+            
+            if (currentDirection === 'asc') {
+                return aValue.localeCompare(bValue);
+            } else {
+                return bValue.localeCompare(aValue);
+            }
+        });
+        
+        // Reappend sorted rows
+        $.each(rows, function(index, row) {
+            tableBody.append(row);
+        });
+    });
+
+    // QR Code preview in modal
+    $('.qr-preview').on('click', function() {
+        const qrSrc = $(this).data('qr-src');
+        $('#qrModalImage').attr('src', qrSrc);
+    });
+
+    // Download QR code
+    $('#downloadQR').on('click', function() {
+        const imgSrc = $('#qrModalImage').attr('src');
+        const link = document.createElement('a');
+        link.href = imgSrc;
+        link.download = 'qr-code.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // Multi-step form functionality
+    const nextButtons = $('.next-step');
+    const prevButtons = $('.prev-step');
+    const steps = $('.step');
+    const formSteps = $('.form-step');
+    const form = $('#companyForm');
+    let currentStep = 1;
+
+    function updateStepIndicators(stepNumber) {
+        steps.each(function() {
+            const stepNum = parseInt($(this).data('step'));
+            $(this).removeClass('active completed');
+            
+            if (stepNum === stepNumber) {
+                $(this).addClass('active');
+            } else if (stepNum < stepNumber) {
+                $(this).addClass('completed');
+            }
+        });
     }
-});
 
-form.on('submit', function(e) {
-    const requiredInputs = form.find('input[required], select[required]');
-    let isValid = true;
+    function showStep(stepNumber) {
+        formSteps.addClass('d-none');
+        $('#step' + stepNumber).removeClass('d-none');
+        updateStepIndicators(stepNumber);
+        currentStep = stepNumber;
+    }
 
-    requiredInputs.each(function() {
-        if (!$(this).val().trim()) {
-            $(this).addClass('is-invalid');
-            isValid = false;
-        } else {
-            $(this).removeClass('is-invalid');
+    nextButtons.on('click', function() {
+        const step = parseInt($(this).data('step'));
+        const currentFormStep = $('#step' + step);
+        const inputs = currentFormStep.find('input[required], select[required]');
+        let isValid = true;
+
+        inputs.each(function() {
+            if (!$(this).val().trim()) {
+                $(this).addClass('is-invalid');
+                isValid = false;
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        if (isValid && step < 4) {
+            showStep(step + 1);
         }
     });
 
-    if (!isValid) {
+    prevButtons.on('click', function() {
+        const step = parseInt($(this).data('step'));
+        if (step > 1) {
+            showStep(step - 1);
+        }
+    });
+
+    form.on('submit', function(e) {
+        const requiredInputs = form.find('input[required], select[required]');
+        let isValid = true;
+
+        requiredInputs.each(function() {
+            if (!$(this).val().trim()) {
+                $(this).addClass('is-invalid');
+                isValid = false;
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            showToast('Please fill in all required fields', 'error');
+            const step1Invalid = $('#step1').find('.is-invalid').length > 0;
+            const step2Invalid = $('#step2').find('.is-invalid').length > 0;
+            
+            if (step1Invalid) {
+                showStep(1);
+            } else if (step2Invalid) {
+                showStep(2);
+            }
+        }
+    });
+
+    // Add company button functionality
+    $('#addCompanyBtn, #addFirstCompanyBtn, #addFirstCompanyTableBtn').on('click', function() {
+        $('#companyModal').modal('show');
+        $('#modalTitle').text('Add New Transportation Company');
+        $('#companyId').val('');
+        form[0].reset();
+        showStep(1);
+    });
+
+    // Delete company functionality
+    $('.delete-company').on('click', function(e) {
         e.preventDefault();
+        const companyId = $(this).data('id');
+        const companyName = $(this).data('company-name');
         
-        // Show toast notification instead of alert
-        showToast('Please fill in all required fields', 'error');
-        
-        // Find the first step with invalid fields
-        const step1Invalid = $('#step1').find('.is-invalid').length > 0;
-        const step2Invalid = $('#step2').find('.is-invalid').length > 0;
-        
-        if (step1Invalid) {
-            showStep(1);
-        } else if (step2Invalid) {
-            showStep(2);
-        }
-    }
-});
+        $('#companyToDelete').text(companyName);
+        $('#deleteCompanyForm').attr('action', '/admin-ticket-counter/delete/' + companyId + '/');
+        $('#deleteModal').modal('show');
+    });
 
-// Add company button functionality
-$('#addCompanyBtn, #addFirstCompanyBtn, #addFirstCompanyTableBtn').on('click', function() {
-    $('#companyModal').modal('show');
-    $('#modalTitle').text('Add New Transportation Company');
-    $('#companyId').val('');
-    form[0].reset();
+    // QR image preview
+    $('#qrImage').on('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#qrPreview').removeClass('d-none');
+                $('#qrPreview img').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Remove QR preview
+    $('#removeQR').on('click', function() {
+        $('#qrImage').val('');
+        $('#qrPreview').addClass('d-none');
+    });
+
+    // Tooltips initialization
+    $('[data-bs-toggle="tooltip"]').tooltip();
+
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle';
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        
+        const toast = `
+            <div class="toast company-toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header ${bgClass} text-white">
+                    <i class="bi ${iconClass} me-2"></i>
+                    <strong class="me-auto">Go Sewa</strong>
+                    <small>Just now</small>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body py-3">
+                    ${message}
+                </div>
+            </div>
+        `;
+        
+        $('.toast-container').append(toast);
+        const toastElement = $('.toast').last();
+        const bsToast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: 3000
+        });
+        bsToast.show();
+        
+        toastElement.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+
+    // Initialize the first step
     showStep(1);
 });
-
-// Delete company functionality
-// Updated delete company functionality
-$('.delete-company').on('click', function(e) {
-    e.preventDefault();
-    const companyId = $(this).data('id');
-    const companyName = $(this).data('company-name');
-    
-    $('#companyToDelete').text(companyName);
-    // Set the action URL for the form
-    $('#deleteCompanyForm').attr('action', '/admin-ticket-counter/delete/' + companyId + '/');
-    $('#deleteModal').modal('show');
-});
-
-// QR image preview
-$('#qrImage').on('change', function() {
-    const file = this.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            $('#qrPreview').removeClass('d-none');
-            $('#qrPreview img').attr('src', e.target.result);
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-// Remove QR preview
-$('#removeQR').on('click', function() {
-    $('#qrImage').val('');
-    $('#qrPreview').addClass('d-none');
-});
-
-// Tooltips initialization
-$('[data-bs-toggle="tooltip"]').tooltip();
-
-// Toast notification function
-function showToast(message, type = 'success') {
-    const iconClass = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-circle';
-    const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-    
-    const toast = `
-        <div class="toast company-toast border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header ${bgClass} text-white">
-                <i class="bi ${iconClass} me-2"></i>
-                <strong class="me-auto">Go Sewa</strong>
-                <small>Just now</small>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body py-3">
-                ${message}
-            </div>
-        </div>
-    `;
-    
-    $('.toast-container').append(toast);
-    const toastElement = $('.toast').last();
-    const bsToast = new bootstrap.Toast(toastElement, {
-        autohide: true,
-        delay: 3000
-    });
-    bsToast.show();
-    
-    // Remove toast after it's hidden
-    toastElement.on('hidden.bs.toast', function() {
-        $(this).remove();
-    });
-}
-
-// Initialize the first step
-showStep(1);
-});
 </script>
-
 {% endblock %}

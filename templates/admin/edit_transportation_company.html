@@ -17,7 +17,6 @@
     @media (min-width: 992px) {
         .main-content {
             margin-left: 150px !important;
-         
             padding: 2.5rem;
             width: calc(100% - 200px);
         }
@@ -57,6 +56,30 @@
         height: auto;
     }
     
+    /* Agent preview styling */
+    .agent-preview {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        background-color: #f8f9fa;
+    }
+    
+    .agent-avatar {
+        width: 30px;
+        height: 30px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
     @media (max-width: 576px) {
         .page-header-title {
             font-size: 1.5rem;
@@ -75,6 +98,8 @@
 
 {% block content %}
 <div class="container-fluid py-3 py-md-4 main-content">
+
+   
     <!-- Page Header -->
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4">
         <div class="mb-2 mb-md-0">
@@ -87,10 +112,21 @@
         </a>
     </div>
 
+
+      <!-- Messages --> 
+            {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+            {% endif %}
+            
     <!-- Edit Form Card -->
     <div class="card border-0 shadow hover-card rounded-3 overflow-hidden">
         <div class="card-header bg-primary text-white py-3">
-            <h5 class="mb-0">
+            <h5 class="mb-0 text-white">
                 <i class="bi bi-building me-2"></i>Update Company Details
             </h5>
         </div>
@@ -214,7 +250,7 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-person text-primary"></i></span>
                                 <input type="text" id="fullName" name="full_name" class="form-control" 
-                                       value="{{ user.full_name }}" required>
+                                       value="{{ transportation_company.user.full_name }}" required>
                                 <div class="invalid-feedback">
                                     Please provide admin's full name.
                                 </div>
@@ -225,7 +261,7 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-envelope text-primary"></i></span>
                                 <input type="email" id="email" name="email" class="form-control" 
-                                       value="{{ user.email }}">
+                                       value="{{ transportation_company.user.email }}">
                                 <div class="invalid-feedback">
                                     Please provide a valid email.
                                 </div>
@@ -236,7 +272,7 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-telephone text-primary"></i></span>
                                 <input type="text" id="phone" name="phone" class="form-control" 
-                                       value="{{ user.phone }}" required>
+                                       value="{{ transportation_company.user.phone }}" required>
                                 <div class="invalid-feedback">
                                     Please provide a phone number.
                                 </div>
@@ -247,10 +283,42 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-gender-ambiguous text-primary"></i></span>
                                 <select id="gender" name="gender" class="form-select" required>
-                                    <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Male</option>
-                                    <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Female</option>
-                                    <option value="other" {% if user.gender == 'other' %}selected{% endif %}>Other</option>
+                                    <option value="male" {% if transportation_company.user.gender == 'male' %}selected{% endif %}>Male</option>
+                                    <option value="female" {% if transportation_company.user.gender == 'female' %}selected{% endif %}>Female</option>
+                                    <option value="other" {% if transportation_company.user.gender == 'other' %}selected{% endif %}>Other</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Information Section -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3 text-primary border-bottom pb-2 section-heading">
+                        <i class="bi bi-person-check me-1"></i>Agent Information
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="agent" class="form-label fw-semibold">Assign Agent</label>
+                            <select id="agent" name="agent_id" class="form-select" required>
+                                <option value="">Select an agent</option>
+                                {% for agent in agents %}
+                                    <option value="{{ agent.id }}" {% if transportation_company.agent and transportation_company.agent.id == agent.id %}selected{% endif %}>
+                                        {{ agent.name }} ({{ agent.phone }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select an agent.
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div id="agentPreview" class="agent-preview d-none">
+                                <div class="agent-avatar" id="agentAvatar"></div>
+                                <div>
+                                    <div class="fw-medium" id="agentName"></div>
+                                    <div class="small text-muted" id="agentPhone"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -300,7 +368,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    // Create preview container if it doesn't exist
                     let previewContainer = document.querySelector('.file-preview');
                     if (!previewContainer) {
                         previewContainer = document.createElement('div');
@@ -308,7 +375,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         qrInput.parentNode.appendChild(previewContainer);
                     }
                     
-                    // Update preview
                     previewContainer.innerHTML = `
                         <small class="text-muted d-block mb-1">New Image:</small>
                         <img src="${event.target.result}" alt="QR Code Preview" class="img-preview">
@@ -318,6 +384,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Dynamic agent preview
+    const agentSelect = document.getElementById('agent');
+    const agentPreview = document.getElementById('agentPreview');
+    const agentAvatar = document.getElementById('agentAvatar');
+    const agentName = document.getElementById('agentName');
+    const agentPhone = document.getElementById('agentPhone');
+
+    function updateAgentPreview() {
+        const selectedOption = agentSelect.options[agentSelect.selectedIndex];
+        if (selectedOption.value) {
+            agentPreview.classList.remove('d-none');
+            agentAvatar.textContent = selectedOption.text.split(' ')[0][0]; // First letter of name
+            agentName.textContent = selectedOption.text.split(' (')[0]; // Name
+            agentPhone.textContent = selectedOption.text.match(/\(([^)]+)\)/)[1]; // Phone in parentheses
+        } else {
+            agentPreview.classList.add('d-none');
+        }
+    }
+
+    // Initialize preview with current agent
+    updateAgentPreview();
+
+    // Update preview on change
+    agentSelect.addEventListener('change', updateAgentPreview);
 });
 </script>
 {% endblock %}

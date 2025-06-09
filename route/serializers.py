@@ -1,38 +1,71 @@
 # ==========================
 # Import Necessary Modules and Models
 # ==========================
-from .models import Route, Schedule, Trip, CustomerReview,Notification
-from custom_user.models import CustomUser,TransportationCompany
-from bus.models import Bus, Driver, Staff, BusReservation, BusLayout, VechicleType,SeatLayoutBooking
 from rest_framework import serializers
+
+from .models import Route, Schedule, Trip, CustomerReview,Notification
+from custom_user.models import CustomUser,TransportationCompany,System
+from bus.models import Bus, BusFeatures,Driver, Staff, BusReservation, BusLayout, VechicleType,SeatLayoutBooking
+
 from booking.models import Booking, Payment, Commission,  BusReservationBooking
 
 # ==========================
 # Route and Schedule Serializers
 # ==========================
 
+
+class BusFeaturesSerializer(serializers.ModelSerializer):
+    icon_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BusFeatures
+        fields = ['id', 'name', 'icon_url']
+
+    def get_icon_url(self, obj):
+        request = self.context.get('request')
+        relative_url = f'bus_features_icons/{obj.name}.png'
+        if request:
+            return request.build_absolute_uri(f'/media/{relative_url}')
+        return f'/media/{relative_url}'
+
+        
 # Serializer for Route model
 class RouteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Route
-        fields = ['id', 'source', 'image', 'destination', 'distance', 'estimated_time']
+        fields = ['id', 'source', 'image', 'destination', 'distance','description', 'estimated_time']
 
 # Serializer for Bus model with schedule details
 class BusScheduleSerializer(serializers.ModelSerializer):
-
+    features = serializers.SerializerMethodField()
 
     class Meta:
         model = Bus
         fields = ['id', 'bus_number', 'bus_type', 'total_seats', 'features', 'bus_image']
+        
+    def get_features(self, obj):
+        request = self.context.get('request')
+        features_data = []
+        for feature in obj.features.all():
+            icon_path = f'bus_features_icons/{feature.name}.png'
+            icon_url = request.build_absolute_uri(f'/media/{icon_path}') if request else f'/media/{icon_path}'
+            features_data.append({
+                'name': feature.name,
+                'icon': icon_url
+            })
+        return features_data
+
+
 
 # Serializer for Schedule model
 class ScheduleSerializer(serializers.ModelSerializer):
     bus = BusScheduleSerializer()
     route = RouteSerializer()
+    
 
     class Meta:
         model = Schedule
-        fields=['id','bus','route','departure_time','arrival_time','date','price','available_seats','status']
+        fields=['id','bus','route','departure_time','arrival_time', 'date','shift','sale_price','price','available_seats','status']
         
         
       
@@ -161,9 +194,15 @@ class VechicleUserReservationBookingSerializer(serializers.ModelSerializer):
 # Booking and Seat Serializers
 # ==========================
 
+        
 # Serializer for Booking model
 class BookingSerializer(serializers.ModelSerializer):
     schedule = ScheduleSerializer()
+
+    phone_number = serializers.SerializerMethodField()
+
+    def get_phone_number(self, obj):
+        return obj.bus.driver.phone_number if obj.bus and obj.bus.driver else None
 
 
     class Meta:
@@ -185,16 +224,16 @@ class UserBookingSerilaizer(serializers.ModelSerializer):
     
     class Meta:
         model=Booking
-        fields=['seat','bus_number','source','schedule','destination','bus_image','booking_status','booked_at']
+        fields=['seat','bus_number','source','schedule','destination','boarding_point','bus_image','booking_status','booked_at']
      
     def get_bus_number(self,obj):
         return getattr(obj.bus ,"bus_number",None) if obj.bus else None
     
     def get_source(self,obj):
-        return getattr(obj.bus.route,'source')
+        return getattr(obj.schedule.route,'source',None) if obj.schedule  else None
     
     def get_destination(self,obj):
-        return getattr(obj.bus.route,'destination')
+        return getattr(obj.schedule.route,'destination',None) if obj.schedule else None
     
     def get_bus_image(self,obj):
         if obj.bus.bus_image:
@@ -235,8 +274,9 @@ class BusSerializer(serializers.ModelSerializer):
 # Serializer for Payment model
 class PaymentSerializer(serializers.ModelSerializer):
     user = CustomUserReviewSerializer()
-    bus=BusSerializer()
-
+    booking=UserBookingSerilaizer()
+    
+   
     class Meta:
         model = Payment
         fields = '__all__'
@@ -264,3 +304,4 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model=Notification
         fields=['id','title','message','is_read','created_at']
+

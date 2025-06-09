@@ -3,12 +3,11 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.apps import apps
-from django.core.exceptions import ValidationError
+
 from decimal import Decimal
 from bus.models import Bus
 from route.models import Schedule
 from .tasks import release_unpaid_seat
-
 
 
 # ===== Booking Model =====
@@ -29,16 +28,33 @@ class Booking(models.Model):
     )
     
     seat = models.JSONField(default=list)
-    bus = models.ForeignKey(Bus, on_delete=models.SET_NULL, related_name='booking',null=True,blank=True)
+    bus = models.ForeignKey(Bus, on_delete=models.CASCADE, related_name='booking',null=True,blank=True)
     schedule = models.ForeignKey(
         'route.Schedule',
         on_delete=models.SET_NULL,
         null=True,
         blank=True
     )
+    boarding_point=models.CharField(max_length=200,null=True,blank=True)
+    ticket_id=models.CharField(max_length=100,null=True,blank=True)
     booking_status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='pending')
     booked_at = models.DateTimeField(auto_now_add=True)
-   
+    
+    def generate_ticket_id(self):
+        """Generate a unique ticket ID"""
+        if self.schedule and self.bus:
+            source_letter = self.schedule.route.source[0].upper()
+            dest_letter = self.schedule.route.destination[0].upper()
+            bus_last_digits = str(self.bus.bus_number)[-2:] if self.bus.bus_number else "00"
+            booking_id = str(self.id)
+            return f"TCK-{source_letter}{dest_letter}-{bus_last_digits}-{booking_id}"
+        return None
+
+
+    def save(self,*args,**kwargs):
+        if not self.ticket_id:
+            self.ticket_id = self.generate_ticket_id()
+        super().save(*args,**kwargs)
 
     def __str__(self):
         return f"Booking #{self.id} - Seat: {self.seat} - Status: {self.booking_status}"
@@ -87,7 +103,7 @@ def change_seat_status_when_booked(sender, instance, **kwargs):
             print("------------")
             release_unpaid_seat.apply_async(
                         args=[instance.id, instance.schedule.id],
-                        countdown=600
+                        countdown=300
                     )
         except Exception as e:
             print("Error in redis " ,e)
@@ -152,7 +168,6 @@ class Payment(models.Model):
     booking=models.ForeignKey(Booking,on_delete=models.CASCADE,null=True,blank=True)
     payment_method=models.CharField(max_length=20,choices=METHODS_CHOICES,default="khalti")
     payment_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    transaction_id = models.CharField(max_length=100, null=True, blank=True)
     commission_deducted = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -260,15 +275,16 @@ class Commission(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text="Rate for commission"
     )
-    
+    agent=models.ForeignKey('custom_user.Agent',on_delete=models.SET_NULL,null=True)
     bus = models.ForeignKey(
         'bus.Bus',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="commission",
         help_text="Bus associated with commission"
     )
+    transportation_company=models.ForeignKey('custom_user.TransportationCompany',on_delete=models.SET_NULL,null=True,related_name="transportation_company_commission")
     schedule=models.ForeignKey(Schedule,on_delete=models.SET_NULL,null=True,blank=True)
     bus_reserve = models.ForeignKey(
         'bus.BusReservation',

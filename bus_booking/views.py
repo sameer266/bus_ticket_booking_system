@@ -7,12 +7,12 @@ from django.contrib.auth import authenticate
 from datetime import datetime
 from django.contrib import messages
 
-from custom_user.models import CustomUser,UserOtp
+from custom_user.models import CustomUser,UserOtp,System
 from route.models import Route,SubRoutes,SearchSubRoute,Schedule,CustomerReview,Notification
 from bus.models import Bus,BusReservation,VechicleType,SeatLayoutBooking
 from booking.models import Booking,BusReservationBooking
 from django.shortcuts import get_object_or_404
-from custom_user.serializers import CustomUserSerializer
+from custom_user.serializers import CustomUserSerializer,SystemSerializer
 from route.serializers import RouteSerializer,ScheduleSerializer,CustomReviewSerializer,BusScheduleSerializer,BusReservationSerializer,VechicleTypeSerializer,VechicleUserReservationBookingSerializer,UserBookingSerilaizer,BookingSerializer,SeatLayoutBookingSerializer,NotificationSerializer
 
 
@@ -261,33 +261,7 @@ class LogoutView(APIView):
             logger.error(f"Logout error: {str(e)}")
             return Response({"success": False, "error": str(e)}, status=400)
 
-
-# # ====== Register ======
-# class Register(APIView):
-    
-#     def post(self, request):
-#         try:
-#             full_name = request.data.get('full_name')
-#             phone = request.data.get('phone')
-#             email = request.data.get('email')
-#             password = request.data.get('password')
-#             confirm_password = request.data.get('confirm_password')
-#             if password == confirm_password:
-#                 user = CustomUser.objects.create_user(full_name=full_name,
-#                                                       phone=phone,
-#                                                       password=password,
-#                                           email=email,
-#                                                       role='customer')
-#                 serializer = CustomUserSerializer(user)
-#                 if user:
-#                     return Response({"success": True, "message": "Mormal  User created Successfully", "data": serializer.data})
-#                 else:
-#                     return Response({"success": False, "error": "Error in creating User"}, status=401)
-#         except Exception as e:
-#             return Response({"success": False, "error": str(e)}, status=401)
-        
 # ======Forget Password ======
-
 class ForgetPassword(APIView):
     
     def post(self, request):
@@ -423,6 +397,7 @@ class VerifyOtp(APIView):
             return Response({"success": False, "error": str(e)}, status=400)
 
 
+
 # ==== Register User (Set Password) ====
 class RegisterUserOtp(APIView):
     authentication_classes = [JWTAuthentication]
@@ -444,26 +419,23 @@ class RegisterUserOtp(APIView):
 
 
 # ===== All Routes  that is availabel in schedule =========
-class AllRoutesConatinsSchedule(APIView):
-    def get(self, request):
-        # Get all routes
-        routes = Route.objects.all()
-        route_data = []
 
-        for route in routes:
-            # Check if the route is available in the Schedule model
-            is_available = Schedule.objects.filter(route=route).exists()
-
-            # Add the route data with the availability status
-            route_info = RouteSerializer(route).data
-            route_info['isAvailable'] = is_available  # Add 'isAvailable' field
-
-            route_data.append(route_info)
-
-        return Response({"success": True, "data": route_data}, status=200)
+class AllRoutes(APIView):
+    def get(self, _):
+        try:
+      
+            unique_routes = set()
+            unique_routes.update(
+                route.source for route in Route.objects.all().order_by('source') if route.source)
+            unique_routes.update(
+                subroute.name for subroute in SubRoutes.objects.all() if subroute.name)
     
-    
+            return Response({"success": True, "data": sorted(unique_routes)}, status=200)
 
+        except Exception as e:
+            return Response({"success": False, "error": str(e)}, status=400)
+        
+        
 # ====== All Schedule ==========      
 class AllSchedule(APIView):
     def get(self,request):
@@ -483,13 +455,13 @@ class FilterSchedule(APIView):
             source = request.query_params.get('source')
             destination = request.query_params.get('destination')
             departure_time = request.query_params.get('departure_time')  
+            departure_date = None
 
-            
-            # Parse date
-            try:
-                departure_date = datetime.strptime(departure_time, "%Y-%m-%d").date()
-            except ValueError:
-                return Response({"success": False, "error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
+            if departure_time:
+                try:
+                    departure_date = datetime.strptime(departure_time, "%Y-%m-%d").date()
+                except ValueError:
+                    return Response({"success": False, "error": "Invalid date format, expected YYYY-MM-DD"}, status=400)
 
             # Find routes where main source/destination match
             route_objs = Route.objects.filter(
@@ -498,16 +470,17 @@ class FilterSchedule(APIView):
             )
             if not route_objs.exists():
                 subroute_routes = SearchSubRoute.find_routes_with_subroute_order(source, destination)
-                if subroute_routes:
-                    route_objs = Route.objects.filter(id__in=[r.id for r in subroute_routes])
-
             print("Filtered Routes:", route_objs)
-
-            schedule = Schedule.objects.filter(
-                route__in=route_objs,
-                departure_time__date=departure_date
-            )
-
+            if not departure_date:
+                schedule = Schedule.objects.filter(
+                    route__in=route_objs
+                )
+            else:
+                schedule = Schedule.objects.filter(
+                    route__in=route_objs,
+                    departure_time__date=departure_date
+                )
+                
             print("Schedule:", schedule)
 
             if not schedule.exists():
@@ -775,8 +748,10 @@ class SeatBookingAPiView(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
     
+    
     def get(self,request):
         try:
+            print(request.data)
             booking=Booking.objects.filter(user=request.user).order_by('-booked_at')
             serializer=BookingSerializer(booking,many=True)
             return Response({'success':True,'data':serializer.data},status=200)
@@ -805,7 +780,8 @@ class BusLayoutApiView(APIView):
         except Exception as e:
             return Response({"success": False, "error": str(e)}, status=400)
         
-    # =========== Notification ==========
+        
+# =========== Notification ==========
 class UserNotificationApiView(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
@@ -843,3 +819,18 @@ class UserNotificationRead(APIView):
         
         except Exception as e:
             return Response({'success': False, 'error': 'Something went wrong'}, status=400)
+
+
+# =========== System ===========
+class SystemApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request):
+        try:
+            system_obj=System.objects.all().first()
+            serializer=SystemSerializer(system_obj)
+            print(serializer)
+            return Response({'success':True,'data':serializer.data})
+        except Exception as e:
+            return Response({'success':False,'error':str(e)},status=400)

@@ -85,7 +85,9 @@
                                     <th>Date</th>
                                     <th>Amount</th>
                                     <th>Payment Status</th>
+                                    {% if user.role == 'bus_admin' %}
                                     <th>Action</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -120,6 +122,7 @@
                                                 <span class="badge bg-secondary">No Payment</span>
                                             {% endfor %}
                                         </td>
+                                        {% if user.role == 'bus_admin' %}   
                                         <td class="text-end pe-3">
                                             <div class="btn-group btn-group-sm" role="group">
                                                 <button class="btn btn-outline-warning edit-booking-status-btn" 
@@ -136,6 +139,8 @@
                                                 </button>
                                             </div>
                                         </td>
+                                        {% endif %}
+
                                     </tr>
                                 {% empty %}
                                     <tr class="no-results-row">
@@ -253,7 +258,7 @@
 {% block extra_css %}
 <style>
     .main-content {
-        margin-left: 260px;
+       
         width: calc(100% - 260px);
         transition: margin-left 0.3s;
     }

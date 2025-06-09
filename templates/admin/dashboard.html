@@ -17,10 +17,7 @@
                     <div class="admin-card-content">
                         <div class="admin-card-label">Total Revenue</div>
                         <div class="admin-card-value">Rs. {{ data.total_revenue }}</div>
-                        <div class="admin-card-trend">
-                            <i class="bi bi-arrow-up-right text-success"></i>
-                            <span class="trend-text">+12.5%</span>
-                        </div>
+                      
                     </div>
                     <div class="admin-card-icon">
                         <i class="bi bi-currency-dollar"></i>
@@ -34,10 +31,7 @@
                     <div class="admin-card-content">
                         <div class="admin-card-label">Active Buses</div>
                         <div class="admin-card-value">{{ data.total_active_bus }}</div>
-                        <div class="admin-card-trend">
-                            <i class="bi bi-arrow-up-right text-success"></i>
-                            <span class="trend-text">+8.2%</span>
-                        </div>
+                       
                     </div>
                     <div class="admin-card-icon">
                         <i class="bi bi-bus-front"></i>
@@ -51,10 +45,7 @@
                     <div class="admin-card-content">
                         <div class="admin-card-label">Registered Users</div>
                         <div class="admin-card-value">{{ data.total_user }}</div>
-                        <div class="admin-card-trend">
-                            <i class="bi bi-arrow-up-right text-success"></i>
-                            <span class="trend-text">+15.3%</span>
-                        </div>
+                     
                     </div>
                     <div class="admin-card-icon">
                         <i class="bi bi-people"></i>
@@ -68,10 +59,7 @@
                     <div class="admin-card-content">
                         <div class="admin-card-label">Pending Bookings</div>
                         <div class="admin-card-value">{{ data.total_booking_pending }}</div>
-                        <div class="admin-card-trend">
-                            <i class="bi bi-arrow-down-right text-warning"></i>
-                            <span class="trend-text">-3.1%</span>
-                        </div>
+                      
                     </div>
                     <div class="admin-card-icon">
                         <i class="bi bi-clock-history"></i>
@@ -85,10 +73,7 @@
                     <div class="admin-card-content">
                         <div class="admin-card-label">Completed Trips</div>
                         <div class="admin-card-value">{{ data.total_trip_completed }}</div>
-                        <div class="admin-card-trend">
-                            <i class="bi bi-arrow-up-right text-success"></i>
-                            <span class="trend-text">+22.7%</span>
-                        </div>
+                      
                     </div>
                     <div class="admin-card-icon">
                         <i class="bi bi-check-circle"></i>
@@ -102,10 +87,7 @@
                     <div class="admin-card-content">
                         <div class="admin-card-label">Tickets Booked</div>
                         <div class="admin-card-value">{{ data.ticket_booked }}</div>
-                        <div class="admin-card-trend">
-                            <i class="bi bi-arrow-up-right text-success"></i>
-                            <span class="trend-text">+18.9%</span>
-                        </div>
+                       
                     </div>
                     <div class="admin-card-icon">
                         <i class="bi bi-ticket-perforated"></i>
@@ -535,17 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-bottom: 0.5rem;
 }
 
-.admin-card-trend {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
 
-.trend-text {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #5a5c69;
-}
 
 .admin-card-icon {
     display: flex;

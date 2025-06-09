@@ -1,0 +1,227 @@
+{% extends 'components/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid py-5 bg-light">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4 modern-card">
+                <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center rounded-top-4">
+                    <h3 class="card-title mb-0 fs-5 fw-bold">
+                        <i class="bi bi-person-plus-fill me-2"></i>Add New Agent
+                    </h3>
+                    <a onclick="history.back()" class="btn btn-outline-light btn-sm d-flex align-items-center">
+                        <i class="bi bi-arrow-left me-1"></i>Back to List
+                    </a>
+                </div>
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4 rounded-3" role="alert">
+                                <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-circle-fill{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    <form method="post" action="" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-4 position-relative">
+                            <label for="name" class="form-label fw-semibold text-dark">Name <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-person text-primary"></i>
+                                </span>
+                                <input type="text" class="form-control form-control-lg border-start-0 {% if form.name.errors %}is-invalid{% endif %}" id="name" name="name" required placeholder="Enter agent's name">
+                            </div>
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.name.errors|first }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-4 position-relative">
+                            <label for="phone" class="form-label fw-semibold text-dark">Phone <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-telephone text-primary"></i>
+                                </span>
+                                <input type="text" class="form-control form-control-lg border-start-0" id="phone" name="phone" maxlength="10" pattern="\d{10}" required placeholder="10 digits only">
+                                <div id="phoneFeedback" class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="mb-4 position-relative">
+                            <label for="rate" class="form-label fw-semibold text-dark">Rate <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white border-end-0">
+                                    <i class="bi bi-currency-dollar text-primary"></i>
+                                </span>
+                                <input type="number" step="0.01" class="form-control form-control-lg border-start-0 {% if form.rate.errors %}is-invalid{% endif %}" id="rate" name="rate" value="10.00" required placeholder="Enter rate">
+                            </div>
+                            {% if form.rate.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.rate.errors|first }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1 rounded-pill">
+                                <i class="bi bi-plus-circle me-2"></i>Add Agent
+                            </button>
+                            <a href="{% url 'agent_list' %}" class="btn btn-outline-secondary btn-lg flex-grow-1 rounded-pill">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+
+<style>
+    /* Background and container styling */
+    .bg-light {
+        background-color: #f5f7fa !important;
+    }
+
+    /* Modern card styling */
+    .modern-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        overflow: hidden;
+    }
+    .modern-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
+    }
+    .card-header {
+        padding: 1.25rem;
+        border-bottom: none;
+    }
+    .rounded-top-4 {
+        border-top-left-radius: 1rem !important;
+        border-top-right-radius: 1rem !important;
+    }
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+    }
+
+    /* Form styling */
+    .form-control-lg {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border-color: #d1d9e6;
+    }
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.1);
+    }
+    .input-group-text {
+        border-color: #d1d9e6;
+        padding: 0.75rem;
+    }
+    .form-label {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+    .invalid-feedback {
+        font-size: 0.85rem;
+        position: absolute;
+        top: 100%;
+        left: 0;
+    }
+
+    /* Button styling */
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 500;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-primary:hover, .btn-outline-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .rounded-pill {
+        border-radius: 50rem !important;
+    }
+
+    /* Alert styling */
+    .alert {
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding: 1rem;
+        }
+        .card-body {
+            padding: 1.5rem;
+        }
+        .form-control-lg {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.95rem;
+        }
+        .btn-lg {
+            padding: 0.5rem 1rem;
+            font-size: 0.95rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+    // Add validation for phone number
+    const phoneInput = document.getElementById('phone');
+    const phoneFeedback = document.getElementById('phoneFeedback');
+
+    phoneInput.addEventListener('input', function (e) {
+        // Restrict to numbers only
+        this.value = this.value.replace(/[^0-9]/g, '');
+        // Limit to 10 digits
+        if (this.value.length > 10) {
+            this.value = this.value.slice(0, 10);
+        }
+        // Real-time validation feedback
+        if (this.value.length < 10 && this.value.length > 0) {
+            this.classList.add('is-invalid');
+            phoneFeedback.textContent = 'Phone number must be exactly 10 digits.';
+        } else if (this.value.length === 10) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+            phoneFeedback.textContent = '';
+        } else {
+            this.classList.remove('is-invalid');
+            this.classList.remove('is-valid');
+        }
+    });
+
+    // Form submission validation
+    document.querySelector('form').addEventListener('submit', function (e) {
+        const phone = phoneInput.value;
+        if (phone.length !== 10) {
+            e.preventDefault();
+            phoneInput.classList.add('is-invalid');
+            phoneFeedback.textContent = 'Phone number must be exactly 10 digits.';
+        }
+    });
+
+    // Rate input validation
+    const rateInput = document.getElementById('rate');
+    rateInput.addEventListener('input', function () {
+        if (this.value < 0) {
+            this.value = 0;
+        } else if (this.value > 999.99) {
+            this.value = 999.99;
+        }
+    });
+</script>
+{% endblock %}

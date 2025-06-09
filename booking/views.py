@@ -1,8 +1,10 @@
 from django.contrib.auth import authenticate
 from django.db.models import Count
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
+
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.utils.timezone import now
@@ -16,7 +18,7 @@ from decimal import Decimal
 import json
 
 
-from custom_user.models import CustomUser,System,TransportationCompany
+from custom_user.models import CustomUser,System,TransportationCompany,Agent
 from route.models import SubRoutes, Route,SearchSubRoute, Schedule, Trip,Notification
 from bus.models import Bus,BusFeatures,Driver,Staff,BusReservation,BusLayout,VechicleType,SeatLayoutBooking
 from booking.models import Commission, Booking,Payment,BusReservationBooking
@@ -222,34 +224,45 @@ def transportation_company_list(request):
 
             messages.success(request, "Transportation Company added successfully!")
             return redirect("transportation_company_list")
-
+        
+    
     return render(request, "admin/transportation_company.html", {
         "companies": TransportationCompany.objects.all(),
+        "agents":Agent.objects.all()
     })
     
 @login_required
 def edit_transportation_company(request, id):
+    
     transportation_company = get_object_or_404(TransportationCompany, id=id)
     user = transportation_company.user
 
     if request.method == "POST":
+        print(request.POST)
         full_name = request.POST.get('full_name')
         email = request.POST.get('email')
         new_phone = request.POST.get('phone')
         gender = request.POST.get('gender')
 
        
-        if CustomUser.objects.filter(phone=new_phone).exists():
-            pass
-        
-        else:
-            user.email=email
-
+        if new_phone != user.phone:  # Only check if phone number changed
+            if CustomUser.objects.filter(phone=new_phone).exclude(id=user.id).exists():
+                messages.error(request, "Phone number already exists for another user!")
+                return redirect('edit_transportation_company',id)
+              
+            
+        user.phone=new_phone         
+        user.email = email
         user.full_name = full_name
         user.gender = gender
         user.save()
 
-        # Update TransportationCompany fields
+        agent_id=request.POST.get('agent_id')
+        if agent_id:
+            agent_obj=Agent.objects.get(id=agent_id)
+            transportation_company.agent=agent_obj
+        # Update TransportationCompany fields'
+        
         transportation_company.company_name = request.POST.get('company_name')
         transportation_company.vat_number = request.POST.get('vat_number')
         transportation_company.country = request.POST.get('country')
@@ -268,6 +281,7 @@ def edit_transportation_company(request, id):
 
     return render(request, "admin/edit_transportation_company.html", {
         "transportation_company": transportation_company,
+        "agents":Agent.objects.all()
     })
 
 
@@ -288,10 +302,55 @@ def delete_transportation_company(request, id):
         
         
         
+# ========= Agent =================
+@login_required
+def agent_list(request):
+    agent_obj=Agent.objects.all().order_by('-created_at')
+    paginator=Paginator(agent_obj,10)
+    page_number=request.GET.get('page_number')
+    page_obj=paginator.get_page(page_number)    
+    return render(request,"admin/agents/agent.html",{'agents':page_obj})
 
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+@login_required 
+def add_agent(request):
+    print(request.POST)
+    if request.method=='POST':
+        name=request.POST.get('name')
+        phone=request.POST.get('phone')
+        rate=request.POST.get('rate')
+        if CustomUser.objects.filter(phone=phone).exists():
+            messages.info(request,"Phone number already exists")
+            return redirect('add_agent')
+        if Agent.objects.filter(name=name):
+            messages.info(request,'Agent with name already exists')
+            return redirect('add_agent')
+        Agent.objects.create(name=name,phone=phone,rate=rate)
+        messages.success(request,f"Agent {name} added successfully ")
+        return redirect('agent_list')
+    return render(request,"admin/agents/add_agent.html")
 
-# ========= Sub Admin Bus List ==========
+@login_required
+def edit_agent(request,agent_id):
+    agent=Agent.objects.get(id=agent_id)
+    if request.method=="POST":
+        agent.name=request.POST.get('name')
+        agent.phone=request.POST.get('phone')
+        agent.rate=request.POST.get('rate')
+        agent.save()
+        messages.success(request,"Agent updated successfully")
+        return redirect('agent_list')
+    return render(request,'admin/agents/edit_agent.html',{'agent':agent})
+
+@login_required 
+def delete_agent(request,agent_id):
+    agent=Agent.objects.get(id=agent_id)
+    agent.delete()
+    messages.success(request,"Agent deleted successfully")
+    return redirect('agent_list')
+
+    
+
+# ========= Sub Admin  (ticket counter or transporatation compnay) Bus List ==========
 @login_required
 def sub_admin_bus_list(request, id):
     user = TransportationCompany.objects.filter(id=id).first()
@@ -516,7 +575,8 @@ def bus_featurelist(request):
 @login_required
 def add_bus_feature(request):
     if request.method == "POST":
-        name = request.POST.get('name')
+        print(request.POST)
+        name = request.POST.get('feature_name')
         if name:
             if BusFeatures.objects.filter(name=name).exists():
                 messages.error(request, "Bus feature already exists!")
@@ -582,7 +642,7 @@ def bus_list(request):
     unassigned_staff = staff.exclude(id__in=set(assigned_staff_ids) | set(scheduled_staff_ids))
     transportation_company_list=TransportationCompany.objects.all()
     # === Final context ===
-    bus_features=BusFeatures.objects.all()
+    bus_features=BusFeatures.BUS_FEATURE_CHOICES
     context = {
         'buses': buses,
         'transportation_company':transportation_company_list,
@@ -603,12 +663,13 @@ def create_bus(request):
 
     if request.method == "POST":
         try:
-            print(request.POST)
-            # Extract form data
+        
             bus_number = request.POST.get('bus_number')
             bus_type = request.POST.get('bus_type')
             driver_id = request.POST.get('driver')
             staff_id = request.POST.get('staff')
+            bus_image=request.FILES.get('bus_image')
+            contact_number=request.POST.get('contact_number')
             transportation_company_id=request.POST.get('transportation')
             if transportation_company_id:
                 transportation_company=TransportationCompany.objects.get(id=transportation_company_id)
@@ -618,9 +679,11 @@ def create_bus(request):
             is_active = request.POST.get('is_active') == 'on'
 
             features = request.POST.getlist('features') 
-            features_obj=BusFeatures.objects.filter(name__in=features)
-            
-            bus_image = request.FILES.get('bus_image')
+            features_obj = []
+            for feature in features:
+                for choice in BusFeatures.BUS_FEATURE_CHOICES:
+                    if feature == choice[0]:
+                        features_obj.append(BusFeatures.objects.get_or_create(name=feature)[0])
             layout = request.POST.get('layout')
 
             driver = Driver.objects.get(id=driver_id) if driver_id else None
@@ -635,7 +698,7 @@ def create_bus(request):
                 bus_type=bus_type,
                 driver=driver,
                 staff=staff,
-            
+                contact_number=contact_number,
             
                 total_seats=total_seats,
             
@@ -679,7 +742,7 @@ def create_bus(request):
         drivers = drivers.filter(transportation_company=transportation_company)
         staff = staff.filter(transportation_company=transportation_company)
 
-    bus_features=BusFeatures.objects.all()
+    bus_features=BusFeatures.BUS_FEATURE_CHOICES
     context = {
 
         'all_drivers': drivers,
@@ -704,10 +767,13 @@ def edit_bus(request, bus_id):
     
     if request.method == 'POST':
         try:
-          
-           
+            print("============")
+            print(request.POST)
+            transportation_company_id=request.POST.get('transportation')
+            bus.transportation_company=TransportationCompany.objects.get(id=transportation_company_id)
             bus.bus_number = request.POST.get('bus_number', bus.bus_number)
             bus.bus_type = request.POST.get('bus_type', bus.bus_type)
+            bus.contact_number=request.POST.get('contact_number',bus.contact_number)
             
             # Handle driver
             driver_id = request.POST.get('driver')
@@ -739,10 +805,13 @@ def edit_bus(request, bus_id):
             # Handle features
             features = request.POST.getlist('features')
             if features:
-                print("------------bus")
-                features_obj = BusFeatures.objects.filter(name__in=features)
+            
+                features_obj = []
+                for feature in features:
+                    for choice in BusFeatures.BUS_FEATURE_CHOICES:
+                        if feature == choice[0]:
+                            features_obj.append(BusFeatures.objects.get_or_create(name=feature)[0])
                 bus.features.set(features_obj)
-                
                 
             # Handle image
             if 'bus_image' in request.FILES:
@@ -813,11 +882,13 @@ def get_bus(request, bus_id):
     'bus_number': bus.bus_number,
     'bus_type': bus.bus_type,
     'rate': rate,
+    'contact_number':bus.contact_number,
     'bus_image': bus.bus_image.url if bus.bus_image else '',
     'total_seats': bus.total_seats,
     'driver': bus.driver.id if bus.driver else None,
     'staff': bus.staff.id if bus.staff else None,
     'is_active': bus.is_active,
+    
     'features': [feature.name for feature in bus.features.all()], 
     'layout': json.dumps(layout_data),
     'transportation_company': bus.transportation_company.id if bus.transportation_company else None,
@@ -1153,79 +1224,124 @@ def vehicleType_vehicle_list(request, id):
     return render(request, 'admin/vehicle_type_details_list.html', context)
     
 
-
-# =============
-#   Route
-# ============
-
+    # =============
+    #   Route
+    # ============
 def route_list_and_add(request):
-    if request.method == 'POST':
-        source = request.POST.get('source')
-        destination = request.POST.get('destination')
-        distance = request.POST.get('distance')
-        estimated_time = request.POST.get('estimated_time')
-        image = request.FILES.get('image')
-        sub_routes = request.POST.getlist('sub_routes')  # This must be ordered from frontend
+        if request.method == 'POST':
+            print(request.POST)
+            source = request.POST.get('source')
+            destination = request.POST.get('destination')
+            distance = request.POST.get('distance')
+            description=request.POST.get('description')
+            estimated_time = request.POST.get('estimated_time')
+            image = request.FILES.get('image')
+            sub_routes = request.POST.getlist('sub_routes')  
 
-        if source and destination and distance and estimated_time:
-            # Create forward route
-            route = Route.objects.create(
-                source=source,
-                destination=destination,
-                distance=distance,
-                estimated_time=estimated_time,
-                image=image
-            )
-
-            # Add sub-routes
-            if sub_routes:
-                route.sub_routes.set(sub_routes)
-
-                if route.sub_routes.count() > Route.MAX_SUBROUTES:
-                    route.delete()
-                    messages.error(request, f"Maximum {Route.MAX_SUBROUTES} sub-routes allowed per route.")
+            if source and destination and distance and estimated_time:
+                # Validate source and destination are not the same
+                if source.lower() == destination.lower():
+                    messages.error(request, "Source and destination cannot be the same.")
                     return redirect('route_list_add')
 
-                # Create SeachSubRoute with order
-                for index, sub_id in enumerate(sub_routes):
-                    SearchSubRoute.objects.create(
-                        route=route,
-                        subroute_id=sub_id,
-                        order=index + 1
+                # Check if either direction of route already exists (case insensitive)
+                if Route.objects.filter(
+                    Q(source__iexact=source, destination__iexact=destination) |
+                    Q(source__iexact=destination, destination__iexact=source)
+                ).exists():
+                    messages.error(request, "This route or its reverse already exists.")
+                    return redirect('route_list_add')
+
+                try:
+                    # Create forward route
+                    forward_route = Route.objects.create(
+                        source=source.title(),
+                        destination=destination.title(),
+                        distance=float(distance),
+                        estimated_time=float(estimated_time),
+                        description=description,
+                        image=image
                     )
 
-            # Create reverse route
-            reverse_route = Route.objects.create(
-                source=destination,
-                destination=source,
-                distance=distance,
-                estimated_time=estimated_time,
-                image=image
-            )
-
-            # Add reverse subroutes (reversed order)
-            if sub_routes:
-                reversed_subroutes = list(reversed(sub_routes))
-                reverse_route.sub_routes.set(reversed_subroutes)
-
-                for index, sub_id in enumerate(reversed_subroutes):
-                    SearchSubRoute.objects.create(
-                        route=reverse_route,
-                        subroute_id=sub_id,
-                        order=index + 1
+                    # Create reverse route
+                    reverse_route = Route.objects.create(
+                        source=destination.title(),  # Swapped
+                        destination=source.title(),  # Swapped
+                        distance=float(distance),
+                        estimated_time=float(estimated_time),
+                        description=description,
+                        image=image
                     )
 
-            messages.success(request, "Route and reverse route added successfully.")
-            return redirect('route_list_add')
+                    # Process sub-routes if any
+                    if sub_routes:
+                        forward_sub_routes = []
+                        reverse_sub_routes = []
+                        
+                        # Create sub-routes for forward direction
+                        for order, sub_route in enumerate(sub_routes, 1):
+                            if sub_route.strip():
+                                sub_route_obj,_ = SubRoutes.objects.get_or_create(
+                                    name=sub_route.strip()
+                                )
+                                forward_sub_routes.append(sub_route_obj)
+                                
+                                # Create search route for forward direction
+                                SearchSubRoute.objects.create(
+                                    route=forward_route,
+                                    subroute=sub_route_obj,
+                                    order=order
+                                )
+                        
+                        # Create sub-routes for reverse direction (reversed order)
+                        reverse_sub_routes = list(reversed(forward_sub_routes))
+                        for order, sub_route_obj in enumerate(reverse_sub_routes, 1):
+                            # Create search route for reverse direction
+                            SearchSubRoute.objects.create(
+                                route=reverse_route,
+                                subroute=sub_route_obj,
+                                order=order
+                            )
 
-    # Pagination
-    routes_list = Route.objects.all().order_by('source')
-    paginator = Paginator(routes_list, 10)
-    page_number = request.GET.get('page')
-    routes = paginator.get_page(page_number)
+                        # Set sub-routes for both directions
+                        forward_route.sub_routes.set(forward_sub_routes)
+                        reverse_route.sub_routes.set(reverse_sub_routes)
 
-    sub_routes = SubRoutes.objects.all()
-    return render(request, 'admin/manage_routes.html', {'routes': routes, 'sub_routes': sub_routes})
+                        # Validate maximum sub-routes
+                        if len(forward_sub_routes) > Route.MAX_SUBROUTES:
+                            forward_route.delete()
+                            reverse_route.delete()
+                            messages.error(request, f"Maximum {Route.MAX_SUBROUTES} sub-routes allowed per route.")
+                            return redirect('route_list_add')
+
+                    messages.success(request, "Route and reverse route added successfully.")
+                    return redirect('route_list_add')
+
+                except ValueError as e:
+                    messages.error(request, f"Invalid input: {str(e)}")
+                    return redirect('route_list_add')
+                except Exception as e:
+                    messages.error(request, f"Error creating route: {str(e)}")
+                    return redirect('route_list_add')
+
+        # GET request handling
+        try:
+            routes_list = Route.objects.all().order_by('source')
+            sub_routes = SubRoutes.objects.all()
+
+            # Pagination
+            paginator = Paginator(routes_list, 10)
+            page_number = request.GET.get('page')
+            routes = paginator.get_page(page_number)
+
+            return render(request, 'admin/manage_routes.html', {
+                'routes': routes, 
+                'sub_routes': sub_routes
+            })
+
+        except Exception as e:
+            messages.error(request, f"Error loading routes: {str(e)}")
+            return redirect('admin_dashboard')
 
 
 
@@ -1236,6 +1352,7 @@ def edit_route(request, id):
         route.source = request.POST.get('source')
         route.destination = request.POST.get('destination')
         route.distance = request.POST.get('distance')
+        route.description=request.POST.get('description')
         route.estimated_time = request.POST.get('estimated_time')
         sub_routes_input = request.POST.get('sub_routes', '').split(',')
 
@@ -1353,7 +1470,7 @@ def schedule_list(request):
                 departure_input = request.POST.get("departure_time")
                 arrival_input = request.POST.get("arrival_time")
                 price = request.POST.get("price")
-                original_price=request.POST.get('original_price')
+                sale_price=request.POST.get('sale_price')
 
                 # Validate route and bus
                 route = Route.objects.get(id=route_id)
@@ -1390,7 +1507,7 @@ def schedule_list(request):
                     departure_time=departure_time,
                     arrival_time=arrival_time,
                     price=price,
-                    original_price=original_price,
+                    sale_price=sale_price,
                     transportation_company=transportation_company
                 )
 
@@ -1493,8 +1610,9 @@ def schedule_edit(request, id):
         schedule.bus = bus
         schedule.departure_time = departure_time
         schedule.arrival_time = arrival_time
-        schedule.original_price=request.POST.get('original_price')
+        schedule.sale_price=request.POST.get('sale_price')
         schedule.price = request.POST.get("price")
+        
         schedule.save()
         
         messages.success(request,"Schedule Updated Successfully")
@@ -1575,11 +1693,13 @@ def booking_details(request, id):
     
     data = {
         'id':booking.id,
+        
         'user': booking.user.full_name,
         'user_phone': booking.user.phone,
         'bus_number': booking.bus.bus_number,
         'source': booking.schedule.route.source,
         'destination': booking.schedule.route.destination,
+        'boarding_point':booking.boarding_point,
         'booking_status': booking.booking_status,
         'seat': booking.seat,
         'booked_at': booking.booked_at,
@@ -1791,7 +1911,9 @@ def report_analysis_view(request):
 # Settings 
 #=========================
 def system_settings_view(request):
-    system = System.objects.first()
+    system=System.objects.none()
+    if System.objects.first():
+        system = System.objects.first()
 
     if request.method == "POST":
     
@@ -1811,6 +1933,7 @@ def system_settings_view(request):
             system.save()
             messages.success(request, "System settings updated successfully!")
         else:
+            
             messages.error(request, "Error: No system settings found.")
 
         return redirect("system_settings")
@@ -2198,11 +2321,90 @@ def vehicle_details_payment(request,id):
         'vehicle_booking': vehicle_booking
     }
     return render(request, 'admin/vehicle_details.html', context)
+
+
     
-    
+# ======== Agents payments =====
+@login_required 
+def agents_details_payments(request):
+    try:
+        # Get all agents
+        agents = Agent.objects.all()
+        agents_data = []
+        
+        # Calculate totals across all agents
+        total_overall_earnings = 0
+        total_overall_commission = 0
+        total_overall_net = 0
+        
+        for agent in agents:
+            # Get companies for this agent
+            companies = TransportationCompany.objects.filter(agent=agent)
+            
+            agent_total_earnings = Decimal('0.00')
+            agent_total_bookings = 0
+            
+            for company in companies:
+                # Bus earnings
+                bus_payments = Payment.objects.filter(
+                    booking__bus__transportation_company=company,
+                    payment_status='completed'
+                )
+                bus_earnings = bus_payments.aggregate(
+                    total=Sum('booking__schedule__price')
+                )['total'] or Decimal('0.00')
+                
+                # Reservation earnings
+                reservation_payments = BusReservationBooking.objects.filter(
+                    bus_reserve__transportation_company=company,
+                    status='completed'
+                )
+                reservation_earnings = reservation_payments.aggregate(
+                    total=Sum('agreed_price')
+                )['total'] or Decimal('0.00')
+                
+                # Total earnings for this company
+                company_total = bus_earnings + reservation_earnings
+                agent_total_earnings += company_total
+                agent_total_bookings += bus_payments.count() + reservation_payments.count()
+            
+            # Calculate agent's commission
+            agent_commission = (agent_total_earnings * agent.rate) / 100
+            agent_net = agent_total_earnings - agent_commission
+            
+            # Add to totals
+            total_overall_earnings += agent_total_earnings
+            total_overall_commission += agent_commission  
+            total_overall_net += agent_net
+            
+            # Store agent data
+            agent_data = {
+                'agent_name': agent.name,
+                'agent_phone': agent.phone,
+                'commission_rate': agent.rate,
+                'total_earnings': agent_total_earnings,
+                'commission_amount': agent_commission,
+                'net_amount': agent_net,
+                'total_bookings': agent_total_bookings,
+                'total_companies': companies.count()
+            }
+            
+            agents_data.append(agent_data)
 
+        context = {
+            'agents_data': agents_data,
+            'total_earnings': total_overall_earnings,
+            'total_commission': total_overall_commission, 
+            'total_net': total_overall_net,
+            'total_agents': agents.count()
+        }
 
+        return render(request, 'admin/agents/agents_payments.html', context)
 
+    except Exception as e:
+        messages.error(request, f"Error calculating agents earnings: {str(e)}")
+        print(e)
+        return redirect('agent_payments')
 
 
 # =================

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from custom_user.models import CustomUser, UserOtp,System,TransportationCompany
+from custom_user.models import CustomUser, UserOtp,System,TransportationCompany,Agent
 from bus.models import Bus,BusFeatures, BusAdmin, Driver, Staff,  BusReservation, BusLayout, VechicleType,SeatLayoutBooking
 from booking.models import Booking, Payment, Commission, BusReservationBooking
 from route.models import SubRoutes,Route,SearchSubRoute, Schedule, Trip, CustomerReview,Notification
@@ -103,7 +103,7 @@ admin.site.register(BusReservationBooking,BusReservationBookingAdmin)
 
 # ========================= Booking =========================
 class BookingAdmin(admin.ModelAdmin):
-    list_display = ('user', 'seat', 'bus', 'schedule', 'booking_status', 'booked_at')
+    list_display = ('user', 'seat', 'bus', 'schedule', 'booking_status','boarding_point', 'booked_at')
 admin.site.register(Booking, BookingAdmin)
 
 
@@ -111,6 +111,7 @@ admin.site.register(Booking, BookingAdmin)
 class SubRouteAdmin(admin.ModelAdmin):
     list_display=('id','name')
 admin.site.register(SubRoutes,SubRouteAdmin)
+
 
 # ========================= Route =========================
 class RouteAdmin(admin.ModelAdmin):
@@ -135,7 +136,7 @@ admin.site.register(SearchSubRoute,SearchSubRouteAdmin)
 
 # ========================= Schedule =========================
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ('id','bus', 'route','available_seats', 'departure_time', 'arrival_time', 'date', 'price','original_price')
+    list_display = ('id','bus', 'route','available_seats', 'departure_time', 'arrival_time', 'date','shift', 'price','sale_price')
     search_fields = ('bus__bus_number', 'route__source', 'route__destination')
     list_filter = ('route', 'departure_time', 'date')
     ordering = ('date',)
@@ -187,11 +188,18 @@ class BusLayoutAdmin(admin.ModelAdmin):
 @admin.register(System)
 class SystemAdmin(admin.ModelAdmin):
     list_display=('name','phone','image','address','email')
+
+
+# ============  Agent =============
+@admin.register(Agent)
+class AgentAdmin(admin.ModelAdmin):
+    list_display=('name','phone','rate')
+    
     
 #============= Transportation Company =======
 @admin.register(TransportationCompany)
-class TransportationCompanySerilaizers(admin.ModelAdmin):
-    list_display=('company_name','vat_number','location_name','longitude','latitude','bank_name','account_name','account_number','qr_image')
+class TransportationCompanyAdmin(admin.ModelAdmin):
+    list_display=('user','agent','company_name','vat_number','location_name','longitude','latitude','bank_name','account_name','account_number','qr_image')
     
 # ================= Seat Layout Booking ==========
 @admin.register(SeatLayoutBooking)  

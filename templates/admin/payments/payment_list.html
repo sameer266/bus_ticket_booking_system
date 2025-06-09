@@ -219,9 +219,9 @@
                                 {% for payment in payments %}
                                 <tr class="transaction-row">
                                     <td class="px-4 py-3">
-                                        {% if payment.transaction_id %}
+                                        {% if payment.booking.ticket_id %}
                                             <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill font-monospace">
-                                                {{ payment.transaction_id }}
+                                                {{ payment.booking.ticket_id }}
                                             </span>
                                         {% else %}
                                             <span class="text-muted fst-italic">N/A</span>

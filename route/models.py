@@ -23,6 +23,7 @@ class Route(models.Model):
     sub_routes = models.ManyToManyField(SubRoutes, blank=True)
     destination = models.CharField(max_length=255, null=False)
     distance = models.DecimalField(max_digits=6, decimal_places=2)
+    description=models.TextField(null=True)
     estimated_time = models.PositiveIntegerField(null=True, default=0)
 
     def clean(self):
@@ -143,7 +144,8 @@ class Schedule(models.Model):
     departure_time = models.DateTimeField(null=True, blank=True, help_text="Time when bus starts")
     arrival_time = models.DateTimeField(null=True, blank=True, help_text="Expected arrival time")
     date = models.DateTimeField(null=True, blank=True, help_text="Date and time of the journey (Y-M-D H:M:S)", editable=False)
-    original_price=models.DecimalField(max_digits=8,decimal_places=2)
+    shift = models.CharField(max_length=5, choices=[('day', 'Day'), ('night', 'Night')],null=True,blank=True)
+    sale_price=models.DecimalField(max_digits=8,decimal_places=2)
     price = models.DecimalField(max_digits=8, decimal_places=2, help_text="Ticket price")
     available_seats = models.PositiveIntegerField(default=0, help_text="Number of available seats")
     status=models.CharField(max_length=20,null=True,blank=True)
@@ -152,6 +154,13 @@ class Schedule(models.Model):
     def save(self, *args, **kwargs):
         if not self.date:
             self.date = timezone.now()
+
+        if self.departure_time:
+            hour = self.departure_time.hour
+            if 6 <= hour < 18:  # Between 6 AM and 6 PM
+                self.shift = 'day'
+            else:
+                self.shift = 'night'
 
         super().save(*args, **kwargs)
 
@@ -185,7 +194,7 @@ class Schedule(models.Model):
         
 
     def __str__(self):
-        return f"{self.bus.bus_number} | {self.route.source} to {self.route.destination} at {self.departure_time.strftime('%Y-%m-%d %H:%M:%S') } {self.status}"
+        return f"{self.bus.bus_number} | {self.route.source} to {self.route.destination} at {self.departure_time } {self.status}"
 
 
 @receiver(post_save, sender=Schedule)
@@ -207,12 +216,12 @@ def create_bus_admin_and_trip(sender, instance, created, **kwargs):
         # Create BusAdmin if not exists
         bus_admin = BusAdmin.objects.filter(bus=instance.bus).first()
         if not bus_admin:
-            print("+;'ad'")
+            print("=== Bus Admin Create  ===")
             new_user, _ = CustomUser.objects.get_or_create(
                 email=f"busadmin_{instance.bus.bus_number.lower().replace(' ', '_')}@example.com",
                 
-                password= "Sameer123",
-                phone= random.randint(9000000000, 9999999999),
+                password= f"Driver@{instance.bus.contact_number}",
+                phone= instance.bus.contact_number,
                 role="bus_admin",
                 
             )

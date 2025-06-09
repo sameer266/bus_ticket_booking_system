@@ -9,10 +9,19 @@ urlpatterns = [
   # ======== Admin Profile ==========
   path('admin-profile/', views.admin_profile, name="admin_profile"),
 
+
   # ======== Admin Ticket Counter Management ==========
-  path("admin-ticket-counter/", views.transportation_company_list, name="transportation_company_list"),
-  path("admin-ticket-counter/edit/<int:id>/", views.edit_transportation_company, name="edit_transportation_company"),
-  path("admin-ticket-counter/delete/<int:id>/", views.delete_transportation_company, name="delete_transportation_company"),
+  path("ticket-counter/", views.transportation_company_list, name="transportation_company_list"),
+  path("ticket-counter/edit/<int:id>/", views.edit_transportation_company, name="edit_transportation_company"),
+  path("ticket-counter/delete/<int:id>/", views.delete_transportation_company, name="delete_transportation_company"),
+  
+  
+  # ============ Agent  ===============
+  path("agent-list/",views.agent_list,name="agent_list"),
+  path('add-agent/',views.add_agent,name="add_agent"),
+  path('edit-agent/<int:agent_id>/',views.edit_agent,name="edit_agent"),
+  path('delete-agent/<int:agent_id>/',views.delete_agent,name="delete_agent"),
+  
 
   # ======== Sub Admin Bus List ==========
   path('subadmin-buslist/<int:id>/', views.sub_admin_bus_list, name='subadmin_bus_list'),
@@ -21,6 +30,7 @@ urlpatterns = [
   path('users-management/', views.manage_users, name='manage_users'),
   path('users-delete/<int:id>/', views.delete_user, name='delete_user'),
 
+
   # ======== Driver and Staff Management ==========
   path('driver-staff/', views.manage_driver_and_staff, name='manage_driver_and_staff'),
   path('edit-driver/<int:driver_id>/', views.edit_driver, name='edit_driver'),
@@ -28,10 +38,12 @@ urlpatterns = [
   path('edit-staff/<int:staff_id>/', views.edit_staff, name='edit_staff'),
   path('delete-staff/<int:staff_id>/', views.delete_staff, name='delete_staff'),
 
+
   # ======== Vehicle Management ==========
   path('vehicle/', views.vehicle_list, name='vehicle_reservation'),
   path('vehicle/edit/<int:id>/', views.edit_vehicle, name='vehicle_reservation_edit'),
   path('vehicle/delete/<int:id>/',views.delete_vehicle,name="delete_vehicle_reservation"),
+
 
   # ======== Vehicle Type Management ==========
   path('vehicle-type-management/', views.vechicle_type_list, name='vehicle_type_list'),
@@ -99,6 +111,9 @@ urlpatterns = [
   path('reservation-payment/', views.reservation_payment_details, name='reservation_payment_details'),
   path('vehicle-earnings-details/<int:vehicle_id>/',views.vehicle_reservation_earings_details,name="vehicle_earning_details"),
   path('reservation-details/<int:id>/',views.vehicle_details_payment,name="vehicle_details_payment"),
+  
+  path('agent-payments/',views.agents_details_payments,name="agent_payments"),
+  
   
   
   # ================ Paymant adn trasctions ===============

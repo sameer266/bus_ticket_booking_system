@@ -78,9 +78,43 @@ class Staff(models.Model):
     def __str__(self):
         return f"Staff: {self.full_name} - {self.phone_number}"
 
+
+
 # =========== Bus Featues =====
 class BusFeatures(models.Model):
-    name=models.CharField(max_length=50,unique=True)
+    BUS_FEATURE_CHOICES = [
+    ('AC', 'AC'),
+    ('Wifi', 'WiFi'),
+    ('TV', 'TV'),
+    ('Charging', 'Charging Port'),
+    ('Water', 'Water Bottle'),
+    ('Blanket', 'Blanket'),
+    ('GPS', 'GPS Tracking'),
+    ('ReadingLight', 'Reading Light'),
+    ('ReclinerSeat', 'Recliner Seat'),
+    ('Toilet', 'Toilet'),
+    ('Snacks', 'Snacks Provided'),
+    ('Curtains', 'Curtains'),
+    ('FirstAid', 'First Aid Kit'),
+    ('CCTV', 'CCTV Surveillance'),
+    ('Music', 'Music System'),
+    ('FootRest', 'Foot Rest'),
+    ('Fan', 'Fan'),
+    ('WindowSeat', 'Window Seat'),
+    ('EmergencyExit', 'Emergency Exit'),
+    ('SecurityGuard', 'Security Guard'),
+    ('Heater', 'Heater'),
+    ('DoubleDecker', 'Double Decker'),
+    ('Luxury', 'Luxury Coach'),
+    ('AdjustableHeadrest', 'Adjustable Headrest'),
+]
+    name=models.CharField(max_length=50,choices=BUS_FEATURE_CHOICES,unique=True)
+    icon = models.ImageField(upload_to='bus_features_icons/', blank=True, null=True)
+    def __str__(self):
+        return f"Bus Featues {self.name}"
+    
+    def icon_url(self):
+        return f'/media/bus_features_icon/{self.name}.png'
 
 # ====== Bus Model =============
 class Bus(models.Model):
@@ -108,6 +142,7 @@ class Bus(models.Model):
     staff = models.OneToOneField(Staff, on_delete=models.CASCADE, null=True, blank=True)
     bus_number = models.CharField(max_length=20, unique=True, null=False, help_text="Example: BA 1 KHA 1234")
     bus_type = models.CharField(max_length=20, choices=VEHICLE_CHOICES, default="deluxe_bus")
+    contact_number=models.PositiveIntegerField(null=True,blank=True)
     features = models.ManyToManyField(BusFeatures,blank=True)
     bus_image = models.ImageField(upload_to="bus_images/")
     total_seats = models.PositiveIntegerField(default=0)

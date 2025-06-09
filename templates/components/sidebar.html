@@ -49,6 +49,14 @@
               <span class="menu-text">Profile</span>
             </a>
           </li>
+
+            <li class="nav-item">
+            <a class="nav-link {% if request.path == '/agent-list/' %}active{% endif %}" href="{% url 'agent_list' %}">
+              <i class="bi bi-person-badge-fill menu-icon"></i>
+              <span class="menu-text">Agent</span>
+            </a>
+            </li>
+            
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/admin-ticket-counter/' %}active{% endif %}" href="{% url 'transportation_company_list' %}">
               <i class="bi bi-ticket-perforated menu-icon"></i>
@@ -103,6 +111,7 @@
               <span class="menu-text">Account & Earning</span>
               <i class="bi bi-chevron-down ms-auto submenu-icon"></i>
             </a>
+
             <div class="collapse {% if request.path == '/bus-bookings-payment/' or request.path == '/reservation-payment/' %}show{% endif %}" id="accountEarningsMenu">
               <ul class="nav flex-column submenu">
                 <li class="nav-item">
@@ -114,11 +123,20 @@
                 <li class="nav-item">
                   <a class="nav-link submenu-link {% if request.path == '/reservation-payment/' %}active{% endif %}" href="{% url 'reservation_payment_details' %}">
                     <i class="bi bi-calendar2-check submenu-icon"></i>
-                    <span>Vehicle Reserve</span>
+                    <span>Reserve Payments</span>
                   </a>
                 </li>
+
+                <li class="nav-item">
+                  <a class="nav-link submenu-link {% if request.path == '/agent-payment/' %}active{% endif %}" href="{% url 'agent_payments'%}">
+                    <i class="bi bi-person-badge submenu-icon"></i>
+                    <span>Agent Payments</span>
+                  </a>
+                </li>
+
               </ul>
             </div>
+
           </li>
           <li class="nav-item">
             <a class="nav-link {% if request.path == '/payments/' %}active{% endif %}" href="{% url 'payment_list' %}">
@@ -206,7 +224,7 @@
                 <li class="nav-item">
                   <a class="nav-link submenu-link {% if request.path == '/reservation-payment/' %}active{% endif %}" href="{% url 'reservation_payment_details' %}">
                     <i class="bi bi-calendar2-check submenu-icon"></i>
-                    <span>Vehicle Reserve</span>
+                    <span>Reservation Payments</span>
                   </a>
                 </li>
               </ul>

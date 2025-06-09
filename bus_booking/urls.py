@@ -60,7 +60,7 @@ urlpatterns = [
     path('api/register_user/', views.RegisterUserOtp.as_view()),
 
     # ================== Web Home Page APIs ==================
-    path('api/all_routes/', views.AllRoutesConatinsSchedule.as_view()),
+    path('api/all_routes/', views.AllRoutes.as_view()),
     path('api/all_schedule/', views.AllSchedule.as_view()),
 
     # ================== Search Routes ==================
@@ -94,6 +94,9 @@ urlpatterns = [
     # ============ Notification =============
     path('api/user_notification/',views.UserNotificationApiView.as_view()),
     path('api/user_notification/read/<notification_id>/',views.UserNotificationRead.as_view()),
+    
+    # ============ System ====================
+    path('api/system/',views.SystemApiView.as_view()) 
     
 
     

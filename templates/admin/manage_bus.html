@@ -54,8 +54,11 @@
                             <th scope="col" class="px-3 py-2 sortable" data-sort="counter">Counter</th>
                             {% endif %}
                             <th scope="col" class="px-3 py-2">Features</th>
+                            <th scope="col" class="px-3 py-2 ">Contact</th>
                             <th scope="col" class="px-3 py-2">Status</th>
+                            {% if user.role == 'admin' %}
                             <th scope="col" class="px-3 py-2 text-end">Actions</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -71,6 +74,7 @@
                                 {% if bus.features.all %}
                                     <div class="d-flex flex-wrap gap-1">
                                         {% for feature in bus.features.all %}
+                                           
                                             <span class="badge bg-primary-subtle text-primary border border-primary rounded-pill d-none d-md-inline">{{ feature.name }}</span>
                                         {% endfor %}
                                         <span class="text-muted small d-md-none">{% for feature in bus.features.all %}{{ feature.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
@@ -79,6 +83,16 @@
                                     <span class="text-muted small">None</span>
                                 {% endif %}
                             </td>
+
+                            <td class="px-3 py-2">
+                                <div class="d-flex flex-column">
+                                   
+                                    <span class="text-muted"> 
+                                        {{bus.contact_number|default:"N/A"}}
+                                    </span>
+                                </div>
+                            </td>
+
                             <td class="px-3 py-2">
                                 <div class="d-flex gap-1">
                                     {% if bus.is_active %}
@@ -91,6 +105,7 @@
                                     {% endif %}
                                 </div>
                             </td>
+                            {% if user.role == 'admin' %}
                             <td class="px-3 py-2 text-end">
                                 <button class="btn btn-outline-warning btn-sm shadow-sm edit-bus-btn" data-bus-id="{{ bus.id }}" title="Edit Bus">
                                     <i class="bi bi-pencil-square"></i>
@@ -99,6 +114,7 @@
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>
+                            {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
@@ -191,6 +207,7 @@
                             <div class="invalid-feedback">Please select a counter.</div>
                         </div>
                         {% endif %}
+
                         <div class="col-md-6">
                             <label class="form-label fw-medium">Driver <span class="text-danger">*</span></label>
                             <select class="form-select rounded-3" name="driver" id="driverSelect" required>
@@ -201,6 +218,8 @@
                             </select>
                             <div class="invalid-feedback">Please select a driver.</div>
                         </div>
+
+
                         <div class="col-md-6">
                             <label class="form-label fw-medium">Staff <span class="text-danger">*</span></label>
                             <select class="form-select rounded-3" name="staff" id="staffSelect" required>
@@ -211,6 +230,15 @@
                             </select>
                             <div class="invalid-feedback">Please select a staff member.</div>
                         </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Contact Number</label>  
+                            <div class="input-group">
+                                <span class="input-group-text rounded-start"><i class="bi bi-telephone"></i></span>
+                                <input type="text" class="form-control rounded-end" name="contact_number" placeholder="e.g. 984....." title="Please enter a valid phone number" required>
+                            </div>
+                        </div>
+                        
                         <div class="col-md-6">
                             <label class="form-label fw-medium">Commission Rate (%) <span class="text-danger">*</span></label>
                             <div class="input-group">
@@ -237,11 +265,11 @@
                             <label class="form-label fw-medium">Features</label>
                             <div class="border rounded-3 p-3 bg-light">
                                 <div class="row g-2">
-                                    {% for value in feature_choices %}
+                                    {% for value,display in feature_choices %}
                                     <div class="col-md-3 col-6">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="features" value="{{ value.name }}" id="feature_{{ value.name }}">
-                                            <label class="form-check-label" for="feature_{{ value.name }}">{{ value.name }}</label>
+                                            <input class="form-check-input" type="checkbox" name="features" value="{{ value }}" id="feature_{{ value }}">
+                                            <label class="form-check-label" for="feature_{{ value }}">{{ value}}</label>
                                         </div>
                                     </div>
                                     {% endfor %}
@@ -371,6 +399,17 @@
                                 {% endfor %}
                             </select>
                         </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Contact Number</label>
+                            <div class="input-group">
+                                <span class="input-group-text rounded-start"><i class="bi bi-telephone"></i></span>
+                                <input type="text" class="form-control rounded-end" name="contact_number" id="edit_contact_number" placeholder="e.g. 984....."  title="Please enter a valid phone number" required>
+                            </div>
+                            <div class="invalid-feedback">Please enter a valid contact number.</div>
+                        </div>
+
+
                         <div class="col-md-6">
                             <label class="form-label fw-medium">Commission Rate (%) <span class="text-danger">*</span></label>
                             <div class="input-group">
@@ -398,11 +437,11 @@
                             <label class="form-label fw-medium">Features</label>
                             <div class="border rounded-3 p-3 bg-light">
                                 <div class="row g-2">
-                                    {% for value in feature_choices %}
+                                    {% for value ,display in feature_choices %}
                                     <div class="col-md-3 col-6">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="features" value="{{ value.name }}" id="edit_feature_{{ value.name }}">
-                                            <label class="form-check-label" for="edit_feature_{{ value.name }}">{{ value.name }}</label>
+                                            <input class="form-check-input" type="checkbox" name="features" value="{{ value}}" id="edit_feature_{{ value.name }}">
+                                            <label class="form-check-label" for="edit_feature_{{ value }}">{{ value}}</label>
                                         </div>
                                     </div>
                                     {% endfor %}
@@ -1026,6 +1065,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (commissionInput) {
                         commissionInput.value = data.rate || 0;
                     }
+
+                    // Set Contact Number
+                    const contactInput = document.getElementById('edit_contact_number');
+                    if (contactInput) {
+                        contactInput.value = data.contact_number || '';
+                    }
+
 
                     // Set Transportation (Counter)
                     const transportationSelect = document.getElementById('edit_transportation');
