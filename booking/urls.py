@@ -28,7 +28,8 @@ urlpatterns = [
 
   # ======== User Management ==========
   path('users-management/', views.manage_users, name='manage_users'),
-  path('users-delete/<int:id>/', views.delete_user, name='delete_user'),
+  path('edit_user/<int:user_id>/',views.edit_user,name="edit_user"),
+
 
 
   # ======== Driver and Staff Management ==========
@@ -81,7 +82,7 @@ urlpatterns = [
   path('schedules-management/', views.schedule_list, name='schedule_list'),
   path('schedules/edit/<int:id>/', views.schedule_edit, name='schedule_edit'),
   path('schedules/delete/<int:id>/', views.schedule_delete, name='schedule_delete'),
-
+  
   # ======== Bus Details from Schedule ==========
   path('bus-list/<int:id>/', views.schedule_bus_details, name='bus_details'),
   path('booking-details/<int:id>/', views.booking_details, name='booking_details'),
@@ -92,6 +93,7 @@ urlpatterns = [
   # ======== Booking Management ==========
   path('booking-management/', views.booking_management, name='booking_list'),
   path('booking-status-update/<int:booking_id>/',views.booking_status_update,name="update_booking_status"),
+  path('delete-booking/<int:booking_id>/',views.booking_delete,name="delete_booking"),
   path('booking-reservation/update/<int:id>/', views.reservationBooking_update, name="update_reservation"),
   path('booking-resevation/delete/<int:id>/',views.delete_vehicle_reservation_booking,name="delete_reservation"),
 

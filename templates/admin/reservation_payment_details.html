@@ -114,6 +114,7 @@
                                 <th>Rate</th>
 
                                 <th>Net Earnings</th>
+                                <th>Commission Received</th>
                                 <th>Trips </th>
                                 <th>Actions</th>
                             </tr>
@@ -125,9 +126,10 @@
        {{vehicle.bus_reserve.vechicle_number}}
     </td>
     <td>{{ vehicle.bus_reserve.type }}</td>
-    <td>{{ vehicle.total_earnings}}</td>
+    <td class="fw-bold text-primary">NPR {{ vehicle.total_earnings}}</td>
     <td>{{ vehicle.rate }}</td>
     <td class="fw-bold text-primary">NRP {{ vehicle.net_earning|floatformat:2 }}</td>
+    <td class="fw-bold text-primary">NRP {{ vehicle.total_commission|floatformat:2 }}</td>
     <td class="fw-bold text-primary">{{ vehicle.total_trips }}</td>
     <td>
         <a href={% url 'vehicle_earning_details' vehicle.bus_reserve.id %} class="btn btn-icon btn-outline-primary" title="View Details">

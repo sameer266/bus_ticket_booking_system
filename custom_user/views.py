@@ -1,10 +1,11 @@
 
-from bus.models import SeatLayoutBooking
+from bus.models import SeatLayoutBooking,Bus
 from booking.models import Booking, Payment, BusReservationBooking
 from route.models import Route, Schedule,  CustomerReview,Notification
 from  custom_user.serializers import CustomUserSerializer
 from route.serializers import RouteSerializer,BookingSerializer, ScheduleSerializer,CustomReviewSerializer,PaymentSerializer,BusReservationBooking,VechicleReservationBookingSerializer
 from django.shortcuts import get_object_or_404
+
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -111,6 +112,18 @@ class PaymentHistoryView(APIView):
 
 
 
+class UserReviewApiView(APIView):
+    authentication_classes=[JWTAuthentication]
+    permission_classes=[IsAuthenticated]
+    
+    def get(self,request):
+        user=request.user
+        bus_id=request.data.get('bus_id')
+        route_id=request.data.get('route_id')
+        comments=request.data.get('comments')
+        rating=request.data.get('rating')
+        bus_obj=Bus.objects.get('')
+        CustomerReview.objects.create()
 
 # ==================
 # User Booking Paymnet
@@ -137,6 +150,9 @@ class UserBookingPaymentView(APIView):
                 schedule_id = request.data.get('schedule_id')
                 schedule_obj = Schedule.objects.get(id=schedule_id)
                 boarding_point=request.data.get('boarding_point')
+                passenger_name=request.data.get('passenger_name')
+                passenger_phone=request.data.get('passenger_phone')
+                
                 count = len(seat)
                 schedule_obj.available_seats -= count
                
@@ -155,7 +171,8 @@ class UserBookingPaymentView(APIView):
                     seat=seat,
                     bus=schedule_obj.bus,
                     boarding_point=boarding_point,
-                 
+                    passenger_name=passenger_name,
+                    passenger_phone=passenger_phone,
                     schedule=schedule_obj
                 )
          
@@ -193,6 +210,9 @@ class UserBookingPaymentView(APIView):
                     'booking_status': booking_obj.booking_status,
                     'seat': booking_obj.seat,
                     'boarding_point':booking_obj.boarding_point,
+                    "passenger_name":booking_obj.passenger_name,
+                    
+                    "passenger_phone":booking_obj.passenger_phone,
                     'booked_at': booking_obj.booked_at,
                     'total_price': total_price,
                     'total_seat': count,

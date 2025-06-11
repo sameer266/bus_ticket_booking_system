@@ -1,7 +1,7 @@
 {% extends 'components/base.html' %}
 {% block title %}Manage Routes | Go Sewa{% endblock %}
 {% block content %}
-<div class="container-fluid px-4 py-4">
+<div class="container-fluid px-4 py-4 bg-light">
     <div class="row g-0">
         <!-- Main Content -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
@@ -21,10 +21,10 @@
                     <i class="bi bi-signpost-split-fill me-2 text-primary"></i>Manage Routes
                 </h1>
                 <div class="d-flex gap-2">
-                    <button id="addRouteBtn" class="btn btn-primary shadow-sm rounded-3 d-none d-md-block">
+                    <button id="addRouteBtn" class="btn btn-primary shadow-sm rounded-pill d-none d-md-block">
                         <i class="bi bi-plus-circle-fill me-2"></i>Add Route
                     </button>
-                    <button id="mobileAddRouteBtn" class="btn btn-primary shadow-sm rounded-3 d-md-none">
+                    <button id="mobileAddRouteBtn" class="btn btn-primary shadow-sm rounded-pill d-md-none">
                         <i class="bi bi-plus-circle-fill"></i>
                     </button>
                 </div>
@@ -32,37 +32,41 @@
 
             <!-- Search Bar -->
             <div class="mb-4">
-                <div class="input-group shadow-sm rounded-3" style="max-width: 400px;">
-                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0" id="searchRoutes" placeholder="Search routes by source, destination, or sub-route..." aria-label="Search routes">
+                <div class="input-group shadow-sm rounded-pill overflow-hidden" style="max-width: 400px;">
+                    <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-0" id="searchRoutes" placeholder="Search routes by source, destination, or sub-route..." aria-label="Search routes">
                 </div>
             </div>
 
-            <!-- Routes Grid -->
-            <div class="row g-3" id="routesGrid">
-                {% for route in routes %}
-                <div class="col-12 col-md-6 col-lg-4 route-card">
-                    <div class="card border-0 shadow-sm rounded-3 h-100">
-                        <div class="card-body p-3">
-                            <div class="d-flex align-items-center mb-3">
-                                {% if route.image %}
-                                    <img src="{{ route.image.url }}" alt="Route Image" class="rounded-2 me-3" style="width: 80px; height: 60px; object-fit: cover;">
-                                {% else %}
-                                    <div class="rounded-2 bg-light text-muted d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 60px;">
-                                        <i class="bi bi-image fs-4"></i>
-                                    </div>
-                                {% endif %}
-                                <div>
-                                    <h5 class="mb-1 fw-bold">
-                                        <a href="{% url 'route_bus_list' route.id %}" class="text-decoration-none text-primary">{{ route.source }} to {{ route.destination }}</a>
-                                    </h5>
-                                    <p class="mb-0 text-muted small">{{ route.distance }} km | {{ route.estimated_time }} hr</p>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <strong class="text-muted small">Sub-Routes:</strong>
+            <!-- Routes Table -->
+            <div class="table-responsive shadow-sm rounded-3">
+                <table class="table table-hover table-bordered align-middle" id="routesTable">
+                    <thead class="table-primary table-head">
+                        <tr>
+                            <th scope="col" class="fw-semibold text-white" style="width: 5%;">S.N.</th>
+                            <th scope="col" class="fw-semibold text-white sortable" id="sortRoute" style="cursor: pointer;">
+                                Route <i class="bi bi-arrow-down-up ms-1"></i>
+                            </th>
+                            <th scope="col" class="fw-semibold text-white" style="width: 10%;">Distance (km)</th>
+                            <th scope="col" class="fw-semibold text-white" style="width: 10%;">Est. Time (hr)</th>
+                            <th scope="col" class="fw-semibold text-white">Sub-Routes</th>
+                            <th scope="col" class="fw-semibold text-white">Description</th>
+                            <th scope="col" class="fw-semibold text-white" style="width: 10%;">Image</th>
+                            <th scope="col" class="fw-semibold text-white" style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="routesTableBody">
+                        {% for route in routes %}
+                        <tr class="route-row">
+                            <td class="fw-medium text-center">{{ forloop.counter }}</td>
+                            <td>
+                                <a href="{% url 'route_bus_list' route.id %}" class="text-decoration-none text-primary fw-medium">{{ route.source }} to {{ route.destination }}</a>
+                            </td>
+                            <td>{{ route.distance }}</td>
+                            <td>{{ route.estimated_time }}</td>
+                            <td>
                                 {% if route.sub_routes.all %}
-                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                    <div class="d-flex flex-wrap gap-1">
                                         {% for sub_route in route.sub_routes.all %}
                                             <span class="badge bg-primary-subtle text-primary border border-primary rounded-pill">{{ sub_route.name }}</span>
                                         {% endfor %}
@@ -70,43 +74,53 @@
                                 {% else %}
                                     <span class="text-muted small">None</span>
                                 {% endif %}
-                            </div>
-                            <div class="mb-3">
-                                <strong class="text-muted small">Description:</strong>
-                                <p class="text-muted">{{ route.description|default:"No description provided." }}</p>
-                            </div>
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="{% url 'route_bus_list' route.id %}" class="btn btn-outline-primary btn-sm shadow-sm" title="View Buses">
-                                    <i class="bi bi-bus-front-fill"></i>
-                                </a>
-                                {% if user.role == "admin" %}
-                                <a href="{% url 'edit_route' route.id %}" class="btn btn-outline-warning btn-sm shadow-sm" title="Edit Route">
-                                    <i class="bi bi-pencil-square"></i>
-                                </a>
-                                <button class="btn btn-outline-danger btn-sm shadow-sm delete-route-btn" 
-                                        data-route-id="{{ route.id }}"
-                                        data-route-source="{{ route.source }}"
-                                        data-route-destination="{{ route.destination }}"
-                                        title="Delete Route">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                            </td>
+                            <td>{{ route.description|default:"No description provided."|truncatewords:10 }}</td>
+                            <td>
+                                {% if route.image %}
+                                    <img src="{{ route.image.url }}" alt="Route Image" class="rounded-2" style="width: 80px; height: 60px; object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-2 bg-light text-muted d-flex align-items-center justify-content-center" style="width: 80px; height: 60px;">
+                                        <i class="bi bi-image fs-5"></i>
+                                    </div>
                                 {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% empty %}
-                <div class="col-12 text-center py-5">
-                    <div class="py-4">
-                        <i class="bi bi-signpost-split-fill display-4 text-muted mb-3"></i>
-                        <h4 class="text-muted fw-semibold">No Routes Found</h4>
-                        <p class="text-muted mb-4">Get started by adding your first route.</p>
-                        <button id="emptyAddRouteBtn" class="btn btn-primary shadow-sm rounded-3">
-                            <i class="bi bi-plus-circle-fill me-2"></i>Add Route
-                        </button>
-                    </div>
-                </div>
-                {% endfor %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'route_bus_list' route.id %}" class="btn btn-outline-primary btn-sm rounded-pill shadow-sm" title="View Buses">
+                                        <i class="bi bi-bus-front-fill"></i>
+                                    </a>
+                                    {% if user.role == "admin" %}
+                                    <a href="{% url 'edit_route' route.id %}" class="btn btn-outline-warning btn-sm rounded-pill shadow-sm" title="Edit Route">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger btn-sm rounded-pill shadow-sm delete-route-btn" 
+                                            data-route-id="{{ route.id }}"
+                                            data-route-source="{{ route.source }}"
+                                            data-route-destination="{{ route.destination }}"
+                                            title="Delete Route">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="py-4">
+                                    <i class="bi bi-signpost-split-fill display-4 text-muted mb-3"></i>
+                                    <h4 class="text-muted fw-semibold">No Routes Found</h4>
+                                    <p class="text-muted mb-4">Get started by adding your first route.</p>
+                                    <button id="emptyAddRouteBtn" class="btn btn-primary shadow-sm rounded-pill">
+                                        <i class="bi bi-plus-circle-fill me-2"></i>Add Route
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
 
             <!-- Pagination -->
@@ -115,19 +129,19 @@
                 <ul class="pagination justify-content-center">
                     {% if routes.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ routes.previous_page_number }}" aria-label="Previous">
+                        <a class="page-link rounded-pill" href="?page={{ routes.previous_page_number }}" aria-label="Previous">
                             <span aria-hidden="true">«</span>
                         </a>
                     </li>
                     {% endif %}
                     {% for num in routes.paginator.page_range %}
                     <li class="page-item {% if routes.number == num %}active{% endif %}">
-                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                        <a class="page-link rounded-pill" href="?page={{ num }}">{{ num }}</a>
                     </li>
                     {% endfor %}
                     {% if routes.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ routes.next_page_number }}" aria-label="Next">
+                        <a class="page-link rounded-pill" href="?page={{ routes.next_page_number }}" aria-label="Next">
                             <span aria-hidden="true">»</span>
                         </a>
                     </li>
@@ -142,8 +156,8 @@
 <!-- Add Route Modal -->
 <div class="modal fade" id="addRouteModal" tabindex="-1" aria-labelledby="addRouteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content rounded-3 shadow-lg">
-            <div class="modal-header border-bottom-0 bg-light">
+        <div class="modal-content rounded-3 shadow-lg border-0">
+            <div class="modal-header border-bottom-0 bg-primary-subtle">
                 <h5 class="modal-title fw-bold" id="addRouteModalLabel">
                     <i class="bi bi-signpost-split-fill me-2 text-primary"></i>Add New Route
                 </h5>
@@ -155,38 +169,38 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="source" class="form-label fw-medium">Source <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control rounded-3" id="source" name="source" placeholder="e.g., Kathmandu" required>
+                            <input type="text" class="form-control rounded-3 shadow-sm" id="source" name="source" placeholder="e.g., Kathmandu" required>
                             <div class="invalid-feedback">Please enter the source location.</div>
                         </div>
                         <div class="col-md-6">
                             <label for="destination" class="form-label fw-medium">Destination <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control rounded-3" id="destination" name="destination" placeholder="e.g., Pokhara" required>
+                            <input type="text" class="form-control rounded-3 shadow-sm" id="destination" name="destination" placeholder="e.g., Pokhara" required>
                             <div class="invalid-feedback">Please enter the destination location.</div>
                         </div>
                         <div class="col-md-6">
                             <label for="distance" class="form-label fw-medium">Distance (km) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <span class="input-group-text rounded-start"><i class="bi bi-rulers"></i></span>
-                                <input type="number" step="0.01" class="form-control rounded-end" id="distance" name="distance" placeholder="e.g., 200" min="0.01" required>
+                                <span class="input-group-text rounded-start-3 shadow-sm"><i class="bi bi-rulers"></i></span>
+                                <input type="number" step="0.01" class="form-control rounded-end-3 shadow-sm" id="distance" name="distance" placeholder="e.g., 200" min="0.01" required>
                             </div>
                             <div class="invalid-feedback">Please enter a valid distance.</div>
                         </div>
                         <div class="col-md-6">
                             <label for="estimated_time" class="form-label fw-medium">Estimated Time (hr) <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <span class="input-group-text rounded-start"><i class="bi bi-clock"></i></span>
-                                <input type="number" step="0.1" class="form-control rounded-end" id="estimated_time" name="estimated_time" placeholder="e.g., 6.5" min="0.1" required>
+                                <span class="input-group-text rounded-start-3 shadow-sm"><i class="bi bi-clock"></i></span>
+                                <input type="number" step="0.1" class="form-control rounded-end-3 shadow-sm" id="estimated_time" name="estimated_time" placeholder="e.g., 6.5" min="0.1" required>
                             </div>
                             <div class="invalid-feedback">Please enter a valid estimated time.</div>
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-medium">Sub-Routes (max 5)</label>
-                            <div class="border rounded-3 p-3 bg-light">
+                            <div class="border rounded-3 p-3 bg-light shadow-sm">
                                 <ul class="list-group list-group-flush mb-3" id="subRoutesList"></ul>
                                 <small class="text-muted d-block mb-2">Add new sub-routes below.</small>
                                 <div class="input-group">
-                                    <input type="text" class="form-control rounded-start" id="new_sub_route" placeholder="e.g., Bhaktapur" aria-label="New sub-route">
-                                    <button type="button" class="btn btn-outline-primary rounded-end" id="addSubRouteBtn">
+                                    <input type="text" class="form-control rounded-start-3 shadow-sm" id="new_sub_route" placeholder="e.g., Bhaktapur" aria-label="New sub-route">
+                                    <button type="button" class="btn btn-outline-primary rounded-end-3 shadow-sm" id="addSubRouteBtn">
                                         <i class="bi bi-plus-circle me-1"></i>Add Sub-Route
                                     </button>
                                 </div>
@@ -197,20 +211,19 @@
                         <div class="col-12">
                             <label for="image" class="form-label fw-medium">Route Image</label>
                             <div class="input-group">
-                                <span class="input-group-text rounded-start"><i class="bi bi-image"></i></span>
-                                <input type="file" class="form-control rounded-end" id="image" name="image" accept="image/*">
+                                <span class="input-group-text rounded-start-3 shadow-sm"><i class="bi bi-image"></i></span>
+                                <input type="file" class="form-control rounded-end-3 shadow-sm" id="image" name="image" accept="image/*">
                             </div>
                             <small class="text-muted">Optional: Upload an image representing the route</small>
                         </div>
-
                         <div class="col-12">
                             <label for="description" class="form-label fw-medium">Description</label>
-                            <textarea class="form-control rounded-3" id="description" name="description" rows="3" placeholder="Optional: Add a brief description of the route"></textarea>
-                        
+                            <textarea class="form-control rounded-3 shadow-sm" id="description" name="description" rows="3" placeholder="Optional: Add a brief description of the route"></textarea>
+                        </div>
                     </div>
                     <div class="mt-4 text-end">
-                        <button type="button" class="btn btn-outline-secondary rounded-3 me-2" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary rounded-3">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill shadow-sm me-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary rounded-pill shadow-sm">
                             <i class="bi bi-plus-circle-fill me-1"></i>Add Route
                         </button>
                     </div>
@@ -223,8 +236,8 @@
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteRouteModal" tabindex="-1" aria-labelledby="deleteRouteModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content rounded-3 shadow-sm">
-            <div class="modal-header border-bottom-0 bg-light">
+        <div class="modal-content rounded-3 shadow-lg border-0">
+            <div class="modal-header border-bottom-0 bg-danger-subtle">
                 <h5 class="modal-title fw-bold" id="deleteRouteModalLabel">
                     <i class="bi bi-exclamation-triangle-fill me-1 text-danger"></i>Confirm Delete
                 </h5>
@@ -235,10 +248,10 @@
                 <p class="text-muted small">This action cannot be undone.</p>
             </div>
             <div class="modal-footer border-top-0">
-                <button type="button" class="btn btn-outline-secondary btn-sm rounded-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm" data-bs-dismiss="modal">Cancel</button>
                 <form method="POST" id="deleteRouteForm" action="#">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-danger btn-sm rounded-3">
+                    <button type="submit" class="btn btn-danger btn-sm rounded-pill shadow-sm">
                         <i class="bi bi-trash me-1"></i>Delete
                     </button>
                 </form>
@@ -291,15 +304,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchInput) {
         searchInput.addEventListener('input', () => {
             const searchTerm = searchInput.value.toLowerCase().trim();
-            const routeCards = document.querySelectorAll('.route-card');
-            routeCards.forEach(card => {
-                const source = card.querySelector('.text-primary').textContent.toLowerCase();
-                const destination = source.split(' to ')[1] || '';
-                const subRoutes = Array.from(card.querySelectorAll('.badge'))
+            const routeRows = document.querySelectorAll('.route-row');
+            routeRows.forEach(row => {
+                const sourceDest = row.querySelector('.text-primary').textContent.toLowerCase();
+                const subRoutes = Array.from(row.querySelectorAll('.badge'))
                     .map(badge => badge.textContent.toLowerCase())
                     .join(' ');
-                const isVisible = source.includes(searchTerm) || destination.includes(searchTerm) || subRoutes.includes(searchTerm);
-                card.style.display = isVisible ? '' : 'none';
+                const isVisible = sourceDest.includes(searchTerm) || subRoutes.includes(searchTerm);
+                row.style.display = isVisible ? '' : 'none';
+            });
+        });
+    }
+
+    // Sorting functionality for Route column
+    const sortRouteHeader = document.getElementById('sortRoute');
+    let sortDirection = 'asc'; // Default sort direction
+    if (sortRouteHeader) {
+        sortRouteHeader.addEventListener('click', () => {
+            const tbody = document.getElementById('routesTableBody');
+            const rows = Array.from(tbody.querySelectorAll('.route-row'));
+            const icon = sortRouteHeader.querySelector('i');
+
+            // Toggle sort direction
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+
+            // Update sort icon
+            icon.className = sortDirection === 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+
+            // Sort rows
+            rows.sort((a, b) => {
+                const aText = a.cells[1].querySelector('.text-primary').textContent.toLowerCase();
+                const bText = b.cells[1].querySelector('.text-primary').textContent.toLowerCase();
+                return sortDirection === 'asc' ? aText.localeCompare(bText) : bText.localeCompare(aText);
+            });
+
+            // Rebuild table body
+            tbody.innerHTML = '';
+            rows.forEach((row, index) => {
+                row.cells[0].textContent = index + 1; // Update S.N.
+                tbody.appendChild(row);
             });
         });
     }
@@ -360,10 +403,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Add new sub-route to list
             const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center py-1';
+            li.className = 'list-group-item d-flex justify-content-between align-items-center py-1 border-0 bg-light';
             li.innerHTML = `
-                <input type="text" class="form-control rounded-3 sub-route-input" value="${newSubRouteName}" readonly>
-                <button type="button" class="btn btn-sm btn-outline-danger remove-sub-route ms-2" title="Remove">
+                <input type="text" class="form-control rounded-3 sub-route-input shadow-sm" value="${newSubRouteName}" readonly>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-sub-route ms-2 rounded-pill" title="Remove">
                     <i class="bi bi-trash"></i>
                 </button>
             `;
@@ -403,10 +446,118 @@ document.addEventListener('DOMContentLoaded', () => {
                 event.stopPropagation();
             }
             addRouteForm.classList.add('was-validated');
-            addRouteForm.classList.add('was-validated-form');
             updateSubRoutesInput();
         });
     }
 });
 </script>
+
+<style>
+/* Table styling */
+.table-responsive {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    width: 100%;
+}
+.table-head {
+    background-color: #007bff !important; /* Blue color for thead */
+}
+.table-head th {
+    color: white !important;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table {
+        width: 100%;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    .table thead {
+        display: none;
+    }
+    .table tbody {
+        display: block;
+        width: 100%;
+    }
+    .table tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+    }
+    .table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .table td:before {
+        content: attr(data-label);
+        font-weight: bold;
+        margin-right: 1rem;
+        color: #007bff;
+    }
+    .table td:last-child {
+        border-bottom: 0;
+    }
+    /* Add data-labels for mobile view */
+    .route-row td:nth-child(1):before { content: "S.N."; }
+    .route-row td:nth-child(2):before { content: "Route"; }
+    .route-row td:nth-child(3):before { content: "Distance"; }
+    .route-row td:nth-child(4):before { content: "Est. Time"; }
+    .route-row td:nth-child(5):before { content: "Sub-Routes"; }
+    .route-row td:nth-child(6):before { content: "Description"; }
+    .route-row td:nth-child(7):before { content: "Image"; }
+    .route-row td:nth-child(8):before { content: "Actions"; }
+}
+
+/* General styling */
+.btn-rounded-pill {
+    padding: 0.375rem 1rem;
+}
+.input-group.rounded-pill {
+    transition: box-shadow 0.3s ease;
+}
+.input-group.rounded-pill:focus-within {
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+}
+.modal-content {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.modal.fade .modal-dialog {
+    transform: scale(0.9);
+}
+.modal.show .modal-dialog {
+    transform: scale(1);
+}
+.sortable:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transition: background-color 0.2s ease;
+}
+
+/* Image styling */
+.table img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Action buttons */
+.table .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Empty state */
+.table td.text-center {
+    display: table-cell !important;
+}
+</style>
 {% endblock %}

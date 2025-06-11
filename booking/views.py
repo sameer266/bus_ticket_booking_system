@@ -188,13 +188,16 @@ def transportation_company_list(request):
         qr_image = request.FILES.get('qr_image')
         full_name = request.POST.get('full_name')
         email = request.POST.get('email')
+        commission_rate=request.POST.get('commission_rate')
         phone = request.POST.get('phone')
         gender = request.POST.get('gender')
+        
 
         # Check if user already exists
         if CustomUser.objects.filter(phone=phone).exists():
             messages.error(request, "User with this phone number already exists!")
         else:
+        
             # Create the user
             user = CustomUser.objects.create(
                 role='sub_admin',
@@ -206,22 +209,21 @@ def transportation_company_list(request):
             )
             user.set_password("company@123")  # Default Password
             user.save()
-
+            
             # Create the TransportationCompany
-            TransportationCompany.objects.create(
+            transportation_company=TransportationCompany.objects.create(
                 user=user,
                 company_name=company_name,
                 vat_number=vat_number,
                 country=country,
                 location_name=location_name,
-              
-                
                 bank_name=bank_name,
                 account_name=account_name,
                 account_number=account_number,
                 qr_image=qr_image
             )
 
+            Commission.objects.create(transportation_company=transportation_company,rate=commission_rate)
             messages.success(request, "Transportation Company added successfully!")
             return redirect("transportation_company_list")
         
@@ -230,6 +232,7 @@ def transportation_company_list(request):
         "companies": TransportationCompany.objects.all(),
         "agents":Agent.objects.all()
     })
+    
     
 @login_required
 def edit_transportation_company(request, id):
@@ -261,7 +264,6 @@ def edit_transportation_company(request, id):
         if agent_id:
             agent_obj=Agent.objects.get(id=agent_id)
             transportation_company.agent=agent_obj
-        # Update TransportationCompany fields'
         
         transportation_company.company_name = request.POST.get('company_name')
         transportation_company.vat_number = request.POST.get('vat_number')
@@ -270,6 +272,11 @@ def edit_transportation_company(request, id):
         transportation_company.bank_name = request.POST.get('bank_name')
         transportation_company.account_name = request.POST.get('account_name')
         transportation_company.account_number = request.POST.get('account_number')
+        commission,_=Commission.objects.get_or_create(transportation_company=transportation_company)
+        commission.rate=request.POST.get('commission_rate')
+        print("Commission Rate",commission.rate)
+        
+        commission.save()
 
         if 'qr_image' in request.FILES:
             transportation_company.qr_image = request.FILES['qr_image']
@@ -427,12 +434,27 @@ def manage_users(request):
     return render(request, 'admin/manage_users.html', {'users': users_page})
 
 @login_required
-def delete_user(request, id):
-    """Delete a user and refresh the page."""
-    user = get_object_or_404(CustomUser, id=id)
-    user.delete()
-    return redirect('manage_users')
+def edit_user(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    
+    if request.method == "POST":
+        try:
+            full_name = request.POST.get('full_name')
+            email = request.POST.get('email')
+            gender = request.POST.get('gender')
+            user.full_name = full_name
+            user.email = email 
+            user.gender = gender
+            user.save()
 
+            messages.success(request, "User updated successfully")
+            return redirect('manage_users')
+
+        except Exception as e:
+            messages.error(request, f"Error updating user: {str(e)}")
+            return redirect('manage_users')
+
+    return render(request, 'admin/edit_user.html', {'user_obj': user})
 
 
 # ======= Driver and staff management ========
@@ -690,21 +712,19 @@ def create_bus(request):
             staff = Staff.objects.get(id=staff_id) if staff_id else None
                        
             commission_rate = float(request.POST.get('commission_rate') or 0)
-            
+            if transportation_company:
+                if not commission_rate:
+                    commission_rate=Commission.objects.get(transportation_company=transportation_company)
+                    
             print(total_seats)
-            # Create bus
             bus = Bus.objects.create(
                 bus_number=bus_number,
                 bus_type=bus_type,
                 driver=driver,
                 staff=staff,
                 contact_number=contact_number,
-            
                 total_seats=total_seats,
-            
                 is_active=is_active,
-           
-              
                 bus_image=bus_image,
                 transportation_company=transportation_company
             )
@@ -1754,6 +1774,7 @@ def change_bus_availability(request):
 # ========== Booking Management  =================
 def booking_management(request):
     user=request.user
+
     transportation_company=getattr(user, 'transportation_company', None)    
     try:
         if transportation_company:
@@ -1792,6 +1813,12 @@ def booking_status_update(request,booking_id):
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
+
+def booking_delete(request,booking_id):
+    booking=Booking.objects.get(id=booking_id)
+    booking.delete()
+    messages.success(request,f'#{booking_id} Booking deleted successfully ')
+    return redirect('booking_list')
 
 def reservationBooking_update(request, id):
     user=request.user
@@ -1943,7 +1970,7 @@ def system_settings_view(request):
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.template.defaulttags import register
-# Register a custom filter for template to calculate commission
+
 @register.filter
 def multiply(value, arg):
     return float(value) * float(arg)
@@ -1956,131 +1983,137 @@ def divide(value, arg):
 #========= Payment and Commission =============
 @login_required 
 def bus_payment_details(request):
-        user = request.user
-        user_company = getattr(user, 'transportation_company', None)
-        
-        buses = Bus.objects.all()
-        if user_company:
-            buses = buses.filter(transportation_company=user_company)
+    user = request.user
+    user_company = getattr(user, 'transportation_company', None)
+    
+    buses = Bus.objects.all()
+    if user_company:
+        buses = buses.filter(transportation_company=user_company)
 
-        # Get all payments for buses
-        payments_query = Payment.objects.filter(
-            booking__bus__in=buses,
-            payment_status='completed'
-        ).order_by('-created_at')
+    # Get all payments for buses
+    payments_query = Payment.objects.filter(
+        booking__bus__in=buses,
+        payment_status='completed'
+    ).order_by('-created_at')
 
-        date_filter = request.GET.get('date_filter', 'all')
-        if date_filter != 'all':
-            today = timezone.now().date()
-            if date_filter == 'today':
-                payments_query = payments_query.filter(created_at__date=today)
-            elif date_filter == 'week':
-                start_of_week = today - timezone.timedelta(days=today.weekday())
-                payments_query = payments_query.filter(created_at__date__gte=start_of_week)
-            elif date_filter == 'month':
-                payments_query = payments_query.filter(created_at__month=today.month, created_at__year=today.year)
-            elif date_filter == 'year':
-                payments_query = payments_query.filter(created_at__year=today.year)
-
-        # Paginate payments
-        payments_per_page = 10
-        payment_paginator = Paginator(payments_query or [], payments_per_page)
-        page = request.GET.get('payment_page')
-        
-        try:
-            payments = payment_paginator.page(page)
-        except PageNotAnInteger:
-            payments = payment_paginator.page(1)
-        except EmptyPage:
-            payments = payment_paginator.page(payment_paginator.num_pages)
-
-        # Calculate earnings and commission per bus
-        bus_earnings = []
-        for bus in buses:
-            # Get commission rate for this bus
-            commission = Commission.objects.filter(bus=bus).first()
-            commission_rate = commission.rate if commission else Decimal('0.00')
-
-            # Get all completed payments for this bus
-            bus_payments = payments_query.filter(booking__bus=bus)
-            
-            # Calculate total earnings (total payment amount)
-            total_earning = bus_payments.aggregate(
-                total=Sum('booking__schedule__price')
-            )['total'] or Decimal('0.00')
-            
-            # Calculate commission
-            total_commission = (total_earning * commission_rate / 100) if commission_rate else Decimal('0.00')
-            
-            # Calculate net earnings
-            net_earning = total_earning - total_commission
-            
-            # Count completed trips
-            total_trips = Schedule.objects.filter(
-                bus=bus, 
-                status="finished"
-            ).count()
-            print("Total Trips" ,total_trips)
-            bus_earnings.append({
-                'bus': bus,
-                'rate': float(commission_rate),
-                'bus_number': bus.bus_number,
-                'bus_type': bus.bus_type,
-                'total_earning': float(total_earning),
-                'total_commission': float(total_commission),
-                'net_earning': float(net_earning),
-                'total_trips': total_trips
-            })
-
-        bus_earnings.sort(key=lambda x: x['total_earning'], reverse=True)
-        
-        # Paginate bus earnings
-        earnings_per_page = 5
-        earnings_paginator = Paginator(bus_earnings or [], earnings_per_page)
-        earnings_page = request.GET.get('earnings_page')
-        
-        try:
-            paginated_earnings = earnings_paginator.page(earnings_page)
-        except PageNotAnInteger:
-            paginated_earnings = earnings_paginator.page(1)
-        except EmptyPage:
-            paginated_earnings = earnings_paginator.page(earnings_paginator.num_pages)
-
-        # Calculate overall totals
-        total_amount = sum(e['total_earning'] for e in bus_earnings)
-        total_commission = sum(e['total_commission'] for e in bus_earnings)
-        total_received = sum(e['net_earning'] for e in bus_earnings)
-        total_trips = sum(e['total_trips'] for e in bus_earnings)
-
-        # Get today's completed payments
+    date_filter = request.GET.get('date_filter', 'all')
+    if date_filter != 'all':
         today = timezone.now().date()
-        today_payments = Payment.objects.filter(
-            payment_status="completed",
-            created_at__date=today,
-            booking__bus__in=buses
-        ).order_by('-created_at')
-        
-        today_paginator = Paginator(today_payments or [], 10)
-        today_page = request.GET.get('today_page')
-        
-        try:
-            paginated_today_payments = today_paginator.page(today_page)
-        except PageNotAnInteger:
-            paginated_today_payments = today_paginator.page(1)
-        except EmptyPage:
-            paginated_today_payments = today_paginator.page(today_paginator.num_pages)
+        if date_filter == 'today':
+            payments_query = payments_query.filter(created_at__date=today)
+        elif date_filter == 'week':
+            start_of_week = today - timezone.timedelta(days=today.weekday())
+            payments_query = payments_query.filter(created_at__date__gte=start_of_week)
+        elif date_filter == 'month':
+            payments_query = payments_query.filter(created_at__month=today.month, created_at__year=today.year)
+        elif date_filter == 'year':
+            payments_query = payments_query.filter(created_at__year=today.year)
 
-        context = {
-            'payments': paginated_today_payments,
-            'bus_earnings': paginated_earnings,
-            'total_amount': float(total_amount),
-            'total_commission': float(total_commission),
-            'total_received': float(total_received), 
-          
-            'date_filter': date_filter,
-        }
+    # Paginate payments
+    payments_per_page = 10
+    payment_paginator = Paginator(payments_query or [], payments_per_page)
+    page = request.GET.get('payment_page')
+    
+    try:
+        payments = payment_paginator.page(page)
+    except PageNotAnInteger:
+        payments = payment_paginator.page(1)
+    except EmptyPage:
+        payments = payment_paginator.page(payment_paginator.num_pages)
 
-        return render(request, 'admin/bus_payment_details.html', context)
+    # Calculate earnings and commission per bus
+    bus_earnings = []
+    for bus in buses:
+        # Get commission rate considering both bus and transportation company
+        bus_commission = Commission.objects.filter(bus=bus).first()
+        company_commission = Commission.objects.filter(transportation_company=bus.transportation_company).first() if bus.transportation_company else None
+        
+        # Use bus commission if available, otherwise use company commission
+        commission_rate = Decimal(str(bus_commission.rate)) if bus_commission else (
+        Decimal(str(company_commission.rate)) if company_commission else Decimal('0.00')
+        )
+
+        # Get all completed payments for this bus
+        bus_payments = payments_query.filter(booking__bus=bus)
+        
+        # Calculate total earnings using schedule price
+        total_earning = bus_payments.aggregate(
+        total=Sum('booking__schedule__price')  # Use schedule price for payment
+        )['total']        
+        # Ensure commission calculation uses Decimal and handle None values
+        total_earning = total_earning or Decimal('0.00')
+        total_commission = (total_earning * commission_rate / Decimal('100')).quantize(Decimal('0.01'))
+        
+        # Calculate net earnings
+        net_earning = total_earning - total_commission
+        
+        # Count completed trips
+        total_trips = Schedule.objects.filter(
+        bus=bus, 
+        status="finished"
+        ).count()
+
+        bus_earnings.append({
+        'bus': bus,
+        'rate': float(commission_rate),
+        'bus_number': bus.bus_number,
+        'bus_type': bus.bus_type,
+        'total_earning': float(total_earning),
+        'total_commission': float(total_commission),
+        'net_earning': float(net_earning),
+        'total_trips': total_trips,
+        'transportation_company': bus.transportation_company.company_name if bus.transportation_company else "N/A"
+        })
+
+    bus_earnings.sort(key=lambda x: x['total_earning'], reverse=True)
+    
+    # Paginate bus earnings
+    earnings_per_page = 5
+    earnings_paginator = Paginator(bus_earnings or [], earnings_per_page)
+    earnings_page = request.GET.get('earnings_page')
+    
+    try:
+        paginated_earnings = earnings_paginator.page(earnings_page)
+    except PageNotAnInteger:
+        paginated_earnings = earnings_paginator.page(1)
+    except EmptyPage:
+        paginated_earnings = earnings_paginator.page(earnings_paginator.num_pages)
+
+    # Calculate overall totals using Decimal for accuracy
+    total_amount = sum(Decimal(str(e['total_earning'])) for e in bus_earnings)
+    total_commission = sum(Decimal(str(e['total_commission'])) for e in bus_earnings)
+    total_received = sum(Decimal(str(e['net_earning'])) for e in bus_earnings)
+    total_trips = sum(e['total_trips'] for e in bus_earnings)
+
+    # Get today's completed payments
+    today = timezone.now().date()
+    today_payments = Payment.objects.filter(
+        payment_status="completed",
+        created_at__date=today,
+        booking__bus__in=buses
+    ).select_related('booking', 'booking__bus', 'booking__bus__transportation_company').order_by('-created_at')
+    
+    today_paginator = Paginator(today_payments or [], 10)
+    today_page = request.GET.get('today_page')
+    
+    try:
+        paginated_today_payments = today_paginator.page(today_page)
+    except PageNotAnInteger:
+        paginated_today_payments = today_paginator.page(1)
+    except EmptyPage:
+        paginated_today_payments = today_paginator.page(today_paginator.num_pages)
+
+    context = {
+        'payments': paginated_today_payments,
+        'bus_earnings': paginated_earnings,
+        'total_amount': float(total_amount),
+        'total_commission': float(total_commission),
+        'total_received': float(total_received),
+        'total_trips': total_trips,
+        'date_filter': date_filter,
+    }
+
+    return render(request, 'admin/bus_payment_details.html', context)
 
 
 
@@ -2248,34 +2281,58 @@ def reservation_payment_details(request):
     user = request.user
     user_company = getattr(user, 'transportation_company', None)
 
-    reservations = BusReservationBooking.objects.all()
+    # Get all bus reservations filtered by company if needed
+    reservations = BusReservation.objects.all() 
     if user_company:
-        reservations = reservations.filter(bus_reserve__transportation_company=user_company)
-    
+        reservations = reservations.filter(transportation_company=user_company)
+
+    # Get commissions and calculate earnings for each vehicle
+    commission_data = []
     total_earning = 0
     total_commission = 0
-    commission = Commission.objects.filter(bus_reserve__in=[r.bus_reserve for r in reservations])
 
-    
-    for item in commission:
-        item.total_trips=item.bus_reserve.reservation_booking.all().count()
-        item.net_earning = item.total_earnings - item.total_commission
-        total_earning += item.total_earnings
-        total_commission += item.total_commission
+    for reservation in reservations:
+        # Get commission rate for this reservation
+        try:
+            commission = Commission.objects.get(bus_reserve=reservation)
+            rate = commission.rate
+        except Commission.DoesNotExist:
+            rate = 0
 
-    net_received = total_earning - total_commission
+        # Get all completed bookings for this vehicle
+        bookings =BusReservationBooking.objects.filter(bus_reserve=reservation)
+        
+        # Calculate totals for this vehicle
+        vehicle_earnings = Decimal(str(sum(float(booking.agreed_price or 0) for booking in bookings)))
+        vehicle_commission = (vehicle_earnings * Decimal(str(rate))) / Decimal('100')
+        net_earning = vehicle_earnings - vehicle_commission
 
-    paginator = Paginator(commission, 8)
+        # Update overall totals
+        total_earning += vehicle_earnings
+        total_commission += Decimal(str(vehicle_commission))
+
+        commission_data.append({
+            'bus_reserve': reservation,
+            'rate': rate,
+            'total_earnings': vehicle_earnings,
+            'total_commission': vehicle_commission,
+            'net_earning': net_earning,
+            'total_trips': bookings.count()
+        })
+
+    # Paginate results
+    paginator = Paginator(commission_data, 8)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Get vehicle types for filter
     vehicle_types = VechicleType.objects.all()
 
     context = {
         'reservation_bookings': page_obj,
         'total_earning': total_earning,
-        'total_commission': total_commission,
-        'net_received': net_received,
+        'total_commission': total_commission, 
+        'net_received': total_earning - total_commission,
         'page_obj': page_obj,
         'vehicle_types': vehicle_types,
     }

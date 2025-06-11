@@ -3,7 +3,6 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.dispatch import receiver
 from django.db.models.signals import post_save
 from django.apps import apps
-
 from decimal import Decimal
 from bus.models import Bus
 from route.models import Schedule
@@ -36,6 +35,8 @@ class Booking(models.Model):
         blank=True
     )
     boarding_point=models.CharField(max_length=200,null=True,blank=True)
+    passenger_name= models.CharField(max_length=200,null=True,blank=True)
+    passenger_phone=models.PositiveIntegerField(max_length=10,null=True,blank=True)
     ticket_id=models.CharField(max_length=100,null=True,blank=True)
     booking_status = models.CharField(max_length=25, choices=STATUS_CHOICES, default='pending')
     booked_at = models.DateTimeField(auto_now_add=True)
@@ -49,7 +50,6 @@ class Booking(models.Model):
             booking_id = str(self.id)
             return f"TCK-{source_letter}{dest_letter}-{bus_last_digits}-{booking_id}"
         return None
-
 
     def save(self,*args,**kwargs):
         if not self.ticket_id:
@@ -138,14 +138,18 @@ def create_commission_on_reservation(sender, instance, created, **kwargs):
     Creates a commission entry when a BusReservation is created.
     """
     if created  or instance.status=='booked':
-      
+        price=0
+        if instance.agreed_price:
+            price=instance.agreed_price
+        else:
+            price=instance.bus_reserve.price
         commission_obj = Commission.objects.create(
             bus_reserve=instance.bus_reserve,
             commission_type='bus_reservation',
-            total_earnings=instance.bus_reserve.price,
+            total_earnings=price,
             total_commission=Decimal(0)
         )
-        commission_obj.total_commission = commission_obj.calculate_commission(instance.bus_reserve.price)
+        commission_obj.total_commission = commission_obj.calculate_commission(price)
         commission_obj.save()
     
 from django.utils.timezone import now
@@ -177,21 +181,11 @@ class Payment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     
 
-    def generate_transaction_id(self):
-        """Generate a unique transaction ID"""
-        if self.booking and self.booking.schedule and self.booking.bus:
-            timestamp = now().strftime('%Y%m%d%H%M')
-            schedule_id = str(self.booking.schedule.id).zfill(4)
-            bus_id = str(self.booking.bus.id).zfill(4)
-            user_id = str(self.user.id).zfill(4)
-            return f"TXN--{timestamp}-S{schedule_id}-B{bus_id}-U{user_id}"
-        return None
+
 
     
     def save(self,*args,**kwargs):
-        if not self.transaction_id:
-            self.transaction_id = self.generate_transaction_id()
-            
+       
         if self.payment_status=="completed":
             commission = Commission.objects.get(bus=self.booking.bus)
             self.commission_deducted = (commission.rate / Decimal('100.00')) * self.booking.schedule.price

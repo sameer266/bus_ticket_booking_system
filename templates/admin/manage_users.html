@@ -51,6 +51,7 @@
                                     <th>Email</th>
                                     <th class="d-none d-md-table-cell">Phone</th>
                                     <th class="d-none d-md-table-cell">Gender</th>
+                                    <th class="d-none d-md-table-cell">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -78,6 +79,14 @@
                                             {{ user.gender|title|default:"N/A" }}
                                         </span>
                                     </td>
+                                    <td class="d-none d-md-table-cell">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'edit_user' user.id %}" class="btn btn-outline-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Edit User">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
@@ -93,6 +102,8 @@
                                             </button>
                                         </div>
                                     </td>
+
+                                
                                 </tr>
                                 {% endfor %}
                             </tbody>

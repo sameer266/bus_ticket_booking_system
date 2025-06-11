@@ -3,6 +3,9 @@ from django.db import models
 import random
 from django.conf import settings
 import requests
+from django.apps import apps
+
+
 
 
 class CustomUserManager(BaseUserManager):
@@ -81,8 +84,20 @@ class TransportationCompany(models.Model):
     account_number=models.CharField(max_length=16)
     qr_image=models.ImageField(upload_to="qr_image/",null=True,blank=True)
     
+    
+    def get_commission_rate(self):
+        Commission=apps.get_model('booking','Commission')
+        commission_obj=Commission.objects.get(transportation_company=self)
+        print(commission_obj)
+        return commission_obj.rate
+    
+    
+        
+        
+    
     def __str__(self):
         return f"{self.company_name}"
+    
     
 
 

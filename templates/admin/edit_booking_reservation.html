@@ -168,8 +168,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="reservation-form-container mt-4" >
-    <!-- Floating back button for mobile -->
+<div class="reservation-form-container mt-4">
     <a href="{% url 'booking_list' %}" class="floating-back">
         <i class="bi bi-arrow-left"></i>
     </a>
@@ -182,13 +181,56 @@
             <form method="POST" action="{% url 'update_reservation' reservation.id %}" class="needs-validation" novalidate>
                 {% csrf_token %}
                 
+                <!-- Important Booking Details -->
+                <div class="important-details p-3 mb-4" style="background: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--primary-green);">
+                    <div class="row g-3">
+                        <div class="col-md-3 form-group">
+                            <label for="agreed_price" class="form-label fw-bold">
+                                <i class="bi bi-currency-dollar text-success"></i> Agreed Price
+                            </label>
+                            <input type="number" class="form-control border-success" id="agreed_price" name="agreed_price" 
+                                   value="{{ reservation.agreed_price }}" required>
+                            <div class="invalid-feedback">Please enter a valid price.</div>
+                        </div>
+                        
+                        <div class="col-md-3 form-group">
+                            <label for="start_date" class="form-label fw-bold">
+                                <i class="bi bi-calendar-check text-success"></i> Start Date
+                            </label>
+                            <input type="date" class="form-control border-success" id="start_date" name="start_date" 
+                                   value="{{ reservation.start_date|date:'Y-m-d' }}" required>
+                            <div class="invalid-feedback">Please select a start date.</div>
+                        </div>
+                        
+                        <div class="col-md-3 form-group">
+                            <label for="end_date" class="form-label fw-bold">
+                                <i class="bi bi-calendar-x text-success"></i> End Date
+                            </label>
+                            <input type="date" class="form-control border-success" id="end_date" name="end_date" 
+                                   value="{{ reservation.end_date|date:'Y-m-d' }}" required>
+                            <div class="invalid-feedback">Please select an end date.</div>
+                        </div>
+                        
+                        <div class="col-md-3 form-group">
+                            <label for="status" class="form-label fw-bold">
+                                <i class="bi bi-check-circle text-success"></i> Status
+                            </label>
+                            <select class="form-select border-success" id="status" name="status" required>
+                                <option value="pending" {% if reservation.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="booked" {% if reservation.status == 'booked' %}selected{% endif %}>Booked</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a status.</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Vehicle Information Section -->
                 <h4 class="section-header"><i class="bi bi-car-front"></i>Vehicle Information</h4>
                 <div class="row g-3">
                     <div class="col-md-6 form-group">
                         <label for="vechicle_number" class="form-label">Vehicle Number</label>
-                        <input type="text" class="form-control" id="vehicle_number" name="vechicle_number" value="{{ reservation.bus_reserve.vechicle_number }}" required>
-                        
+                        <input type="text" class="form-control" id="vehicle_number" name="vechicle_number" 
+                               value="{{ reservation.bus_reserve.vechicle_number }}" required>
                         <div class="invalid-feedback">Please select a vehicle.</div>
                     </div>
                 </div>
@@ -210,15 +252,8 @@
 
                     <div class="col-md-6 form-group">
                         <label for="agreed_price" class="form-label">Actual Price (NRP)</label>
-                        <input type="number" class="form-control" id="agreed_price" name="agreed_price" value="{{ reservation.bus_reserve.price }}"  readonly >
-
-                    </div>
-
-                    
-                    <div class="col-md-6 form-group">
-                        <label for="agreed_price" class="form-label">Agreed Price (NRP)</label>
-                        <input type="number" class="form-control" id="agreed_price" name="agreed_price" value="{{ reservation.agreed_price }}"  required>
-                        <div class="invalid-feedback">Please enter a valid price.</div>
+                        <input type="number" class="form-control" id="agreed_price" name="agreed_price" 
+                               value="{{ reservation.bus_reserve.price }}" readonly>
                     </div>
                     
                     <div class="col-md-6 form-group">
@@ -226,32 +261,10 @@
                         <input type="text" class="form-control" id="date" name="date" value="{{ reservation.date }} " required>
                         <div class="invalid-feedback">Please enter Duration in Days.</div>
                     </div>
-                    
-                    <div class="col-md-6 form-group">
-                        <label for="start_date" class="form-label">Start Date</label>
-                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ reservation.start_date|date:'Y-m-d' }}" required>
-                        <div class="invalid-feedback">Please select a start date.</div>
-                    </div>
-                    
-                    <div class="col-md-6 form-group">
-                        <label for="end_date" class="form-label">End Date</label>
-                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ reservation.end_date|date:'Y-m-d' }}" required>
-                        <div class="invalid-feedback">Please select an end date.</div>
-                    </div>
-                    
-                    <div class="col-md-6 form-group">
-                        <label for="status" class="form-label">Status</label>
-                        <select class="form-select" id="status" name="status" required>
-                            <option value="pending" {% if reservation.status == 'pending' %}selected{% endif %}>Pending</option>
-                            <option value="booked" {% if reservation.status == 'booked' %}selected{% endif %}>Booked</option>
-
-                        </select>
-                        <div class="invalid-feedback">Please select a status.</div>
-                    </div>
                 </div>
-                
+
                 <!-- Personnel Section -->
-                <h4 class="section-header"><i class="bi bi-people"></i>Personnel Assignment</h4>
+                <h4 class="section-header"><i class="bi bi-people"></i>Personnel </h4>
                 <div class="row g-3">
                     <div class="col-md-6 form-group">
                         <label for="driver_id" class="form-label">Driver</label>
@@ -285,8 +298,8 @@
                     <a href="{% url 'booking_list' %}" class="btn btn-back">
                         <i class="bi bi-arrow-left me-2"></i>Back to List
                     </a>
-                    <button type="submit" class="btn btn-submit">
-                        <i class="bi bi-save me-2"></i>Update Reservation
+                    <button type="submit"  class="btn btn-submit text-light">
+                        <i class="bi bi-save me-2 "></i>Update Reservation
                     </button>
                 </div>
             </form>

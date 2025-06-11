@@ -748,17 +748,34 @@ class SeatBookingAPiView(APIView):
     authentication_classes=[JWTAuthentication]
     permission_classes=[IsAuthenticated]
     
-    
     def get(self,request):
         try:
-            print(request.data)
-            booking=Booking.objects.filter(user=request.user).order_by('-booked_at')
-            serializer=BookingSerializer(booking,many=True)
-            return Response({'success':True,'data':serializer.data},status=200)
+            bookings = Booking.objects.filter(user=request.user).order_by('-booked_at')
+            booking_data = []
+            total_amount=0
+            for booking in bookings:
+                total_amount=booking.schedule.price * len(booking.seat)
+                data = {
+                    'bus_number': booking.schedule.bus.bus_number,
+                    'contact_number': str(booking.schedule.bus.contact_number),
+                    'ticket_id': booking.ticket_id,
+                    'source': booking.schedule.route.source,
+                    'destination': booking.schedule.route.destination,
+                    'departure_time': booking.schedule.departure_time,
+                    'passenger_name': booking.passenger_name,
+                    'passenger_phone': str(booking.passenger_phone),
+                    'boarding_point': booking.boarding_point,
+                    'total_amount': total_amount,
+                    'seat_list': booking.seat,
+                    'booking_status': booking.booking_status,
+                    'schedule_status': booking.schedule.status
+                }
+                booking_data.append(data)
+                
+            return Response({'success': True, 'data': booking_data}, status=200)
             
         except Exception as e:
-            return Response({'success':False,"error":str(e)},status=400)
-    
+            return Response({'success': False, "error": str(e)}, status=400)
 
 # ========= Bus Layout =========
 class BusLayoutApiView(APIView):

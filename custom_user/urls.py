@@ -41,6 +41,8 @@ urlpatterns = [
     # path('khalti-initiate/',views.InitiateKhaltiPayment.as_view(),name="initiate"),
     #path('khalti-verify/',views.VerifyKhalti.as_view(),name="verify"),
     
+    # ========= Review ============
+    
     # ====================
     # Sub Admin 
     #======================

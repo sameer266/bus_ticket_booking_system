@@ -165,11 +165,15 @@ class VechicleUserReservationBookingSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     vechicle_number = serializers.SerializerMethodField()
     price=serializers.SerializerMethodField()
+    phone_number=serializers.SerializerMethodField()
     
     class Meta:
         model = BusReservationBooking
         fields = '__all__'
 
+    
+    def get_phone_number(self,obj):
+        return obj.bus_reserve.phone_number
     
     def get_price(self,obj):
         if obj.bus_reserve and obj.bus_reserve.price:
@@ -204,15 +208,17 @@ class BookingSerializer(serializers.ModelSerializer):
     def get_phone_number(self, obj):
         return obj.bus.driver.phone_number if obj.bus and obj.bus.driver else None
 
-
     class Meta:
         model = Booking
         fields = '__all__'
+
+
 
 class ScheduleBookingUser(serializers.ModelSerializer):
     class Meta:
         model=Schedule
         fields=['id','departure_time','arrival_time','price']
+        
         
 #User view Booking Serializer
 class UserBookingSerilaizer(serializers.ModelSerializer):
